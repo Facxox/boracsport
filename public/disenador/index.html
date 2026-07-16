@@ -1,0 +1,2290 @@
+<html lang="es"><head></head><body class="theme-dark">﻿
+
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <title>Starbade - Configurador 3D</title>
+  <meta name="description" content="Diseñá tu camiseta personalizada en el configurador 3D de Starbade y solicitá una cotización para tu equipo.">
+  <link rel="canonical" href="https://starbade.com.uy/configurador/">
+  <meta property="og:locale" content="es_UY">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Starbade">
+  <meta property="og:title" content="Starbade - Configurador 3D">
+  <meta property="og:description" content="Diseñá tu camiseta personalizada en el configurador 3D de Starbade y solicitá una cotización para tu equipo.">
+  <meta property="og:url" content="https://starbade.com.uy/configurador/">
+  <meta property="og:image" content="images/starbade_open_graph.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Starbade - Configurador 3D">
+  <meta name="twitter:description" content="Diseñá tu camiseta personalizada en el configurador 3D de Starbade y solicitá una cotización para tu equipo.">
+  <meta name="twitter:image" content="https://starbade.com.uy/textures/assets/starbade_open_graph.png">
+
+  <link rel="icon" type="image/png" sizes="180x180" href="images/icon_starbade.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="images/icon_starbade.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+
+  <link href="css/css2.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+
+  <script defer src="js/parent-comms.js"></script>
+
+
+
+  <script>
+    (() => {
+      try {
+        const savedThemeMode = localStorage.getItem("starbade-theme-mode");
+        document.body.classList.toggle("theme-dark", savedThemeMode !== "light");
+      } catch (error) {
+        document.body.classList.add("theme-dark");
+      }
+    })();
+  </script>
+
+  <header class="topbar">
+
+    <a class="topbar-logo-link" href="index_1.html" target="_blank" rel="noopener noreferrer" aria-label="Ir al inicio de Starbade">
+      <img src="images/starbade.png" alt="Starbade" class="topbar-logo">
+    </a>
+
+    <nav class="desktop-nav">
+
+    <a href="index_1.html#como-trabajamos" target="_blank" rel="noopener noreferrer">
+        Proceso
+    </a>
+
+    <a href="index_1.html#productos" target="_blank" rel="noopener noreferrer">
+        Productos
+    </a>
+
+    <a href="index_1.html#sobre-nosotros" target="_blank" rel="noopener noreferrer">
+        Nosotros
+    </a>
+
+    <a href="index_1.html#clientes" target="_blank" rel="noopener noreferrer">
+        Clientes
+    </a>
+
+    <a href="index_1.html#contacto" target="_blank" rel="noopener noreferrer">
+        Contacto
+    </a>
+
+    <div class="nav-divider"></div>
+
+    <button class="theme-mode-toggle" id="themeModeToggle" type="button" aria-label="Activar modo claro" aria-pressed="true">
+      <img class="theme-mode-icon theme-mode-icon-dark" src="images/icon_dark_mode_2.png" alt="" draggable="false">
+      <img class="theme-mode-icon theme-mode-icon-light" src="images/icon_light_mode.png" alt="" draggable="false">
+    </button>
+
+    <div class="nav-divider"></div>
+
+    <div class="social-icons">
+
+        <a href="starbadeuy.html" target="_blank" rel="noopener noreferrer">
+        <img src="images/facebook.png" alt="Facebook">
+        </a>
+
+        <a href="starbadeuy_1.html" target="_blank" rel="noopener noreferrer">
+        <img src="images/instagram.png" alt="Instagram">
+        </a>
+
+    </div>
+
+    </nav>
+
+    <div class="mobile-topbar-actions">
+      <button class="theme-mode-toggle mobile-theme-mode-toggle" id="mobileThemeModeToggle" type="button" aria-label="Activar modo claro" aria-pressed="true">
+        <img class="theme-mode-icon theme-mode-icon-dark" src="images/icon_dark_mode_2.png" alt="" draggable="false">
+        <img class="theme-mode-icon theme-mode-icon-light" src="images/icon_light_mode.png" alt="" draggable="false">
+      </button>
+
+      <button class="menu-btn" id="menuBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+  </header>
+
+  <div class="mobile-menu" id="mobileMenu">
+
+    <a href="index_1.html#como-trabajamos" target="_blank" rel="noopener noreferrer">
+      Proceso
+    </a>
+
+    <a href="index_1.html#productos" target="_blank" rel="noopener noreferrer">
+      Productos
+    </a>
+
+    <a href="index_1.html#sobre-nosotros" target="_blank" rel="noopener noreferrer">
+      Nosotros
+    </a>
+
+    <a href="index_1.html#clientes" target="_blank" rel="noopener noreferrer">
+      Clientes
+    </a>
+
+    <a href="index_1.html#contacto" target="_blank" rel="noopener noreferrer">
+      Contacto
+    </a>
+
+    <div class="mobile-social-icons">
+
+    <a href="starbadeuy.html" target="_blank" rel="noopener noreferrer">
+        <img src="images/facebook.png" alt="Facebook">
+    </a>
+
+    <a href="starbadeuy_1.html" target="_blank" rel="noopener noreferrer">
+        <img src="images/instagram.png" alt="Instagram">
+    </a>
+
+    </div>
+
+  </div>
+
+  <main class="main-layout">
+
+    <section class="desktop-left-panel">
+
+      <h2 class="panel-title design-title">
+        Diseñá tu Camiseta
+      </h2>
+
+      <div class="design-section-tabs">
+
+        <button class="design-section-tab active" data-section="base">
+          Colores Base
+        </button>
+
+        <button class="design-section-tab" data-section="design">
+          Diseño
+        </button>
+
+        <button class="design-section-tab" data-section="logos">
+          Escudo y Logos
+        </button>
+
+
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <div class="desktop-panel-scroll">
+
+        <div class="design-panel-section active" data-section="base">
+
+        <h3 class="garment-title">
+          Camiseta
+        </h3>
+
+        <div class="color-controls-grid">
+
+        <button class="color-control-btn" id="frontColorBtn">
+
+          <div class="color-preview-circle" id="frontPreviewCircle"></div>
+
+          <span>
+            Frente
+          </span>
+
+        </button>
+
+        <button class="color-control-btn" id="backColorBtn">
+
+          <div class="color-preview-circle" id="backPreviewCircle"></div>
+
+          <span>
+            Espalda
+          </span>
+
+        </button>
+
+        <button class="color-control-btn" id="neckColorBtn">
+
+          <div class="color-preview-circle" id="neckPreviewCircle"></div>
+
+          <span>
+            Cuello
+          </span>
+
+        </button>
+
+        <button class="color-control-btn" id="lapelColorBtn">
+
+          <div class="color-preview-circle" id="lapelPreviewCircle"></div>
+
+          <span>
+            Solapa
+            <span class="lapel-info-btn" id="lapelInfoBtn" role="button" tabindex="0" aria-label="Información sobre Solapa">ⓘ</span>
+          </span>
+
+        </button>
+
+        <div class="split-material-group" id="sleevesGroup">
+          <div class="split-material-row">
+            <button class="color-control-btn split-main-btn" id="sleevesColorBtn" type="button">
+              <div class="color-preview-circle" id="sleevesPreviewCircle"></div>
+
+              <span>
+                Mangas
+              </span>
+            </button>
+
+            <button class="color-control-btn split-part-btn" id="sleevesLeftColorBtn" type="button">
+              <div class="color-preview-circle" id="sleevesLeftPreviewCircle"></div>
+
+              <span>
+                Manga Izq.
+              </span>
+            </button>
+
+            <button class="color-control-btn split-part-btn" id="sleevesRightColorBtn" type="button">
+              <div class="color-preview-circle" id="sleevesRightPreviewCircle"></div>
+
+              <span>
+                Manga Der.
+              </span>
+            </button>
+
+            <button class="split-toggle-btn" id="sleevesSplitToggle" type="button" aria-label="Dividir o unificar mangas">
+              <span class="split-toggle-icon">
+                <span></span>
+                <span></span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div class="split-material-group" id="cuffsGroup">
+          <div class="split-material-row">
+            <button class="color-control-btn split-main-btn" id="cuffsColorBtn" type="button">
+              <div class="color-preview-circle" id="cuffsPreviewCircle"></div>
+
+              <span>
+                Puños
+              </span>
+            </button>
+
+            <button class="color-control-btn split-part-btn" id="cuffsLeftColorBtn" type="button">
+              <div class="color-preview-circle" id="cuffsLeftPreviewCircle"></div>
+
+              <span>
+                Puño Izq.
+              </span>
+            </button>
+
+            <button class="color-control-btn split-part-btn" id="cuffsRightColorBtn" type="button">
+              <div class="color-preview-circle" id="cuffsRightPreviewCircle"></div>
+
+              <span>
+                Puño Der.
+              </span>
+            </button>
+
+            <button class="split-toggle-btn" id="cuffsSplitToggle" type="button" aria-label="Dividir o unificar puños">
+              <span class="split-toggle-icon">
+                <span></span>
+                <span></span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+      <h3 class="garment-title secondary-garment-title">
+        Short y Medias
+      </h3>
+
+      <div class="short-medias-row">
+        <button class="color-control-btn" id="shortColorBtn" type="button">
+          <div class="color-preview-circle" id="shortPreviewCircle"></div>
+
+          <span>
+            Short
+          </span>
+        </button>
+
+        <button class="color-control-btn" id="mediasColorBtn" type="button">
+          <div class="color-preview-circle" id="mediasPreviewCircle"></div>
+          <span>Medias</span>
+        </button>
+      </div>
+
+      </div>
+
+      </div>
+
+      <div class="design-panel-section" data-section="design">
+
+        <h3 class="garment-title">
+          Diseño
+        </h3>
+
+        <div class="color-controls-grid design-color-controls" id="designColorControls">
+
+          <button class="color-control-btn design-action-btn" id="addDesignBtn" type="button">
+            <img src="images/icon_sin_diseno.png" alt="Sin diseño" class="design-action-icon">
+            <span>
+              Agregar Diseño
+            </span>
+          </button>
+
+          <button class="color-control-btn design-color-btn" id="designColorBtn" type="button">
+            <div class="color-preview-circle" id="designPreviewCircle"></div>
+            <span>
+              Color Diseño
+            </span>
+          </button>
+
+          <button class="color-control-btn design-color-btn design-color-secondary-btn" id="designColor2Btn" type="button">
+            <div class="color-preview-circle" id="designPreviewCircle2"></div>
+            <span>
+              Color Diseño 2
+            </span>
+          </button>
+
+          <h3 class="garment-title secondary-garment-title">
+            Paneles
+          </h3>
+
+          <div class="design-panels-pair">
+            <div class="design-toggle-row">
+              <button class="color-control-btn design-layer-btn is-disabled" id="panelHombrosBtn" type="button">
+                <div class="color-preview-circle" id="panelHombrosPreviewCircle"></div>
+                <span>
+                  Panel Hombros
+                </span>
+              </button>
+
+              <button class="design-switch-toggle" id="panelHombrosToggle" type="button" aria-label="Activar o desactivar panel hombros">
+                <span class="design-switch-thumb"></span>
+              </button>
+            </div>
+
+            <div class="design-toggle-row">
+              <button class="color-control-btn design-layer-btn design-border-btn is-disabled" id="borderPanelHombrosBtn" type="button" disabled="">
+                <div class="color-preview-circle" id="borderPanelHombrosPreviewCircle"></div>
+                <span>
+                  Bordes Hombros
+                </span>
+              </button>
+
+              <button class="design-switch-toggle" id="borderPanelHombrosToggle" type="button" aria-label="Activar o desactivar bordes panel hombros" disabled="">
+                <span class="design-switch-thumb"></span>
+              </button>
+            </div>
+
+            <div class="design-toggle-row">
+              <button class="color-control-btn design-layer-btn is-disabled" id="panelLateralesBtn" type="button">
+                <div class="color-preview-circle" id="panelLateralesPreviewCircle"></div>
+                <span>
+                  Paneles Laterales
+                </span>
+              </button>
+
+              <button class="design-switch-toggle" id="panelLateralesToggle" type="button" aria-label="Activar o desactivar paneles laterales">
+                <span class="design-switch-thumb"></span>
+              </button>
+            </div>
+
+            <div class="design-toggle-row">
+              <button class="color-control-btn design-layer-btn design-border-btn is-disabled" id="borderPanelLateralesBtn" type="button" disabled="">
+                <div class="color-preview-circle" id="borderPanelLateralesPreviewCircle"></div>
+                <span>
+                  Bordes Laterales
+                </span>
+              </button>
+
+              <button class="design-switch-toggle" id="borderPanelLateralesToggle" type="button" aria-label="Activar o desactivar bordes paneles laterales" disabled="">
+                <span class="design-switch-thumb"></span>
+              </button>
+            </div>
+          </div>
+
+          <h3 class="garment-title secondary-garment-title">
+            Líneas
+          </h3>
+
+          <div class="design-toggle-row">
+            <button class="color-control-btn design-layer-btn is-disabled" id="lineCuelloBtn" type="button">
+              <div class="color-preview-circle" id="lineCuelloPreviewCircle"></div>
+              <span>
+                Línea Cuello
+              </span>
+            </button>
+
+            <button class="design-switch-toggle" id="lineCuelloToggle" type="button" aria-label="Activar o desactivar línea cuello">
+              <span class="design-switch-thumb"></span>
+            </button>
+          </div>
+
+          <div class="split-material-group line-punos-split-group design-line-full-row" id="linePunosGroup">
+            <div class="split-material-row">
+              <button class="color-control-btn design-layer-btn is-disabled split-main-btn" id="linePunosBtn" type="button">
+                <div class="color-preview-circle" id="linePunosPreviewCircle"></div>
+                <span>
+                  Línea Puños
+                </span>
+              </button>
+
+              <button class="color-control-btn design-layer-btn is-disabled split-part-btn" id="linePunosLeftBtn" type="button">
+                <div class="color-preview-circle" id="linePunosLeftPreviewCircle"></div>
+                <span>
+                  Línea Puño Izq.
+                </span>
+              </button>
+
+              <button class="color-control-btn design-layer-btn is-disabled split-part-btn" id="linePunosRightBtn" type="button">
+                <div class="color-preview-circle" id="linePunosRightPreviewCircle"></div>
+                <span>
+                  Línea Puño Der.
+                </span>
+              </button>
+
+              <button class="split-toggle-btn" id="linePunosSplitToggle" type="button" aria-label="Dividir o unificar línea puños" disabled="">
+                <span class="split-toggle-icon">
+                  <span></span>
+                  <span></span>
+                </span>
+              </button>
+
+              <button class="design-switch-toggle" id="linePunosToggle" type="button" aria-label="Activar o desactivar línea puños">
+                <span class="design-switch-thumb"></span>
+              </button>
+            </div>
+          </div>
+
+          <h3 class="garment-title secondary-garment-title">
+            Short
+          </h3>
+
+          <div class="design-lines-pair">
+            <div class="design-toggle-row">
+              <button class="color-control-btn design-layer-btn is-disabled" id="lineFinaBtn" type="button">
+                <div class="color-preview-circle" id="lineFinaPreviewCircle"></div>
+                <span>
+                  Línea Fina
+                </span>
+              </button>
+
+              <button class="design-switch-toggle" id="lineFinaToggle" type="button" aria-label="Activar o desactivar línea fina">
+                <span class="design-switch-thumb"></span>
+              </button>
+            </div>
+
+            <div class="design-toggle-row">
+              <button class="color-control-btn design-layer-btn is-disabled" id="lineGruesaBtn" type="button">
+                <div class="color-preview-circle" id="lineGruesaPreviewCircle"></div>
+                <span>
+                  Línea Gruesa
+                </span>
+              </button>
+
+              <button class="design-switch-toggle" id="lineGruesaToggle" type="button" aria-label="Activar o desactivar línea gruesa">
+                <span class="design-switch-thumb"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="design-toggle-row">
+            <button class="color-control-btn design-layer-btn is-disabled" id="lineInferiorBtn" type="button">
+              <div class="color-preview-circle" id="lineInferiorPreviewCircle"></div>
+              <span>
+                Línea Inferior
+              </span>
+            </button>
+
+            <button class="design-switch-toggle" id="lineInferiorToggle" type="button" aria-label="Activar o desactivar línea inferior">
+              <span class="design-switch-thumb"></span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="design-panel-section" data-section="logos">
+
+        <h3 class="garment-title">
+          Frente
+        </h3>
+
+        <div class="logo-action-grid">
+          <button class="color-control-btn design-action-btn" id="addShieldBtn" type="button">
+            <img src="images/icon_escudo.png" alt="Escudo" class="design-action-icon" id="shieldButtonIcon">
+            <span>
+              Agregar Escudo
+            </span>
+          </button>
+
+          <button class="color-control-btn design-action-btn" id="addSponsorBtn" type="button">
+            <img src="images/icon_mas.png" alt="Sponsor" class="design-action-icon" id="sponsorButtonIcon">
+            <span>
+              Agregar Sponsor
+            </span>
+          </button>
+
+          <button class="color-control-btn logo-control-btn" id="starbadeLogoColorBtn" type="button">
+            <div class="design-action-icon starbade-logo-preview-icon" id="starbadeLogoPreviewCircle" aria-hidden="true"></div>
+            <span>
+              Starbade
+            </span>
+          </button>
+
+          <div class="logo-trace-row">
+            <button class="color-control-btn logo-control-btn logo-trace-btn is-disabled" id="starbadeStrokeColorBtn" type="button" disabled="">
+              <div class="color-preview-circle stroke-preview-circle" id="starbadeStrokePreviewCircle"></div>
+              <span>
+                Trazo
+              </span>
+            </button>
+
+            <button class="design-switch-toggle" id="starbadeStrokeToggle" type="button" aria-label="Activar o desactivar trazo Starbade">
+              <span class="design-switch-thumb"></span>
+            </button>
+          </div>
+        </div>
+
+        <h3 class="garment-title secondary-garment-title logo-back-title">
+          Espalda
+        </h3>
+
+        <div class="back-logo-action-grid">
+          <button class="color-control-btn design-action-btn" id="dorsalTypeBtn" type="button">
+            <img src="images/icon_mas.png" alt="Tipo de letra" class="design-action-icon" id="dorsalTypeButtonIcon">
+            <span>Tipo de Letra</span>
+          </button>
+
+          <button class="color-control-btn design-action-btn" id="backSponsorBtn" type="button">
+            <img src="images/icon_mas.png" alt="Sponsor espalda" class="design-action-icon" id="backSponsorButtonIcon">
+            <span>Agregar Sponsor</span>
+          </button>
+        </div>
+
+        <div class="back-number-grid">
+          <div class="number-option-row">
+            <button class="color-control-btn logo-control-btn dorsal-number-color-btn is-disabled" id="dorsalNumberColorBtn" type="button" disabled="">
+              <div class="color-preview-circle" id="dorsalNumberPreviewCircle"></div>
+              <span>
+                Número
+              </span>
+            </button>
+
+            <button class="design-switch-toggle" id="dorsalNumberToggle" type="button" aria-label="Activar o desactivar número">
+              <span class="design-switch-thumb"></span>
+            </button>
+          </div>
+
+          <div class="number-option-row">
+            <button class="color-control-btn logo-control-btn dorsal-number-stroke-btn is-disabled" id="dorsalNumberStrokeColorBtn" type="button" disabled="">
+              <div class="color-preview-circle stroke-preview-circle" id="dorsalNumberStrokePreviewCircle"></div>
+              <span>
+                Trazo
+              </span>
+            </button>
+
+            <button class="design-switch-toggle" id="dorsalNumberStrokeToggle" type="button" aria-label="Activar o desactivar trazo del número" disabled="">
+              <span class="design-switch-thumb"></span>
+            </button>
+          </div>
+
+          <div class="number-option-row">
+            <button class="color-control-btn logo-control-btn dorsal-name-color-btn is-disabled" id="dorsalNameColorBtn" type="button" disabled="">
+              <div class="color-preview-circle" id="dorsalNamePreviewCircle"></div>
+              <span>
+                Nombre
+              </span>
+            </button>
+
+            <button class="design-switch-toggle" id="dorsalNameToggle" type="button" aria-label="Activar o desactivar nombre">
+              <span class="design-switch-thumb"></span>
+            </button>
+          </div>
+
+          <div class="number-option-row">
+            <button class="color-control-btn logo-control-btn dorsal-name-stroke-btn is-disabled" id="dorsalNameStrokeColorBtn" type="button" disabled="">
+              <div class="color-preview-circle stroke-preview-circle" id="dorsalNameStrokePreviewCircle"></div>
+              <span>
+                Trazo
+              </span>
+            </button>
+
+            <button class="design-switch-toggle" id="dorsalNameStrokeToggle" type="button" aria-label="Activar o desactivar trazo del nombre" disabled="">
+              <span class="design-switch-thumb"></span>
+            </button>
+          </div>
+
+          <button class="color-control-btn logo-control-btn" id="backStarbadeLogoColorBtn" type="button">
+            <div class="design-action-icon starbade-logo-preview-icon" id="backStarbadeLogoPreviewCircle" aria-hidden="true"></div>
+            <span>
+              Starbade
+            </span>
+          </button>
+
+          <div class="logo-trace-row">
+            <button class="color-control-btn logo-control-btn logo-trace-btn is-disabled" id="backStarbadeStrokeColorBtn" type="button" disabled="">
+              <div class="color-preview-circle stroke-preview-circle" id="backStarbadeStrokePreviewCircle"></div>
+              <span>
+                Trazo
+              </span>
+            </button>
+
+            <button class="design-switch-toggle" id="backStarbadeStrokeToggle" type="button" aria-label="Activar o desactivar trazo Starbade espalda">
+              <span class="design-switch-thumb"></span>
+            </button>
+          </div>
+
+        </div>
+
+        <h3 class="garment-title secondary-garment-title logo-back-title">
+          Short
+        </h3>
+
+        <div class="short-logo-grid">
+          <div class="number-option-row">
+            <button class="color-control-btn design-layer-btn short-shield-btn is-disabled" id="shortShieldBtn" type="button" disabled="">
+              <img src="images/icon_escudo.png" alt="Escudo short" class="design-action-icon" id="shortShieldButtonIcon">
+              <span>
+                Escudo
+              </span>
+            </button>
+
+            <button class="design-switch-toggle" id="shortShieldToggle" type="button" aria-label="Activar o desactivar escudo en short" disabled="">
+              <span class="design-switch-thumb"></span>
+            </button>
+          </div>
+
+          <div class="number-option-row">
+            <button class="color-control-btn logo-control-btn short-number-color-btn is-disabled" id="shortNumberColorBtn" type="button" disabled="">
+              <div class="color-preview-circle" id="shortNumberPreviewCircle"></div>
+              <span>
+                Número
+              </span>
+            </button>
+
+            <button class="design-switch-toggle" id="shortNumberToggle" type="button" aria-label="Activar o desactivar número en short">
+              <span class="design-switch-thumb"></span>
+            </button>
+          </div>
+
+          <button class="color-control-btn logo-control-btn short-starbade-btn" id="shortStarbadeLogoColorBtn" type="button">
+            <div class="design-action-icon starbade-logo-preview-icon" id="shortStarbadeLogoPreviewCircle" aria-hidden="true"></div>
+            <span>
+              Starbade
+            </span>
+          </button>
+        </div>
+
+      </div>
+
+      </div>
+
+    </section>
+
+    <section class="viewer-panel">
+      <div class="viewer-3d-root" id="viewer3dRoot">
+        <div class="viewer-3d-status" id="viewer3dStatus">Cargando modelo...</div>
+        <button class="viewer-warning-btn" id="viewerWarningBtn" type="button" aria-label="Advertencia sobre continuidad del diseño" hidden="">
+          <img src="images/icon_warning.png" alt="">
+        </button>
+      </div>
+
+      <div class="kit-view-controls" aria-label="Seleccionar vista del kit">
+        <button class="kit-view-btn active" type="button" data-camera-view="shirt" aria-label="Ver camiseta">
+          <img src="images/icon_kit_shirt.png" alt="">
+        </button>
+
+        <button class="kit-view-btn" type="button" data-camera-view="shirtShort" aria-label="Ver camiseta y short">
+          <img src="images/icon_kit_shirt_short.png" alt="">
+        </button>
+
+        <button class="kit-view-btn" type="button" data-camera-view="full" aria-label="Ver kit completo">
+          <img src="images/icon_kit_full.png" alt="">
+        </button>
+
+        <button class="mobile-view-download-btn" type="button" aria-label="Guardá tu diseño">
+          <img src="images/icon_download.png" alt="">
+        </button>
+      </div>
+
+      <button class="change-mold-btn" id="changeMoldBtn" type="button">
+        Cambiar Molde
+      </button>
+    </section>
+
+    <section class="desktop-right-panel">
+
+      <button class="quote-collapse-toggle" id="quoteCollapseToggle" type="button" aria-label="Cerrar panel de cotización" aria-expanded="true">
+        ›
+      </button>
+
+      <h2 class="panel-title quote-title">
+        Pedí tu Cotización
+      </h2>
+
+      <div class="panel-divider"></div>
+
+      <div class="quote-form">
+        <div class="quote-field">
+          <label class="quote-field-label" for="quoteNameInput">
+            Tu nombre<span class="quote-required-mark">*</span><span class="quote-field-error-message">Te falta completar este campo.</span><span class="quote-limit-hint" id="quoteNameLimitHint">Máximo 45 caracteres</span>
+          </label>
+
+          <input class="quote-text-input" id="quoteNameInput" name="customerName" type="text" autocomplete="name" maxlength="45" placeholder="Ejemplo: Juan Rodríguez">
+        </div>
+
+        <div class="quote-field">
+          <label class="quote-field-label" for="quoteTeamInput">
+            Nombre de tu equipo / empresa<span class="quote-required-mark">*</span><span class="quote-field-error-message">Te falta completar este campo.</span><span class="quote-limit-hint" id="quoteTeamLimitHint">Máximo 60 caracteres</span>
+          </label>
+
+          <input class="quote-text-input" id="quoteTeamInput" name="teamName" type="text" autocomplete="organization" maxlength="60" placeholder="Ejemplo: Club Atlético Estrella Roja">
+        </div>
+
+        <div class="quote-field">
+          <div class="quote-field-label">
+            Talles que necesitás<span class="quote-required-mark">*</span><span class="quote-field-error-message">Te falta completar este campo.</span>
+          </div>
+
+          <div class="quote-choice-row" role="group" aria-label="Talles que necesitás">
+            <button class="quote-choice-btn" type="button" data-quote-size="adulto" aria-pressed="false">
+              <span>Adulto</span>
+              <span class="quote-choice-check" aria-hidden="true"></span>
+            </button>
+
+            <button class="quote-choice-btn" type="button" data-quote-size="nino" aria-pressed="false">
+              <span>Niño</span>
+              <span class="quote-choice-check" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+
+        <p class="quote-privacy-note">
+          Al solicitar una cotización, aceptás nuestra
+          <a href="politica-de-privacidad.html" target="_blank" rel="noopener noreferrer">Política de Privacidad</a>.
+        </p>
+      </div>
+
+      <div class="quote-action-footer">
+        <button class="quote-image-btn" type="button">
+          <img class="quote-action-icon" src="images/icon_download_alone.png" alt="">
+          <span>Guardá tu Diseño</span>
+        </button>
+
+        <button class="quote-submit-btn" id="quoteRequestBtn" type="button">
+          <img class="quote-action-icon" src="images/icon_message_alone.png" alt="">
+          <span>Solicitar Cotización</span>
+        </button>
+      </div>
+
+    </section>
+
+    <section class="mobile-bottom-panel">
+
+      <div class="mobile-tabs">
+
+        <button class="mobile-tab active" id="designTab">
+          Diseñar
+        </button>
+
+        <button class="mobile-tab" id="quoteTab">
+          Cotizar
+        </button>
+
+      </div>
+
+      <div class="mobile-panel-content" id="mobilePanelContent">
+
+        <div class="mobile-panel-view mobile-design-view active" id="mobileDesignView">
+
+          <div class="design-section-tabs">
+
+            <button class="design-section-tab active" data-section="base">
+              Colores Base
+            </button>
+
+            <button class="design-section-tab" data-section="design">
+              Diseño
+            </button>
+
+            <button class="design-section-tab" data-section="logos">
+              Escudo y Logos
+            </button>
+
+          </div>
+
+          <div class="panel-divider mobile-design-divider"></div>
+
+          <div class="mobile-design-scroll">
+
+            <div class="design-panel-section active" data-section="base">
+
+            <h3 class="garment-title mobile-garment-title">
+              Camiseta
+            </h3>
+
+            <div class="color-controls-grid mobile-color-controls-grid">
+
+            <button class="color-control-btn mobile-color-control-btn" id="mobileFrontColorBtn">
+
+              <div class="color-preview-circle" id="mobileFrontPreviewCircle"></div>
+
+              <span>
+                Frente
+              </span>
+
+            </button>
+
+            <button class="color-control-btn mobile-color-control-btn" id="mobileBackColorBtn">
+
+              <div class="color-preview-circle" id="mobileBackPreviewCircle"></div>
+
+              <span>
+                Espalda
+              </span>
+
+            </button>
+
+            <button class="color-control-btn mobile-color-control-btn" id="mobileNeckColorBtn">
+
+              <div class="color-preview-circle" id="mobileNeckPreviewCircle"></div>
+
+              <span>
+                Cuello
+              </span>
+
+            </button>
+
+            <button class="color-control-btn mobile-color-control-btn" id="mobileLapelColorBtn">
+
+              <div class="color-preview-circle" id="mobileLapelPreviewCircle"></div>
+
+              <span>
+                Solapa
+                <span class="lapel-info-btn" id="mobileLapelInfoBtn" role="button" tabindex="0" aria-label="Información sobre Solapa">ⓘ</span>
+              </span>
+
+            </button>
+
+            <div class="split-material-group" id="mobileSleevesGroup">
+              <div class="split-material-row">
+                <button class="color-control-btn mobile-color-control-btn split-main-btn" id="mobileSleevesColorBtn" type="button">
+                  <div class="color-preview-circle" id="mobileSleevesPreviewCircle"></div>
+
+                  <span>
+                    Mangas
+                  </span>
+                </button>
+
+                <button class="color-control-btn mobile-color-control-btn split-part-btn" id="mobileSleevesLeftColorBtn" type="button">
+                  <div class="color-preview-circle" id="mobileSleevesLeftPreviewCircle"></div>
+
+                  <span>
+                    Manga Izq.
+                  </span>
+                </button>
+
+                <button class="color-control-btn mobile-color-control-btn split-part-btn" id="mobileSleevesRightColorBtn" type="button">
+                  <div class="color-preview-circle" id="mobileSleevesRightPreviewCircle"></div>
+
+                  <span>
+                    Manga Der.
+                  </span>
+                </button>
+
+                <button class="split-toggle-btn" id="mobileSleevesSplitToggle" type="button" aria-label="Dividir o unificar mangas">
+                  <span class="split-toggle-icon">
+                    <span></span>
+                    <span></span>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div class="split-material-group" id="mobileCuffsGroup">
+              <div class="split-material-row">
+                <button class="color-control-btn mobile-color-control-btn split-main-btn" id="mobileCuffsColorBtn" type="button">
+                  <div class="color-preview-circle" id="mobileCuffsPreviewCircle"></div>
+
+                  <span>
+                    Puños
+                  </span>
+                </button>
+
+                <button class="color-control-btn mobile-color-control-btn split-part-btn" id="mobileCuffsLeftColorBtn" type="button">
+                  <div class="color-preview-circle" id="mobileCuffsLeftPreviewCircle"></div>
+
+                  <span>
+                    Puño Izq.
+                  </span>
+                </button>
+
+                <button class="color-control-btn mobile-color-control-btn split-part-btn" id="mobileCuffsRightColorBtn" type="button">
+                  <div class="color-preview-circle" id="mobileCuffsRightPreviewCircle"></div>
+
+                  <span>
+                    Puño Der.
+                  </span>
+                </button>
+
+                <button class="split-toggle-btn" id="mobileCuffsSplitToggle" type="button" aria-label="Dividir o unificar puños">
+                  <span class="split-toggle-icon">
+                    <span></span>
+                    <span></span>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <h3 class="garment-title mobile-garment-title mobile-section-title secondary-garment-title">
+              Short y Medias
+            </h3>
+
+            <div class="short-medias-row">
+              <button class="color-control-btn mobile-color-control-btn" id="mobileShortColorBtn" type="button">
+                <div class="color-preview-circle" id="mobileShortPreviewCircle"></div>
+
+                <span>
+                  Short
+                </span>
+              </button>
+
+              <button class="color-control-btn mobile-color-control-btn" id="mobileMediasColorBtn" type="button">
+                <div class="color-preview-circle" id="mobileMediasPreviewCircle"></div>
+                <span>Medias</span>
+              </button>
+            </div>
+
+            </div>
+
+            </div>
+
+            <div class="design-panel-section" data-section="design">
+
+              <h3 class="garment-title mobile-garment-title">
+                Diseño
+              </h3>
+
+              <div class="color-controls-grid design-color-controls" id="mobileDesignColorControls">
+
+                <button class="color-control-btn mobile-color-control-btn design-action-btn" id="mobileAddDesignBtn" type="button">
+                  <img src="images/icon_sin_diseno.png" alt="Sin diseño" class="design-action-icon">
+                  <span>
+                    Agregar Diseño
+                  </span>
+                </button>
+
+                <button class="color-control-btn mobile-color-control-btn design-color-btn" id="mobileDesignColorBtn" type="button">
+                  <div class="color-preview-circle" id="mobileDesignPreviewCircle"></div>
+                  <span>
+                    Color Diseño
+                  </span>
+                </button>
+
+                <button class="color-control-btn mobile-color-control-btn design-color-btn design-color-secondary-btn" id="mobileDesignColor2Btn" type="button">
+                  <div class="color-preview-circle" id="mobileDesignPreviewCircle2"></div>
+                  <span>
+                    Color Diseño 2
+                  </span>
+                </button>
+
+                <h3 class="garment-title mobile-garment-title mobile-section-title secondary-garment-title">
+                  Paneles
+                </h3>
+
+                <div class="design-toggle-row">
+                  <button class="color-control-btn mobile-color-control-btn design-layer-btn is-disabled" id="mobilePanelHombrosBtn" type="button">
+                    <div class="color-preview-circle" id="mobilePanelHombrosPreviewCircle"></div>
+                    <span>
+                      Panel Hombros
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobilePanelHombrosToggle" type="button" aria-label="Activar o desactivar panel hombros">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+                <div class="design-toggle-row">
+                  <button class="color-control-btn mobile-color-control-btn design-layer-btn design-border-btn is-disabled" id="mobileBorderPanelHombrosBtn" type="button" disabled="">
+                    <div class="color-preview-circle" id="mobileBorderPanelHombrosPreviewCircle"></div>
+                    <span>
+                      Bordes Hombros
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileBorderPanelHombrosToggle" type="button" aria-label="Activar o desactivar bordes panel hombros" disabled="">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>                
+
+                <div class="design-toggle-row">
+                  <button class="color-control-btn mobile-color-control-btn design-layer-btn is-disabled" id="mobilePanelLateralesBtn" type="button">
+                    <div class="color-preview-circle" id="mobilePanelLateralesPreviewCircle"></div>
+                    <span>
+                      Paneles Laterales
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobilePanelLateralesToggle" type="button" aria-label="Activar o desactivar paneles laterales">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+                <div class="design-toggle-row">
+                  <button class="color-control-btn mobile-color-control-btn design-layer-btn design-border-btn is-disabled" id="mobileBorderPanelLateralesBtn" type="button" disabled="">
+                    <div class="color-preview-circle" id="mobileBorderPanelLateralesPreviewCircle"></div>
+                    <span>
+                      Bordes Laterales
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileBorderPanelLateralesToggle" type="button" aria-label="Activar o desactivar bordes paneles laterales" disabled="">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+                <h3 class="garment-title mobile-garment-title mobile-section-title secondary-garment-title">
+                  Líneas
+                </h3>
+
+                <div class="design-toggle-row design-line-full-row">
+                  <button class="color-control-btn mobile-color-control-btn design-layer-btn is-disabled" id="mobileLineCuelloBtn" type="button">
+                    <div class="color-preview-circle" id="mobileLineCuelloPreviewCircle"></div>
+                    <span>
+                      Línea Cuello
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileLineCuelloToggle" type="button" aria-label="Activar o desactivar línea cuello">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+                <div class="split-material-group line-punos-split-group design-line-full-row" id="mobileLinePunosGroup">
+                  <div class="split-material-row">
+                    <button class="color-control-btn mobile-color-control-btn design-layer-btn is-disabled split-main-btn" id="mobileLinePunosBtn" type="button">
+                      <div class="color-preview-circle" id="mobileLinePunosPreviewCircle"></div>
+                      <span>
+                        Línea Puños
+                      </span>
+                    </button>
+
+                    <button class="color-control-btn mobile-color-control-btn design-layer-btn is-disabled split-part-btn" id="mobileLinePunosLeftBtn" type="button">
+                      <div class="color-preview-circle" id="mobileLinePunosLeftPreviewCircle"></div>
+                      <span>
+                        Línea Puño Izq.
+                      </span>
+                    </button>
+
+                    <button class="color-control-btn mobile-color-control-btn design-layer-btn is-disabled split-part-btn" id="mobileLinePunosRightBtn" type="button">
+                      <div class="color-preview-circle" id="mobileLinePunosRightPreviewCircle"></div>
+                      <span>
+                        Línea Puño Der.
+                      </span>
+                    </button>
+
+                    <button class="split-toggle-btn" id="mobileLinePunosSplitToggle" type="button" aria-label="Dividir o unificar línea puños" disabled="">
+                      <span class="split-toggle-icon">
+                        <span></span>
+                        <span></span>
+                      </span>
+                    </button>
+
+                    <button class="design-switch-toggle" id="mobileLinePunosToggle" type="button" aria-label="Activar o desactivar línea puños">
+                      <span class="design-switch-thumb"></span>
+                    </button>
+                  </div>
+                </div>
+
+                <h3 class="garment-title mobile-garment-title mobile-section-title secondary-garment-title">
+                  Short
+                </h3>
+
+                <div class="design-lines-pair">
+                  <div class="design-toggle-row design-line-option">
+                    <button class="color-control-btn mobile-color-control-btn design-layer-btn is-disabled" id="mobileLineFinaBtn" type="button">
+                      <div class="color-preview-circle" id="mobileLineFinaPreviewCircle"></div>
+                      <span>
+                        Línea Fina
+                      </span>
+                    </button>
+
+                    <button class="design-switch-toggle" id="mobileLineFinaToggle" type="button" aria-label="Activar o desactivar línea fina">
+                      <span class="design-switch-thumb"></span>
+                    </button>
+                  </div>
+
+                  <div class="design-toggle-row design-line-option">
+                    <button class="color-control-btn mobile-color-control-btn design-layer-btn is-disabled" id="mobileLineGruesaBtn" type="button">
+                      <div class="color-preview-circle" id="mobileLineGruesaPreviewCircle"></div>
+                      <span>
+                        Línea Gruesa
+                      </span>
+                    </button>
+
+                    <button class="design-switch-toggle" id="mobileLineGruesaToggle" type="button" aria-label="Activar o desactivar línea gruesa">
+                      <span class="design-switch-thumb"></span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="design-toggle-row design-line-full-row">
+                  <button class="color-control-btn mobile-color-control-btn design-layer-btn is-disabled" id="mobileLineInferiorBtn" type="button">
+                    <div class="color-preview-circle" id="mobileLineInferiorPreviewCircle"></div>
+                    <span>
+                      Línea Inferior
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileLineInferiorToggle" type="button" aria-label="Activar o desactivar línea inferior">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+
+            <div class="design-panel-section" data-section="logos">
+              <h3 class="garment-title mobile-garment-title">
+                Frente
+              </h3>
+
+              <div class="logo-action-grid">
+                <button class="color-control-btn mobile-color-control-btn design-action-btn" id="mobileAddShieldBtn" type="button">
+                  <img src="images/icon_escudo.png" alt="Escudo" class="design-action-icon" id="mobileShieldButtonIcon">
+                  <span>
+                    Agregar Escudo
+                  </span>
+                </button>
+
+                <button class="color-control-btn mobile-color-control-btn design-action-btn" id="mobileAddSponsorBtn" type="button">
+                  <img src="images/icon_mas.png" alt="Sponsor" class="design-action-icon" id="mobileSponsorButtonIcon">
+                  <span>
+                    Agregar Sponsor
+                  </span>
+                </button>
+
+                <button class="color-control-btn mobile-color-control-btn logo-control-btn" id="mobileStarbadeLogoColorBtn" type="button">
+                  <div class="design-action-icon starbade-logo-preview-icon" id="mobileStarbadeLogoPreviewCircle" aria-hidden="true"></div>
+                  <span>
+                    Starbade
+                  </span>
+                </button>
+
+                <div class="logo-trace-row">
+                  <button class="color-control-btn mobile-color-control-btn logo-control-btn logo-trace-btn is-disabled" id="mobileStarbadeStrokeColorBtn" type="button" disabled="">
+                    <div class="color-preview-circle stroke-preview-circle" id="mobileStarbadeStrokePreviewCircle"></div>
+                    <span>
+                      Trazo
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileStarbadeStrokeToggle" type="button" aria-label="Activar o desactivar trazo Starbade">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+              </div>
+
+              <h3 class="garment-title mobile-garment-title mobile-section-title secondary-garment-title logo-back-title">
+                Espalda
+              </h3>
+
+              <div class="back-logo-action-grid">
+                <button class="color-control-btn mobile-color-control-btn design-action-btn" id="mobileDorsalTypeBtn" type="button">
+                  <img src="images/icon_mas.png" alt="Tipo de letra" class="design-action-icon" id="mobileDorsalTypeButtonIcon">
+                  <span>Tipo de Letra</span>
+                </button>
+
+                <button class="color-control-btn mobile-color-control-btn design-action-btn" id="mobileBackSponsorBtn" type="button">
+                  <img src="images/icon_mas.png" alt="Sponsor espalda" class="design-action-icon" id="mobileBackSponsorButtonIcon">
+                  <span>Agregar Sponsor</span>
+                </button>
+              </div>
+
+              <div class="back-number-grid">
+                <div class="number-option-row">
+                  <button class="color-control-btn mobile-color-control-btn logo-control-btn dorsal-number-color-btn is-disabled" id="mobileDorsalNumberColorBtn" type="button" disabled="">
+                    <div class="color-preview-circle" id="mobileDorsalNumberPreviewCircle"></div>
+                    <span>
+                      Número
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileDorsalNumberToggle" type="button" aria-label="Activar o desactivar número">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+                <div class="number-option-row">
+                  <button class="color-control-btn mobile-color-control-btn logo-control-btn dorsal-number-stroke-btn is-disabled" id="mobileDorsalNumberStrokeColorBtn" type="button" disabled="">
+                    <div class="color-preview-circle stroke-preview-circle" id="mobileDorsalNumberStrokePreviewCircle"></div>
+                    <span>
+                      Trazo
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileDorsalNumberStrokeToggle" type="button" aria-label="Activar o desactivar trazo del número" disabled="">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+                <div class="number-option-row">
+                  <button class="color-control-btn mobile-color-control-btn logo-control-btn dorsal-name-color-btn is-disabled" id="mobileDorsalNameColorBtn" type="button" disabled="">
+                    <div class="color-preview-circle" id="mobileDorsalNamePreviewCircle"></div>
+                    <span>
+                      Nombre
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileDorsalNameToggle" type="button" aria-label="Activar o desactivar nombre">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+                <div class="number-option-row">
+                  <button class="color-control-btn mobile-color-control-btn logo-control-btn dorsal-name-stroke-btn is-disabled" id="mobileDorsalNameStrokeColorBtn" type="button" disabled="">
+                    <div class="color-preview-circle stroke-preview-circle" id="mobileDorsalNameStrokePreviewCircle"></div>
+                    <span>
+                      Trazo
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileDorsalNameStrokeToggle" type="button" aria-label="Activar o desactivar trazo del nombre" disabled="">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+                <button class="color-control-btn mobile-color-control-btn logo-control-btn" id="mobileBackStarbadeLogoColorBtn" type="button">
+                  <div class="design-action-icon starbade-logo-preview-icon" id="mobileBackStarbadeLogoPreviewCircle" aria-hidden="true"></div>
+                  <span>
+                    Starbade
+                  </span>
+                </button>
+
+                <div class="logo-trace-row">
+                  <button class="color-control-btn mobile-color-control-btn logo-control-btn logo-trace-btn is-disabled" id="mobileBackStarbadeStrokeColorBtn" type="button" disabled="">
+                    <div class="color-preview-circle stroke-preview-circle" id="mobileBackStarbadeStrokePreviewCircle"></div>
+                    <span>
+                      Trazo
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileBackStarbadeStrokeToggle" type="button" aria-label="Activar o desactivar trazo Starbade espalda">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+              </div>
+
+              <h3 class="garment-title mobile-garment-title mobile-section-title secondary-garment-title logo-back-title">
+                Short
+              </h3>
+
+              <div class="short-logo-grid">
+                <div class="number-option-row">
+                  <button class="color-control-btn mobile-color-control-btn design-layer-btn short-shield-btn is-disabled" id="mobileShortShieldBtn" type="button" disabled="">
+                    <img src="images/icon_escudo.png" alt="Escudo short" class="design-action-icon" id="mobileShortShieldButtonIcon">
+                    <span>
+                      Escudo
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileShortShieldToggle" type="button" aria-label="Activar o desactivar escudo en short" disabled="">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+                <div class="number-option-row">
+                  <button class="color-control-btn mobile-color-control-btn logo-control-btn short-number-color-btn is-disabled" id="mobileShortNumberColorBtn" type="button" disabled="">
+                    <div class="color-preview-circle" id="mobileShortNumberPreviewCircle"></div>
+                    <span>
+                      Número
+                    </span>
+                  </button>
+
+                  <button class="design-switch-toggle" id="mobileShortNumberToggle" type="button" aria-label="Activar o desactivar número en short">
+                    <span class="design-switch-thumb"></span>
+                  </button>
+                </div>
+
+                <button class="color-control-btn mobile-color-control-btn logo-control-btn short-starbade-btn" id="mobileShortStarbadeLogoColorBtn" type="button">
+                  <div class="design-action-icon starbade-logo-preview-icon" id="mobileShortStarbadeLogoPreviewCircle" aria-hidden="true"></div>
+                  <span>
+                    Starbade
+                  </span>
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="mobile-panel-view mobile-quote-view" id="mobileQuoteView">
+
+          <div class="mobile-quote-header">
+            <h2 class="panel-title quote-title mobile-quote-title">
+              Pedí tu Cotización
+            </h2>
+
+            <button class="quote-submit-btn mobile-quote-header-btn" id="mobileQuoteRequestBtn" type="button">
+              Solicitar Cotización
+            </button>
+          </div>
+
+          <div class="panel-divider"></div>
+
+          <div class="mobile-quote-scroll">
+            <div class="quote-form mobile-quote-form">
+              <div class="quote-field">
+                <label class="quote-field-label" for="mobileQuoteNameInput">
+                  Tu nombre<span class="quote-required-mark">*</span><span class="quote-field-error-message">Te falta completar este campo.</span><span class="quote-limit-hint" id="mobileQuoteNameLimitHint">Máximo 45 caracteres</span>
+                </label>
+
+                <input class="quote-text-input" id="mobileQuoteNameInput" name="mobileCustomerName" type="text" autocomplete="name" maxlength="45" placeholder="Ejemplo: Juan Rodríguez">
+              </div>
+
+              <div class="quote-field">
+                <label class="quote-field-label" for="mobileQuoteTeamInput">
+                  Nombre de tu equipo / empresa<span class="quote-required-mark">*</span><span class="quote-field-error-message">Te falta completar este campo.</span><span class="quote-limit-hint" id="mobileQuoteTeamLimitHint">Máximo 60 caracteres</span>
+                </label>
+
+                <input class="quote-text-input" id="mobileQuoteTeamInput" name="mobileTeamName" type="text" autocomplete="organization" maxlength="60" placeholder="Ejemplo: Club Atlético Estrella Roja">
+              </div>
+
+              <div class="quote-field">
+                <div class="quote-field-label">
+                  Talles que necesitás<span class="quote-required-mark">*</span><span class="quote-field-error-message">Te falta completar este campo.</span>
+                </div>
+
+                <div class="quote-choice-row" role="group" aria-label="Talles que necesitás">
+                  <button class="quote-choice-btn" type="button" data-quote-size="adulto" aria-pressed="false">
+                    <span>Adulto</span>
+                    <span class="quote-choice-check" aria-hidden="true"></span>
+                  </button>
+
+                  <button class="quote-choice-btn" type="button" data-quote-size="nino" aria-pressed="false">
+                    <span>Niño</span>
+                    <span class="quote-choice-check" aria-hidden="true"></span>
+                  </button>
+                </div>
+              </div>
+
+              <p class="quote-privacy-note">
+                Al solicitar una cotización, aceptás nuestra
+                <a href="politica-de-privacidad.html" target="_blank" rel="noopener noreferrer">Política de Privacidad</a>.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <div class="design-overlay" id="moldOverlay"></div>
+
+  <div class="design-panel mold-panel" id="moldPanel">
+    <button class="design-panel-close" id="closeMoldPanel">×</button>
+
+    <div class="design-panel-header">
+      Cambiar Molde
+    </div>
+
+    <div class="design-panel-content mold-panel-content">
+      <div class="mold-options-grid">
+        <button class="mold-option-item" type="button" data-mold="classic-crew">
+          <img src="images/icon_mold_classic_crew.png" alt="Clásica Redondo">
+          <span>Clásica | Redondo</span>
+        </button>
+
+        <button class="mold-option-item" type="button" data-mold="classic-v">
+          <img src="images/icon_mold_classic_v.png" alt="Clásica V">
+          <span>Clásica | V</span>
+        </button>
+
+        <button class="mold-option-item" type="button" data-mold="classic-polo">
+          <img src="images/icon_mold_classic_polo.png" alt="Clásica Polo">
+          <span>Clásica | Polo</span>
+        </button>
+
+        <button class="mold-option-item" type="button" data-mold="ranglan-crew">
+          <img src="images/icon_mold_ranglan_crew.png" alt="Ranglan Redondo">
+          <span>Ranglan | Redondo</span>
+        </button>
+
+        <button class="mold-option-item" type="button" data-mold="ranglan-v">
+          <img src="images/icon_mold_ranglan_v.png" alt="Ranglan V">
+          <span>Ranglan | V</span>
+        </button>
+
+        <button class="mold-option-item" type="button" data-mold="ranglan-polo">
+          <img src="images/icon_mold_ranglan_polo.png" alt="Ranglan Polo">
+          <span>Ranglan | Polo</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-overlay" id="viewerWarningOverlay"></div>
+
+  <div class="design-panel viewer-warning-panel" id="viewerWarningPanel">
+    <button class="design-panel-close" id="closeViewerWarningPanel">×</button>
+
+    <div class="design-panel-header">
+      ADVERTENCIA
+    </div>
+
+    <div class="design-panel-content viewer-warning-panel-content">
+      <p class="viewer-warning-text">
+        Este diseño queda perfectamente continuo en la vista 3D entre el frente y la espalda. En la prenda real, al trabajarse por sublimación, puede haber pequeñas diferencias en los costados al momento de confeccionar. Para disimular ese encuentro y lograr un resultado más prolijo, te recomendamos
+        <button class="viewer-warning-link" id="viewerWarningActivateSidePanels" type="button">
+          activar paneles laterales
+        </button>.
+      </p>
+    </div>
+  </div>
+
+  <div class="design-overlay" id="performanceWarningOverlay"></div>
+
+  <div class="design-panel performance-warning-panel" id="performanceWarningPanel" role="dialog" aria-modal="true" aria-labelledby="performanceWarningTitle">
+    <button class="design-panel-close" id="closePerformanceWarningPanel">×</button>
+
+    <div class="design-panel-header" id="performanceWarningTitle">
+      Rendimiento de la Vista 3D
+    </div>
+
+    <div class="design-panel-content performance-warning-panel-content">
+      <p class="performance-warning-text" id="performanceWarningText">
+        Notamos que la vista 3D puede funcionar lenta en este dispositivo. Para mejorar la rotación del modelo, podés probar actualizar tu navegador o activar la aceleración por gráficos en su configuración.
+      </p>
+
+      <label class="performance-warning-option">
+        <input id="performanceWarningDontShow" type="checkbox">
+        <span class="performance-warning-check" aria-hidden="true"></span>
+        <span>No volver a mostrar</span>
+      </label>
+
+      <div class="designs-panel-buttons performance-warning-buttons">
+        <button class="designs-panel-btn performance-warning-action-btn" id="performanceWarningAcceptBtn" type="button">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-overlay" id="autosaveRecoveryOverlay"></div>
+
+  <div class="design-panel autosave-recovery-panel" id="autosaveRecoveryPanel" role="dialog" aria-modal="true" aria-labelledby="autosaveRecoveryTitle">
+    <button class="design-panel-close" id="closeAutosaveRecoveryPanel">×</button>
+
+    <div class="design-panel-header" id="autosaveRecoveryTitle">
+      Recuperar Diseño
+    </div>
+
+    <div class="design-panel-content autosave-recovery-panel-content">
+      <p class="autosave-recovery-text">
+        Encontramos un diseño sin terminar en este dispositivo. Podés recuperarlo para seguir desde donde quedaste o empezar de cero.
+      </p>
+
+      <div class="designs-panel-buttons autosave-recovery-buttons">
+        <button class="designs-panel-btn" id="recoverAutosaveDesignBtn" type="button">
+          Recuperar Diseño
+        </button>
+
+        <button class="designs-panel-btn" id="discardAutosaveDesignBtn" type="button">
+          Empezar de Cero
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-overlay" id="saveDesignOverlay"></div>
+
+  <div class="design-panel save-design-panel" id="saveDesignPanel">
+    <button class="design-panel-close" id="closeSaveDesignPanel">×</button>
+
+    <div class="design-panel-header">
+      Guardá tu Diseño
+    </div>
+
+    <div class="design-panel-content save-design-panel-content">
+      <p class="save-design-text">
+        Elegí cómo querés guardar tu diseño. Podés descargar una imagen en tu dispositivo o copiar un link para volver a abrir esta página con la configuración actual. Tené en cuenta que el link no conserva las imágenes cargadas de escudo o sponsors.
+      </p>
+
+      <div class="designs-panel-buttons save-design-buttons">
+        <button class="designs-panel-btn save-design-action-btn" id="saveDesignDownloadBtn" type="button">
+          <img class="save-design-action-icon" src="images/icon_download_alone.png" alt="">
+          <span>Descargar Imagen</span>
+        </button>
+
+        <button class="designs-panel-btn save-design-action-btn" id="copyDesignLinkBtn" type="button">
+          <img class="save-design-action-icon" src="images/icon_link.png" alt="">
+          <span>Copiar Link</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-overlay" id="quoteRequestOverlay"></div>
+
+  <div class="design-panel quote-request-panel" id="quoteRequestPanel">
+    <button class="design-panel-close" id="closeQuoteRequestPanel">×</button>
+
+    <div class="design-panel-header">
+      Solicitá tu Cotización
+    </div>
+
+    <div class="design-panel-content quote-request-panel-content">
+      <p class="quote-request-text">
+        Elegí por dónde querés enviarnos tu diseño para que podamos preparar la cotización.
+      </p>
+
+      <div class="designs-panel-buttons quote-request-buttons">
+        <a class="designs-panel-btn save-design-action-btn" id="quoteWhatsappBtn" href="send.html" target="_blank" rel="noopener noreferrer">
+          <img class="save-design-action-icon" src="images/icon_whatsapp.png" alt="">
+          <span>Vía WhatsApp</span>
+        </a>
+
+        <a class="designs-panel-btn save-design-action-btn" id="quoteEmailBtn" href="mailto:starbadeuy@hotmail.com">
+          <img class="save-design-action-icon" src="images/icon_email.png" alt="">
+          <span>Vía E-Mail</span>
+        </a>
+      </div>
+
+      <p class="quote-upload-error" id="quoteUploadError" role="alert"></p>
+    </div>
+  </div>
+
+  <div class="design-overlay" id="designOverlay"></div>
+
+  <div class="design-panel" id="designPanel">
+    <button class="design-panel-close" id="closeDesignPanel">×</button>
+
+    <div class="design-panel-header">
+      Agregar Escudo
+    </div>
+
+    <div class="design-panel-content">
+
+      <p class="design-panel-note">
+        <strong>IMPORTANTE:</strong> Te recomendamos subir tu escudo en formato .PNG, con fondo transparente y un tamaño mínimo de 128×128 píxeles para garantizar una mejor calidad.
+      </p>
+
+      <label class="shield-upload-box" for="shieldUploadInput">
+
+        <img class="shield-upload-preview" id="shieldUploadPreview" alt="Vista previa del escudo">
+
+        <span class="shield-upload-plus" id="shieldUploadPlus">
+          +
+        </span>
+
+        <span class="shield-upload-text" id="shieldUploadText">
+          Tocá acá para agregar tu escudo.
+        </span>
+
+      </label>
+
+      <input type="file" id="shieldUploadInput" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+
+      <div class="shield-action-buttons">
+        <button class="shield-action-btn shield-apply-btn" type="button">
+          Aplicar Escudo
+        </button>
+
+        <button class="shield-action-btn shield-delete-btn" type="button">
+          Eliminar Escudo
+        </button>
+      </div>
+
+      <div class="shield-warning-popup" id="shieldWarningPopup">
+        No se ha seleccionado ningún escudo.
+      </div>
+
+    </div>
+  </div>
+
+  <div class="design-overlay" id="sponsorOverlay"></div>
+
+  <div class="design-panel" id="sponsorPanel">
+    <button class="design-panel-close" id="closeSponsorPanel">×</button>
+
+    <div class="design-panel-header">
+      Agregar Sponsor (Frente)
+    </div>
+
+    <div class="design-panel-content">
+
+      <p class="design-panel-note">
+        <strong>IMPORTANTE:</strong> Te recomendamos subir tu sponsor en formato .PNG, con fondo transparente y un tamaño mínimo de 350×175 píxeles para garantizar una mejor calidad. Cuando pidas la cotización, nuestro equipo de diseño puede sumar los sponsors adicionales que necesites.
+      </p>
+
+      <label class="shield-upload-box sponsor-upload-box" for="sponsorUploadInput">
+
+        <img class="shield-upload-preview sponsor-upload-preview" id="sponsorUploadPreview" alt="Vista previa del sponsor">
+
+        <span class="shield-upload-plus sponsor-upload-plus" id="sponsorUploadPlus">
+          +
+        </span>
+
+        <span class="shield-upload-text sponsor-upload-text" id="sponsorUploadText">
+          Tocá acá para agregar tu sponsor.
+        </span>
+
+      </label>
+
+      <input type="file" id="sponsorUploadInput" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+
+      <div class="shield-action-buttons sponsor-action-buttons">
+        <button class="shield-action-btn sponsor-apply-btn" type="button">
+          Aplicar Sponsor
+        </button>
+
+        <button class="shield-action-btn sponsor-delete-btn" type="button">
+          Eliminar Sponsor
+        </button>
+      </div>
+
+      <div class="shield-warning-popup sponsor-warning-popup" id="sponsorWarningPopup">
+        No se ha seleccionado ningún sponsor.
+      </div>
+
+    </div>
+  </div>
+
+  <div class="design-overlay" id="backSponsorOverlay"></div>
+
+  <div class="design-panel" id="backSponsorPanel">
+    <button class="design-panel-close" id="closeBackSponsorPanel">×</button>
+
+    <div class="design-panel-header">
+      Agregar Sponsor (Espalda)
+    </div>
+
+    <div class="design-panel-content">
+
+      <p class="design-panel-note">
+        <strong>IMPORTANTE:</strong> Te recomendamos subir tu sponsor en formato .PNG, con fondo transparente y un tamaño mínimo de 350×175 píxeles para garantizar una mejor calidad. Cuando pidas la cotización, nuestro equipo de diseño puede sumar los sponsors adicionales que necesites.
+      </p>
+
+      <label class="shield-upload-box sponsor-upload-box" for="backSponsorUploadInput">
+
+        <img class="shield-upload-preview sponsor-upload-preview" id="backSponsorUploadPreview" alt="Vista previa del sponsor de espalda">
+
+        <span class="shield-upload-plus sponsor-upload-plus" id="backSponsorUploadPlus">
+          +
+        </span>
+
+        <span class="shield-upload-text sponsor-upload-text" id="backSponsorUploadText">
+          Tocá acá para agregar tu sponsor.
+        </span>
+
+      </label>
+
+      <input type="file" id="backSponsorUploadInput" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+
+      <div class="shield-action-buttons sponsor-action-buttons">
+        <button class="shield-action-btn sponsor-apply-btn back-sponsor-apply-btn" type="button">
+          Aplicar Sponsor
+        </button>
+
+        <button class="shield-action-btn sponsor-delete-btn back-sponsor-delete-btn" type="button">
+          Eliminar Sponsor
+        </button>
+      </div>
+
+      <div class="shield-warning-popup sponsor-warning-popup" id="backSponsorWarningPopup">
+        No se ha seleccionado ningún sponsor.
+      </div>
+
+    </div>
+  </div>
+
+  <div class="design-overlay" id="dorsalTypeOverlay"></div>
+
+  <div class="design-panel" id="dorsalTypePanel">
+    <button class="design-panel-close" id="closeDorsalTypePanel">×</button>
+
+    <div class="design-panel-header">
+      Elegir Tipo de Letra
+    </div>
+
+    <div class="dorsal-variant-selector">
+
+      <button class="dorsal-variant-btn active" id="dorsalVariant10Btn" type="button">
+        N° 10
+      </button>
+
+      <button class="dorsal-variant-btn" id="dorsalVariant1Btn" type="button">
+        N° 1
+      </button>
+
+    </div>
+
+    <div class="dorsal-preview-wrap">
+      <div class="dorsal-preview-card">
+        <img class="dorsal-preview-image dorsal-preview-name" id="dorsalNamePreviewImage" alt="Vista previa del nombre">
+        <img class="dorsal-preview-image dorsal-preview-number" id="dorsalNumberPreviewImage" alt="Vista previa del numero">
+      </div>
+    </div>
+
+    <div class="dorsal-font-picker" id="dorsalFontPicker">
+      <button class="dorsal-font-dropdown-btn" id="dorsalFontDropdownBtn" type="button">
+        <span class="dorsal-font-dropdown-text">
+          Elegir Tipo de Letra
+          <span class="dorsal-font-dropdown-selected" id="dorsalFontDropdownLabel">(Moderna)</span>
+        </span>
+        <span class="dorsal-font-dropdown-arrow">▾</span>
+      </button>
+
+      <div class="dorsal-font-dropdown-menu" id="dorsalFontDropdownMenu">
+        <button class="dorsal-font-option" type="button" data-font="ariq">Moderna</button>
+        <button class="dorsal-font-option" type="button" data-font="2017">Simple</button>
+        <button class="dorsal-font-option" type="button" data-font="lemands">Elegante</button>
+        <button class="dorsal-font-option" type="button" data-font="broncos">Inglesa</button>
+        <button class="dorsal-font-option" type="button" data-font="jl">Alta</button>
+        <button class="dorsal-font-option" type="button" data-font="feyenoord">Retro</button>
+        <button class="dorsal-font-option" type="button" data-font="jersey">Clásica</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="designs-overlay" id="designsOverlay"></div>
+
+  <div class="designs-panel" id="designsPanel">
+
+    <button class="designs-panel-close" id="closeDesignsPanel">
+      ×
+    </button>
+
+    <div class="designs-panel-header">
+      Agregar Diseño
+    </div>
+
+    <div class="designs-panel-content">
+
+      <p class="designs-panel-note">
+        <strong>IMPORTANTE:</strong> si el diseño que tenés en mente no lo encontrás acá,
+        <a href="send.html" target="_blank" rel="noopener noreferrer">
+          escribinos por privado
+        </a>
+        para que nuestros diseñadores te hagan un boceto personalizado <strong>sin cargo.</strong>
+      </p>
+
+      <div class="designs-panel-buttons">
+
+        <button class="designs-panel-btn" id="catalogDesignsBtn" type="button">
+          Catálogo Starbade
+        </button>
+
+        <button class="designs-panel-btn" id="traditionalDesignsBtn" type="button">
+          Diseños Tradicionales
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="traditional-designs-panel" id="catalogDesignsPanel">
+
+    <button class="traditional-designs-back" id="catalogDesignsBack" type="button" aria-label="Volver a categorías de diseños">
+      ←
+    </button>
+
+    <div class="traditional-designs-header">
+      Catálogo Starbade
+    </div>
+
+    <button class="traditional-designs-close" id="closeCatalogDesignsPanel" type="button" aria-label="Cerrar catálogo Starbade">
+      ×
+    </button>
+
+    <div class="traditional-designs-content">
+
+      <div class="traditional-designs-grid">
+
+        <div class="traditional-designs-category">Un Color</div>
+
+        <button class="traditional-designs-item" type="button" data-design="sin-diseno">
+          <img src="images/icon_sin_diseno.png" alt="Sin Diseño">
+          <span>Sin Diseño</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="degrade-linea">
+          <img src="images/iconsb_degrade.png" alt="Degradé Líneas">
+          <span>Degradé Líneas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="ondas">
+          <img src="images/iconsb_ondas.png" alt="Ondas">
+          <span>Ondas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="zigzag">
+          <img src="images/iconsb_zigzag.png" alt="Zigzag">
+          <span>Zigzag</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="zigzag-2">
+          <img src="images/iconsb_zigzag2.png" alt="Zigzag 2">
+          <span>Zigzag 2</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="rayas-diagonales">
+          <img src="images/iconsb_rayas_diagonales.png" alt="Rayas Diagonales">
+          <span>Rayas Diagonales</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="lineas-finas">
+          <img src="images/iconsb_lineas_finas.png" alt="Líneas Finas">
+          <span>Líneas Finas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="tribal">
+          <img src="images/iconsb_tribal.png" alt="Tribal">
+          <span>Tribal</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="rocoso">
+          <img src="images/iconsb_rocoso.png" alt="Rocoso">
+          <span>Rocoso</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="marmol">
+          <img src="images/iconsb_marmol.png" alt="Mármol">
+          <span>Mármol</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="halftone">
+          <img src="images/iconsb_halftone.png" alt="Halftone">
+          <span>Halftone</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="flechas">
+          <img src="images/iconsb_flechas.png" alt="Flechas">
+          <span>Flechas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="estrellado">
+          <img src="images/iconsb_estrellado.png" alt="Estrellado">
+          <span>Estrellado</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="lineas">
+          <img src="images/iconsb_lineas.png" alt="Líneas">
+          <span>Líneas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="lineas-circulares">
+          <img src="images/iconsb_lineas_circulares.png" alt="Líneas Circulares">
+          <span>Líneas Circulares</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="2-bastones-catalogo">
+          <img src="images/iconsb_2bastones.png" alt="2 Bastones">
+          <span>2 Bastones</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="rombos">
+          <img src="images/iconsb_rombos.png" alt="Rombos">
+          <span>Rombos</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="grietas">
+          <img src="images/iconsb_grietas.png" alt="Grietas">
+          <span>Grietas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="grunge">
+          <img src="images/iconsb_grunge.png" alt="Grunge">
+          <span>Grunge</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="garra">
+          <img src="images/iconsb_garra.png" alt="Garra">
+          <span>Garra</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="franja-halftone">
+          <img src="images/iconsb_franja_halftone.png" alt="Franja Halftone">
+          <span>Franja Halftone</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="olas">
+          <img src="images/iconsb_olas.png" alt="Olas">
+          <span>Olas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="geometrico">
+          <img src="images/iconsb_geometrico.png" alt="Geométrico">
+          <span>Geométrico</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="rafaga">
+          <img src="images/iconsb_rafaga.png" alt="Ráfaga">
+          <span>Ráfaga</span>
+        </button>
+
+        <div class="traditional-designs-category">Dos Colores</div>
+
+        <button class="traditional-designs-item" type="button" data-design="rayas-con-puntos">
+          <img src="images/iconsb2_rayas_con_puntos.png" alt="Bastones con Puntos">
+          <span>Bastones con Puntos</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="rayas-con-grunge">
+          <img src="images/iconsb2_rayas_con_grunge.png" alt="Bastones con Grunge">
+          <span>Bastones con Grunge</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="rayas-diagonales-dos-colores">
+          <img src="images/iconsb2_rayas_diagonales.png" alt="Rayas Diagonales">
+          <span>Rayas Diagonales</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mosaico">
+          <img src="images/iconsb2_mosaico.png" alt="Mosaico">
+          <span>Mosaico</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="halftone-diagonal">
+          <img src="images/iconsb2_halftone_diagonal.png" alt="Halftone Diagonal">
+          <span>Halftone Diagonal</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="marmol-dos-colores">
+          <img src="images/iconsb2_marmol.png" alt="Mármol">
+          <span>Mármol</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="formas">
+          <img src="images/iconsb2_formas.png" alt="Formas">
+          <span>Formas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="camuflaje">
+          <img src="images/iconsb2_camuflaje.png" alt="Camuflaje">
+          <span>Camuflaje</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="abstracto">
+          <img src="images/iconsb2_abstracto.png" alt="Abstracto">
+          <span>Abstracto</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="puas">
+          <img src="images/iconsb2_puas.png" alt="Púas">
+          <span>Púas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="glitch">
+          <img src="images/iconsb2_glitch.png" alt="Glitch">
+          <span>Glitch</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="espinas">
+          <img src="images/iconsb2_espinas.png" alt="Espinas">
+          <span>Espinas</span>
+        </button>
+
+        <div class="traditional-designs-category">Diseño en Mangas</div>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-triangulos">
+          <img src="images/iconsbmangas_triangulos.png" alt="Triángulos">
+          <span>Triángulos</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-ondas">
+          <img src="images/iconsbmangas_ondas.png" alt="Ondas">
+          <span>Ondas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-fuego">
+          <img src="images/iconsbmangas_fuego.png" alt="Fuego">
+          <span>Fuego</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-hexagonos">
+          <img src="images/iconsbmangas_hexagonos.png" alt="Hexágonos">
+          <span>Hexágonos</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-animal-print">
+          <img src="images/iconsbmangas_animalprint.png" alt="Animal Print">
+          <span>Animal Print</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-circulos">
+          <img src="images/iconsbmangas_circulos.png" alt="Círculos">
+          <span>Círculos</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-cuadros">
+          <img src="images/iconsbmangas_cuadros.png" alt="Cuadros">
+          <span>Cuadros</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-curvas">
+          <img src="images/iconsbmangas_curvas.png" alt="Curvas">
+          <span>Curvas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-floral">
+          <img src="images/iconsbmangas_floral.png" alt="Floral">
+          <span>Floral</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-picos">
+          <img src="images/iconsbmangas_picos.png" alt="Picos">
+          <span>Picos</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-abstracto">
+          <img src="images/iconsbmangas_abstracto.png" alt="Abstracto">
+          <span>Abstracto</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mangas-art-deco">
+          <img src="images/iconsbmangas_artdeco.png" alt="Art Deco">
+          <span>Art Deco</span>
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="traditional-designs-panel" id="traditionalDesignsPanel">
+
+    <button class="traditional-designs-back" id="traditionalDesignsBack">
+      ←
+    </button>
+
+    <div class="traditional-designs-header">
+      Diseños Tradicionales
+    </div>
+
+    <button class="traditional-designs-close" id="closeTraditionalDesignsPanel">
+      ×
+    </button>
+
+    <div class="traditional-designs-content">
+
+      <div class="traditional-designs-grid">
+
+        <div class="traditional-designs-category">Un Color</div>
+
+        <button class="traditional-designs-item" type="button" data-design="sin-diseno">
+          <img src="images/icon_sin_diseno.png" alt="Sin Diseño">
+          <span>Sin Diseño</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="2-bastones">
+          <img src="images/icon_2_bastones.png" alt="2 Bastones">
+          <span>2 Bastones</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="3-bastones">
+          <img src="images/icon_3_bastones.png" alt="3 Bastones">
+          <span>3 Bastones</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="4-bastones">
+          <img src="images/icon_4_bastones.png" alt="4 Bastones">
+          <span>4 Bastones</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="banda-diagonal">
+          <img src="images/icon_banda_diagonal.png" alt="Banda Diagonal">
+          <span>Banda Diagonal</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="banda-diagonal-2">
+          <img src="images/icon_banda_diagonal2.png" alt="Banda Diagonal 2">
+          <span>Banda Diagonal 2</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="franja-horizontal">
+          <img src="images/icon_franja_hzt.png" alt="Franja Horizontal">
+          <span>Franja Horizontal</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="chevron">
+          <img src="images/icon_chevron.png" alt="Chevron">
+          <span>Chevron</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mitad">
+          <img src="images/icon_mitad.png" alt="Mitad">
+          <span>Mitad</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="hoops">
+          <img src="images/icon_hoops.png" alt="Hoops">
+          <span>Hoops</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="hoops2">
+          <img src="images/icon_hoops2.png" alt="Hoops 2">
+          <span>Hoops 2</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="franja-vertical">
+          <img src="images/icon_franja_vtc.png" alt="Franja Vertical">
+          <span>Franja Vertical</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="cuadros-4">
+          <img src="images/icon_4_cuadros.png" alt="4 Cuadros">
+          <span>4 Cuadros</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mitad-diagonal">
+          <img src="images/icon_mitad_diagonal.png" alt="Mitad Diagonal">
+          <span>Mitad Diagonal</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="mitad-diagonal-2">
+          <img src="images/icon_mitad_diagonal2.png" alt="Mitad Diagonal 2">
+          <span>Mitad Diagonal 2</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="pinstripes">
+          <img src="images/icon_pinstripes.png" alt="Pinstripes">
+          <span>Pinstripes</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="cuadros">
+          <img src="images/icon_cuadros.png" alt="Cuadros">
+          <span>Cuadros</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="bloque-superior">
+          <img src="images/icon_bloque_superior.png" alt="Bloque Superior">
+          <span>Bloque Superior</span>
+        </button>
+
+        <div class="traditional-designs-category">Dos Colores</div>
+
+        <button class="traditional-designs-item" type="button" data-design="franja-escudo">
+          <img src="images/icon2_franja_escudo.png" alt="Franja Escudo">
+          <span>Franja Escudo</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="franja-escudo-2">
+          <img src="images/icon2_franja_escudo2.png" alt="Franja Escudo 2">
+          <span>Franja Escudo 2</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="franja-central">
+          <img src="images/icon2_franja_central.png" alt="Franja Central">
+          <span>Franja Central</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="chevron-dos-colores">
+          <img src="images/icon2_chevron.png" alt="Chevron">
+          <span>Chevron</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="banda-diagonal-dos-colores">
+          <img src="images/icon2_banda_diagonal.png" alt="Banda Diagonal">
+          <span>Banda Diagonal</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="banda-diagonal-2-dos-colores">
+          <img src="images/icon2_banda_diagonal2.png" alt="Banda Diagonal 2">
+          <span>Banda Diagonal 2</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="franja-horizontal-dos-colores">
+          <img src="images/icon2_franja_hzt.png" alt="Franja Horizontal">
+          <span>Franja Horizontal</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="bandera">
+          <img src="images/icon2_bandera.png" alt="Bandera">
+          <span>Bandera</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="franja-vertical-dos-colores">
+          <img src="images/icon2_franja_vtc.png" alt="Franja Vertical">
+          <span>Franja Vertical</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="2-bastones-con-lineas">
+          <img src="images/icon2_2bastones_con_lineas.png" alt="2 Bastones con Líneas">
+          <span>2 Bastones con Líneas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="3-bastones-con-lineas">
+          <img src="images/icon2_3bastones_con_lineas.png" alt="3 Bastones con Líneas">
+          <span>3 Bastones con Líneas</span>
+        </button>
+
+        <button class="traditional-designs-item" type="button" data-design="4-bastones-con-lineas">
+          <img src="images/icon2_4bastones_con_lineas.png" alt="4 Bastones con Líneas">
+          <span>4 Bastones con Líneas</span>
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="color-popup" id="colorPopup">
+
+    <button class="color-popup-close" id="closeColorPopup">×</button>
+
+    <div class="color-popup-header">
+      <span class="color-popup-header-text">Colores Starbade</span>
+
+      <button type="button" class="color-info-btn" id="colorInfoBtn" aria-label="Información sobre la paleta de colores">
+        ⓘ
+      </button>
+    </div>
+
+    <div class="color-popup-info" id="colorPopupInfo">
+      Paleta recomendada para que la vista previa se acerque lo más posible al color real.
+    </div>
+
+    <div class="color-grid" id="colorGrid"></div>
+
+    <div class="color-popup-divider"></div>
+
+    <div class="recent-colors-title">
+      Últimos usados
+    </div>
+
+    <div class="recent-colors" id="recentColors"></div>
+
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module" src="js/script.js"></script>
+
+</body></html>
