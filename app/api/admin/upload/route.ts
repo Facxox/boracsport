@@ -87,6 +87,17 @@ export async function POST(request: Request) {
   }
   const supabase = auth.supabase
 
+  // Cap TOTAL del body para evitar OOM con muchos archivos. Usamos el mayor
+  // maxBytes conocido + 5MB de holgura para multipart overhead.
+  const MAX_TOTAL_BYTES = 100 * 1024 * 1024 // 100 MB
+  const contentLength = Number(request.headers.get("content-length") ?? 0)
+  if (contentLength > MAX_TOTAL_BYTES) {
+    return NextResponse.json(
+      { error: `Petición demasiado grande (${(contentLength / 1024 / 1024).toFixed(1)}MB > ${MAX_TOTAL_BYTES / 1024 / 1024}MB)` },
+      { status: 413 },
+    )
+  }
+
   const form = await request.formData()
   const bucket = String(form.get("bucket") ?? "")
   if (!(ALLOWED_BUCKETS as readonly string[]).includes(bucket)) {

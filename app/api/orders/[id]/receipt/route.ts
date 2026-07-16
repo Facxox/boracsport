@@ -21,10 +21,41 @@ interface ShippingDetails {
   phone?: string
 }
 
+// Rate limit in-memory por orderId+ip. Limpieza lazy: cada hit borra entradas
+// más viejas que la ventana. Suficiente para una sola instancia de Next.js;
+// en multi-instancia habría que mover esto a Redis/Upstash.
+const RATE_WINDOW_MS = 60_000 // 1 minuto
+const RATE_MAX = 5 // 5 uploads por minuto por orderId+ip
+const rateBucket = new Map<string, number[]>()
+function rateLimit(key: string): boolean {
+  const now = Date.now()
+  const arr = (rateBucket.get(key) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
+  if (arr.length >= RATE_MAX) {
+    rateBucket.set(key, arr)
+    return false
+  }
+  arr.push(now)
+  rateBucket.set(key, arr)
+  // Limpieza oportunista para evitar crecimiento del Map.
+  if (rateBucket.size > 5000) {
+    for (const [k, ts] of rateBucket) {
+      if (ts.every((t) => now - t >= RATE_WINDOW_MS)) rateBucket.delete(k)
+    }
+  }
+  return true
+}
+
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   if (!isUuid(id)) {
     return NextResponse.json({ error: "ID inválido" }, { status: 400 })
+  }
+
+  // Cap temprano del body para evitar cargar archivos enormes en memoria
+  // antes de la autenticación.
+  const contentLength = Number(request.headers.get("content-length") ?? 0)
+  if (contentLength > MAX_BYTES * 1.2) {
+    return NextResponse.json({ error: "Petición demasiado grande." }, { status: 413 })
   }
 
   // Parse form data ONCE up front (body is a stream — only readable one time).
@@ -36,6 +67,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Falta el archivo" }, { status: 400 })
   }
+  // Rate limit antes de cualquier consulta pesada.
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown"
+  if (!rateLimit(`${id}:${ip}`)) {
+    return NextResponse.json({ error: "Demasiados intentos. Esperá un momento." }, { status: 429 })
+  }
 
   const supabase = await createClient()
   const { data: authData } = await supabase.auth.getUser()
@@ -43,7 +82,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { data: orderData, error: orderError } = await supabase
     .from("orders")
-    .select("id, user_id, payment_method, payment_receipt_url, shipping_details")
+    .select("id, user_id, payment_method, payment_receipt_url, shipping_details, created_at")
     .eq("id", id)
     .maybeSingle()
 
@@ -54,7 +93,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 })
   }
 
-  const order = orderData as Pick<OrderRow, "id" | "user_id" | "payment_method" | "payment_receipt_url" | "shipping_details">
+  const order = orderData as Pick<OrderRow, "id" | "user_id" | "payment_method" | "payment_receipt_url" | "shipping_details"> & { created_at: string }
 
   // Authorization: caller must be admin OR the order's user OR the guest who placed it.
   let isAdmin = false
@@ -73,21 +112,34 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (order.user_id && user && order.user_id === user.id) {
       isOwner = true
     } else if (!order.user_id && !user) {
-      // Guest caller: must provide matching name + email + phone in the form body to prove ownership.
+      // Guest caller: debe probar ownership con datos consistentes. Exigimos:
+      //  1. Coincidencia exacta (case-insensitive) de email + phone + name.
+      //  2. Pedido creado en los últimos 7 días (anti-replay).
+      //  3. El match se hashea en logs, no se loguean valores en claro.
       const guestName = String(formData.get("guest_name") ?? "").trim().toLowerCase()
       const guestEmail = String(formData.get("guest_email") ?? "").trim().toLowerCase()
       const guestPhone = String(formData.get("guest_phone") ?? "").trim()
       const shipping = order.shipping_details as ShippingDetails
+      const orderEmail = String(shipping?.email ?? "").trim().toLowerCase()
+      const orderName = String(shipping?.name ?? "").trim().toLowerCase()
+      const orderPhone = String(shipping?.phone ?? "").trim()
+      const ageMs = Date.now() - new Date(order.created_at).getTime()
+      const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000
+      const fresh = Number.isFinite(ageMs) && ageMs >= 0 && ageMs <= SEVEN_DAYS
       if (
         shipping &&
         guestEmail &&
         guestName &&
         guestPhone &&
-        guestEmail === String(shipping.email ?? "").trim().toLowerCase() &&
-        guestName === String(shipping.name ?? "").trim().toLowerCase() &&
-        guestPhone === String(shipping.phone ?? "").trim()
+        fresh &&
+        guestEmail === orderEmail &&
+        guestName === orderName &&
+        guestPhone === orderPhone
       ) {
         isOwner = true
+      } else if (!fresh) {
+        // No logueamos el hash para no leak; solo decimos "vencido".
+        console.warn(`[receipt] guest auth: order ${id} outside 7d window`)
       }
     }
   }

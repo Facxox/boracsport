@@ -4,11 +4,19 @@
 
 import "server-only"
 import { createClient } from "../server"
-import type { Product } from "../types"
+import type { Product, ProductVariantRow } from "../types"
 import type { Category } from "@/lib/constants"
 
 const PRODUCT_COLUMNS =
   "id, slug, name, description, price, images, tags, category" as const
+
+const PRODUCT_DETAIL_COLUMNS =
+  "id, slug, name, description, price, images, tags, category, stock, active, featured, on_sale, product_variants:product_variants(id, size, color, sku, stock, price_override, active)" as const
+
+export type ProductWithVariants = Product & {
+  stock: number
+  variants: ProductVariantRow[]
+}
 
 export type GetProductsParams = {
   category?: Category
@@ -28,6 +36,7 @@ export async function getProducts({
     let query = supabase
       .from("products")
       .select(PRODUCT_COLUMNS)
+      .eq("active", true)
       .order("created_at", { ascending: false })
       .range(from, to)
 
@@ -46,19 +55,40 @@ export async function getProducts({
   }
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | null> {
+export async function getProductBySlug(slug: string): Promise<ProductWithVariants | null> {
   try {
     const supabase = await createClient()
-    const { data, error } = await supabase
+    // Primero el producto plano (sin embed) — así un fallo de RLS o un
+    // schema mismatch en el join no rompe la PDP.
+    const { data: row, error } = await supabase
       .from("products")
-      .select(PRODUCT_COLUMNS)
+      .select("id, slug, name, description, price, images, tags, category, stock, active, featured, on_sale")
       .eq("slug", slug)
+      .eq("active", true)
       .maybeSingle()
     if (error) {
-      console.warn("[getProductBySlug] error:", error.message)
+      console.warn("[getProductBySlug] product error:", error.message)
       return null
     }
-    return (data as unknown as Product | null) ?? null
+    if (!row) return null
+
+    // Variantes en una segunda query tolerante a fallos.
+    let variants: ProductVariantRow[] = []
+    try {
+      const { data: variantRows } = await supabase
+        .from("product_variants")
+        .select("id, product_id, size, color, sku, stock, price_override, active")
+        .eq("product_id", (row as { id: string }).id)
+        .order("created_at", { ascending: true })
+      variants = (variantRows ?? []) as unknown as ProductVariantRow[]
+    } catch (variantErr) {
+      console.warn("[getProductBySlug] variants fetch failed:", variantErr)
+    }
+
+    return {
+      ...(row as unknown as ProductWithVariants),
+      variants,
+    }
   } catch (err) {
     console.warn("[getProductBySlug] exception:", err)
     return null
@@ -75,6 +105,7 @@ export async function getRelatedProducts(
       .from("products")
       .select(PRODUCT_COLUMNS)
       .eq("category", category)
+      .eq("active", true)
       .neq("id", excludeId)
       .limit(4)
     if (error) {
@@ -97,6 +128,7 @@ export async function getRecommendedFor(
     const { data, error } = await supabase
       .from("products")
       .select(PRODUCT_COLUMNS)
+      .eq("active", true)
       .in("category", intereses)
       .limit(8)
     if (error) {
@@ -113,7 +145,7 @@ export async function getRecommendedFor(
 const ON_SALE_COLUMNS =
   "id, slug, name, description, price, images, tags, category, stock, featured, active, on_sale" as const
 
-export async function getOnSaleProducts(limit = 8): Promise<Product[]> {
+export async function getOnSaleProducts(limit = 8, from = 0): Promise<Product[]> {
   try {
     const supabase = await createClient()
     const { data, error } = await supabase
@@ -122,7 +154,7 @@ export async function getOnSaleProducts(limit = 8): Promise<Product[]> {
       .eq("active", true)
       .eq("on_sale", true)
       .order("created_at", { ascending: false })
-      .limit(limit)
+      .range(from, from + limit - 1)
     if (error) {
       console.warn("[getOnSaleProducts] error:", error.message)
       return []

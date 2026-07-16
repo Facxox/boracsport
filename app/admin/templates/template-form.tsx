@@ -210,7 +210,7 @@ export function TemplateForm({ id, initial = defaultInitial }: TemplateFormProps
           type="checkbox"
           name="active"
           defaultChecked={initial.active}
-          className="size-4 accent-[#ff5a00]"
+          className="size-4 accent-[#dc2626]"
         />
         Publicar plantilla (visible en /personalizar)
       </label>
@@ -230,7 +230,7 @@ export function TemplateForm({ id, initial = defaultInitial }: TemplateFormProps
         )}
         <button
           disabled={pending}
-          className="rounded-xl bg-[#ff5a00] px-5 py-2 font-bold text-black disabled:opacity-50"
+          className="rounded-xl bg-[#dc2626] px-5 py-2 font-bold text-black disabled:opacity-50"
         >
           {pending ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear plantilla"}
         </button>

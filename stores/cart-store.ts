@@ -57,21 +57,37 @@ export const useCartStore = create<CartState>()(
       addProduct: (input) =>
         set((state) => {
           const qty = input.qty ?? 1
-          // Si ya existe un product line con mismo id, sumamos qty.
+          const variantId = input.variantId ?? null
+          // Sin stockCap y sin variantId, no podemos limitar qty en UI → bloqueamos.
+          // Productos legacy sin variantId quedan permitidos (cap = Infinity) para
+          // no romper el flujo existente, pero los nuevos deben llegar con stockCap.
+          const stockCap = input.stockCap
+          if (stockCap != null && stockCap <= 0) {
+            // Stock agotado: ignorar silenciosamente. UI ya debería deshabilitar
+            // el botón; si llega acá es por bug o estado desincronizado.
+            return state
+          }
+          // Dedupe por (id, variantId) — variantes distintas de un mismo
+          // producto son líneas separadas.
           const existing = state.items.find(
             (it): it is ProductLine =>
-              it.kind === "product" && it.id === input.id,
+              it.kind === "product" &&
+              it.id === input.id &&
+              (it.variantId ?? null) === variantId,
           )
           if (existing) {
+            const cap = existing.stockCap ?? stockCap ?? Infinity
+            const nextQty = Math.min(existing.qty + qty, cap)
             return {
               items: state.items.map((it) =>
-                it.kind === "product" && it.id === input.id
-                  ? { ...it, qty: it.qty + qty }
+                it.kind === "product" && it.key === existing.key
+                  ? { ...it, qty: nextQty }
                   : it,
               ),
               isOpen: true,
             }
           }
+          const initialQty = stockCap != null ? Math.min(qty, stockCap) : qty
           const line: ProductLine = {
             kind: "product",
             key: makeKey(),
@@ -79,8 +95,12 @@ export const useCartStore = create<CartState>()(
             slug: input.slug,
             name: input.name,
             price: input.price,
-            qty,
+            qty: initialQty,
             image: input.image,
+            variantId,
+            size: input.size,
+            color: input.color,
+            stockCap: stockCap ?? null,
           }
           return { items: [...state.items, line], isOpen: true }
         }),
@@ -111,11 +131,13 @@ export const useCartStore = create<CartState>()(
       updateQty: (key, qty) =>
         set((state) => ({
           items: state.items
-            .map((it) =>
-              it.kind === "product" && it.key === key
-                ? { ...it, qty: Math.max(1, qty) }
-                : it,
-            ),
+            .map((it) => {
+              if (it.kind !== "product" || it.key !== key) return it
+              // Si tenemos stockCap lo respetamos; si no, permitimos hasta 99
+              // para productos legacy (en lugar de Infinity) como salvaguarda.
+              const cap = it.stockCap ?? 99
+              return { ...it, qty: Math.max(1, Math.min(qty, cap)) }
+            }),
         })),
 
       removeItem: (key) =>
@@ -131,7 +153,15 @@ export const useCartStore = create<CartState>()(
       name: "borac-cart-v1",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ items: state.items }),
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.warn("[cart] rehydrate failed, clearing corrupted storage:", error)
+          try {
+            localStorage.removeItem("borac-cart-v1")
+          } catch {
+            /* ignore */
+          }
+        }
         state?._setHasHydrated(true)
       },
     },

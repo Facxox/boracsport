@@ -38,7 +38,7 @@ export function SlideNewForm({ nextOrder }: { nextOrder: number }) {
               key={k}
               className={
                 "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm " +
-                (kind === k ? "border-[#ff5a00] bg-[#ff5a00]/10" : "border-white/10 hover:bg-white/5")
+                (kind === k ? "border-[#dc2626] bg-[#dc2626]/10" : "border-white/10 hover:bg-white/5")
               }
             >
               <input
@@ -46,7 +46,7 @@ export function SlideNewForm({ nextOrder }: { nextOrder: number }) {
                 name="kind-radio"
                 checked={kind === k}
                 onChange={() => setKind(k)}
-                className="accent-[#ff5a00]"
+                className="accent-[#dc2626]"
               />
               {k === "image" ? "Imagen" : "Video"}
             </label>
@@ -76,12 +76,12 @@ export function SlideNewForm({ nextOrder }: { nextOrder: number }) {
       </div>
       <Field name="display_order" label="Orden" type="number" defaultValue={String(nextOrder)} />
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="active" defaultChecked className="size-4 accent-[#ff5a00]" />
+        <input type="checkbox" name="active" defaultChecked className="size-4 accent-[#dc2626]" />
         Activo
       </label>
       <button
         disabled={pending}
-        className="justify-self-start rounded-xl bg-[#ff5a00] px-5 py-2 font-bold text-black disabled:opacity-50"
+        className="justify-self-start rounded-xl bg-[#dc2626] px-5 py-2 font-bold text-black disabled:opacity-50"
       >
         {pending ? "Creando…" : "Crear slide"}
       </button>

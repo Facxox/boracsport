@@ -9,6 +9,10 @@ export type ProductLine = {
   price: number
   qty: number
   image?: string
+  variantId?: string | null
+  size?: string
+  color?: string
+  stockCap?: number
 }
 
 export type DesignLine = {

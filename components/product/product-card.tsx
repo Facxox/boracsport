@@ -8,9 +8,20 @@ import { formatUYU } from "@/lib/format"
 import { CATEGORY_LABELS, type Category } from "@/lib/constants"
 import type { Product } from "@/lib/supabase/types"
 
+function safeImageUrl(u: unknown): string | null {
+  if (typeof u !== "string" || u.length === 0 || u.length > 2048) return null
+  try {
+    const url = new URL(u, "https://placeholder.local")
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null
+    return u
+  } catch {
+    return null
+  }
+}
+
 export function ProductCard({ product }: { product: Product }) {
   const addProduct = useCartStore((s) => s.addProduct)
-  const image = product.images?.[0]
+  const image = safeImageUrl(product.images?.[0])
 
   return (
     <div className="group bg-bg-titanium relative flex flex-col overflow-hidden rounded-xl border border-white/5 transition-all hover:border-white/15">
@@ -34,7 +45,7 @@ export function ProductCard({ product }: { product: Product }) {
           {CATEGORY_LABELS[product.category as Category] ?? product.category}
         </span>
         {product.on_sale ? (
-          <span className="absolute top-2 right-2 rounded-full bg-[#ff5a00] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black shadow-lg shadow-[#ff5a00]/40">
+          <span className="absolute top-2 right-2 rounded-full bg-[#dc2626] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black shadow-lg shadow-[#dc2626]/40">
             Oferta
           </span>
         ) : null}

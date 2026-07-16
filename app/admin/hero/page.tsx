@@ -20,7 +20,7 @@ export default async function AdminHeroPage() {
     <main className="mx-auto max-w-5xl px-5 py-10">
       <Link href="/admin" className="text-sm text-white/60">← Panel</Link>
       <div className="mt-4">
-        <p className="text-xs uppercase tracking-[0.25em] text-[#ff5a00]">Hero público</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-[#dc2626]">Hero público</p>
         <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight">Carrusel del Hero</h1>
         <p className="mt-1 text-sm text-white/60">
           Las imágenes o videos que se muestran en la portada. Si no hay slides activos, el sitio usa el gradiente por defecto.

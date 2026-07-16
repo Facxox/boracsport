@@ -17,14 +17,19 @@ type SearchParams = Promise<{ category?: string }>
 export default async function HomePage({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams
   const requestedCategory = sp.category as Category | undefined
-  const safeCategory =
-    requestedCategory && (CATEGORIES as readonly string[]).includes(requestedCategory)
-      ? requestedCategory
-      : undefined
+  // Validamos contra la DB: aceptamos slugs de categorías activas o el set
+  // hardcoded legacy (compatibilidad con categorías creadas antes del admin).
   const [categories, products] = await Promise.all([
     getActiveCategories(),
-    getProducts({ category: safeCategory, from: 0, to: 11 }),
+    getProducts({ category: undefined, from: 0, to: 11 }),
   ])
+  const dbSlugs = new Set(categories.map((c) => c.slug))
+  const known = new Set<string>([...dbSlugs, ...(CATEGORIES as readonly string[])])
+  const safeCategory =
+    requestedCategory && known.has(requestedCategory) ? requestedCategory : undefined
+  const finalProducts = safeCategory
+    ? await getProducts({ category: safeCategory, from: 0, to: 11 })
+    : products
 
   return (
     <>
@@ -43,7 +48,7 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
             categories={categories.map((c) => ({ slug: c.slug, label: c.label, emoji: c.emoji }))}
           />
         </Suspense>
-        <ProductGrid products={products} />
+        <ProductGrid products={finalProducts} />
       </section>
       <Suspense><RecommendedForYou /></Suspense>
     </>

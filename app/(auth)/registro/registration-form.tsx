@@ -203,7 +203,7 @@ export function RegistrationForm({ cards }: { cards: Card[] }) {
                 animate={
                   selected
                     ? {
-                        borderColor: ["#ff5a00", "#00e676", "#ff5a00"],
+                        borderColor: ["#dc2626", "#00e676", "#dc2626"],
                         boxShadow: [
                           "0 0 0 0 rgba(255,90,0,0.0)",
                           "0 0 0 4px rgba(255,90,0,0.18)",
@@ -220,7 +220,7 @@ export function RegistrationForm({ cards }: { cards: Card[] }) {
                 className={
                   "relative flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors " +
                   (selected
-                    ? "border-[1px] border-[#ff5a00] bg-brand-red/5"
+                    ? "border-[1px] border-[#dc2626] bg-brand-red/5"
                     : "border-white/10 hover:border-white/25")
                 }
               >
@@ -259,7 +259,7 @@ export function RegistrationForm({ cards }: { cards: Card[] }) {
           type="button"
           onClick={onConfirm}
           disabled={intereses.length === 0 || loading}
-          className="bg-brand-red text-foreground hover:bg-[#ff6a1f]"
+          className="bg-brand-red text-foreground hover:bg-[#ef4444]"
         >
           {loading ? (
             <>

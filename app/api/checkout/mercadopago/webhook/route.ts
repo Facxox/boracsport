@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto"
 import { NextResponse } from "next/server"
 import { Payment } from "mercadopago"
 import { createClient } from "@/lib/supabase/server"
-import type { OrderStatus, PaymentStatus } from "@/lib/supabase/types"
+import type { OrderRow, OrderStatus, PaymentStatus } from "@/lib/supabase/types"
 
 function isValidSignature(request: Request, paymentId: string) {
   const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET
@@ -19,23 +19,56 @@ function isValidSignature(request: Request, paymentId: string) {
   return providedBuffer.length === expectedBuffer.length && timingSafeEqual(providedBuffer, expectedBuffer)
 }
 
+// Orden de "frescura" para evitar que un reintento viejo sobreescriba un
+// estado más reciente (ej. approved después de refunded).
+const STATUS_RANK: Record<PaymentStatus, number> = {
+  pendiente: 0,
+  rechazado: 1,
+  reembolsado: 2,
+  aprobado: 3,
+}
+
 export async function POST(request: Request) {
-  const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
-  if (!accessToken || accessToken.includes("REPLACE")) return NextResponse.json({ error: "Webhook no configurado." }, { status: 503 })
-  const body = await request.json().catch(() => null) as { type?: string; data?: { id?: string }; action?: string } | null
-  const paymentId = body?.data?.id
-  if (!paymentId || (body.type !== "payment" && body.action !== "payment.created" && body.action !== "payment.updated")) return NextResponse.json({ received: true })
-  if (!isValidSignature(request, paymentId)) return NextResponse.json({ error: "Firma inválida." }, { status: 401 })
-  const payment = new Payment({ accessToken })
-  const detail = await payment.get({ id: paymentId })
-  const orderId = detail.external_reference
-  if (!orderId) return NextResponse.json({ received: true })
-  const supabase = await createClient()
-  const paymentStatus: PaymentStatus = detail.status === "approved" ? "aprobado" : detail.status === "refunded" ? "reembolsado" : detail.status === "rejected" ? "rechazado" : "pendiente"
-  const orderStatus: OrderStatus = paymentStatus === "aprobado" ? "confirmado" : paymentStatus === "rechazado" ? "cancelado" : "pendiente"
-  const { error } = await supabase.from("orders").update({ payment_status: paymentStatus, status: orderStatus } as never).eq("id", orderId)
-  if (error) return NextResponse.json({ error: "No se pudo actualizar el pedido." }, { status: 503 })
-  return NextResponse.json({ received: true })
+  try {
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
+    if (!accessToken || accessToken.includes("REPLACE")) return NextResponse.json({ error: "Webhook no configurado." }, { status: 503 })
+    const body = await request.json().catch(() => null) as { type?: string; data?: { id?: string }; action?: string } | null
+    const paymentId = body?.data?.id
+    if (!paymentId || (body.type !== "payment" && body.action !== "payment.created" && body.action !== "payment.updated")) return NextResponse.json({ received: true })
+    if (!isValidSignature(request, paymentId)) return NextResponse.json({ error: "Firma inválida." }, { status: 401 })
+    const payment = new Payment({ accessToken })
+    const detail = await payment.get({ id: paymentId })
+    const orderId = detail.external_reference
+    if (!orderId) return NextResponse.json({ received: true })
+    const supabase = await createClient()
+    const incomingPayment: PaymentStatus = detail.status === "approved" ? "aprobado" : detail.status === "refunded" ? "reembolsado" : detail.status === "rejected" ? "rechazado" : "pendiente"
+    const incomingOrder: OrderStatus = incomingPayment === "aprobado" ? "confirmado" : incomingPayment === "rechazado" ? "cancelado" : "pendiente"
+
+    // Idempotencia: si el estado guardado es "más fresco" que el entrante, no
+    // sobreescribimos. Esto cubre reintentos fuera de orden de MP.
+    const { data: current, error: fetchErr } = await supabase
+      .from("orders")
+      .select("payment_status, status")
+      .eq("id", orderId)
+      .maybeSingle()
+    if (fetchErr) {
+      console.error("[mp-webhook] fetch order error:", fetchErr.message)
+      return NextResponse.json({ error: "No se pudo consultar el pedido." }, { status: 503 })
+    }
+    if (current) {
+      const currentRank = STATUS_RANK[(current as Pick<OrderRow, "payment_status">).payment_status] ?? -1
+      if (currentRank > STATUS_RANK[incomingPayment]) {
+        return NextResponse.json({ received: true, ignored: "stale" })
+      }
+    }
+
+    const { error } = await supabase.from("orders").update({ payment_status: incomingPayment, status: incomingOrder } as never).eq("id", orderId)
+    if (error) return NextResponse.json({ error: "No se pudo actualizar el pedido." }, { status: 503 })
+    return NextResponse.json({ received: true })
+  } catch (err) {
+    console.error("[mp-webhook] unhandled error:", err)
+    return NextResponse.json({ error: "internal" }, { status: 500 })
+  }
 }
 
 export async function GET() { return NextResponse.json({ received: true }) }

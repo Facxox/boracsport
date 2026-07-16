@@ -93,11 +93,11 @@ export function TransferOptions({ items, customer }: TransferOptionsProps) {
       <section className="rounded-2xl border border-white/10 bg-[#101012] p-5">
         <header className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-[#ff5a00]">Transferencia BROU</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-[#dc2626]">Transferencia BROU</p>
             <h3 className="mt-1 font-display text-xl font-extrabold tracking-tight">{ACCOUNT.name}</h3>
             <p className="text-muted-foreground text-xs">{ACCOUNT.accountType}</p>
           </div>
-          <Building2 className="h-5 w-5 text-[#ff5a00]" />
+          <Building2 className="h-5 w-5 text-[#dc2626]" />
         </header>
 
         <dl className="mt-5 space-y-4 text-sm">
@@ -106,7 +106,7 @@ export function TransferOptions({ items, customer }: TransferOptionsProps) {
             <dd className="mt-1 font-semibold">{TAX_HOLDER.legalName}</dd>
           </div>
 
-          <div className="rounded-xl border border-[#ff5a00]/30 bg-[#ff5a00]/5 p-4">
+          <div className="rounded-xl border border-[#dc2626]/30 bg-[#dc2626]/5 p-4">
             <dt className="text-muted-foreground text-[10px] uppercase tracking-[0.2em]">Cuenta principal</dt>
             <dd className="mt-1 flex items-center justify-between gap-3">
               <code className="font-mono text-lg font-bold tracking-wide">{ACCOUNT.accountNumber}</code>
@@ -129,7 +129,7 @@ export function TransferOptions({ items, customer }: TransferOptionsProps) {
       {/* Instrucciones */}
       <section className="rounded-2xl border border-white/10 bg-[#101012] p-5">
         <header className="flex items-center gap-2">
-          <Smartphone className="h-4 w-4 text-[#ff5a00]" />
+          <Smartphone className="h-4 w-4 text-[#dc2626]" />
           <h3 className="font-sans text-sm font-bold uppercase tracking-wider">Cómo pagar</h3>
         </header>
         <ol className="mt-3 space-y-2 text-sm text-white/80">
@@ -164,7 +164,7 @@ export function TransferOptions({ items, customer }: TransferOptionsProps) {
               type="button"
               onClick={() => void registerOrder()}
               disabled={!canRegister || registering}
-              className="inline-flex w-full items-center justify-center rounded-xl bg-[#ff5a00] px-4 py-3 text-sm font-bold text-black disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center rounded-xl bg-[#dc2626] px-4 py-3 text-sm font-bold text-black disabled:opacity-50"
             >
               {registering ? (
                 <>
@@ -262,7 +262,7 @@ function ReceiptUploader({
     <label
       htmlFor={`receipt-${orderId}`}
       className={cn(
-        "flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/15 bg-black/20 px-4 py-4 text-sm transition-colors hover:border-[#ff5a00]/60",
+        "flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-white/15 bg-black/20 px-4 py-4 text-sm transition-colors hover:border-[#dc2626]/60",
         uploading && "pointer-events-none opacity-60",
       )}
     >

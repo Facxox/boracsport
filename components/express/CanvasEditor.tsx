@@ -153,7 +153,7 @@ export function CanvasEditor({ template, onAdded }: CanvasEditorProps) {
           <input type="file" accept="image/png,image/svg+xml" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadLogo(file) }} />
         </label>
         <Button type="button" onClick={() => { canvasRef.current?.discardActiveObject(); canvasRef.current?.requestRenderAll() }} variant="outline" className="w-full"><RotateCcw className="mr-2 h-4 w-4" />Deseleccionar</Button>
-        <Button type="button" onClick={addToCart} disabled={saving} className="w-full bg-brand-red text-foreground hover:bg-[#ff6a1f]"><ShoppingBag className="mr-2 h-4 w-4" />{saving ? "Guardando…" : "Agregar al carrito"}</Button>
+        <Button type="button" onClick={addToCart} disabled={saving} className="w-full bg-brand-red text-foreground hover:bg-[#ef4444]"><ShoppingBag className="mr-2 h-4 w-4" />{saving ? "Guardando…" : "Agregar al carrito"}</Button>
         <p className="text-muted-foreground flex items-center gap-2 text-xs"><Check className="h-4 w-4 text-brand-green" />Precio a coordinar después de revisar tu diseño.</p>
       </aside>
     </div>

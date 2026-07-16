@@ -47,7 +47,7 @@ export function TemplateRow({ id, name, active, price, modelFormat, zoneCount }:
     <article className="flex flex-col rounded-2xl border border-white/10 bg-[#101012] p-5">
       <div className="flex items-start justify-between gap-2">
         <h2 className="font-sans text-xl font-bold tracking-tight">
-          <Link href={`/admin/templates/${id}`} className="hover:text-[#ff5a00]">
+          <Link href={`/admin/templates/${id}`} className="hover:text-[#dc2626]">
             {name}
           </Link>
         </h2>
@@ -74,7 +74,7 @@ export function TemplateRow({ id, name, active, price, modelFormat, zoneCount }:
             checked={active}
             disabled={pending}
             onChange={(e) => handleToggle(e.target.checked)}
-            className="size-4 accent-[#ff5a00]"
+            className="size-4 accent-[#dc2626]"
           />
           <span className={active ? "text-emerald-400" : "text-white/50"}>
             {active ? "Visible en /personalizar" : "Solo admins"}

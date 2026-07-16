@@ -96,6 +96,13 @@ export function CartDrawer() {
                         <p className="truncate text-sm font-medium">
                           {it.name}
                         </p>
+                        {(it.size || it.color) && (
+                          <p className="text-muted-foreground text-xs">
+                            {it.size ? `Talle: ${it.size}` : ""}
+                            {it.size && it.color ? " · " : ""}
+                            {it.color ? `Color: ${it.color}` : ""}
+                          </p>
+                        )}
                         <p className="text-muted-foreground text-xs">
                           {formatUYU(it.price)} c/u
                         </p>
@@ -118,11 +125,17 @@ export function CartDrawer() {
                             variant="outline"
                             size="icon"
                             className="h-7 w-7"
+                            disabled={it.stockCap != null && it.qty >= it.stockCap}
                             onClick={() => updateQty(it.key, it.qty + 1)}
                             aria-label="Sumar"
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
+                          {it.stockCap != null && it.qty >= it.stockCap && (
+                            <span className="text-amber-400 ml-1 text-[10px]">
+                              stock máx.
+                            </span>
+                          )}
                         </div>
                       </>
                     ) : (

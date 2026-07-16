@@ -13,6 +13,7 @@ interface CategoryFormProps {
     description: string
     display_order: number
     active: boolean
+    kind: "ropa" | "pelota" | "otro"
   }
 }
 
@@ -69,12 +70,28 @@ export function CategoryForm({ id, initial }: CategoryFormProps) {
         />
       </label>
 
+      <label className="grid gap-2 text-sm">
+        Tipo
+        <select
+          name="kind"
+          defaultValue={initial.kind}
+          className="rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+        >
+          <option value="ropa">Ropa (muestra matriz de talles y colores)</option>
+          <option value="pelota">Pelota (sin variantes — solo stock)</option>
+          <option value="otro">Otro (sin variantes — DTF, merchandising, etc.)</option>
+        </select>
+        <span className="text-xs text-white/50">
+          Cambiar el tipo afecta cómo se cargan los productos de esta categoría.
+        </span>
+      </label>
+
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
           name="active"
           defaultChecked={initial.active}
-          className="size-4 accent-[#ff5a00]"
+          className="size-4 accent-[#dc2626]"
         />
         Activa (visible en filtro, registro y cuenta)
       </label>
@@ -90,7 +107,7 @@ export function CategoryForm({ id, initial }: CategoryFormProps) {
         </button>
         <button
           disabled={pending}
-          className="rounded-xl bg-[#ff5a00] px-5 py-2 font-bold text-black disabled:opacity-50"
+          className="rounded-xl bg-[#dc2626] px-5 py-2 font-bold text-black disabled:opacity-50"
         >
           {pending ? "Guardando…" : "Guardar cambios"}
         </button>

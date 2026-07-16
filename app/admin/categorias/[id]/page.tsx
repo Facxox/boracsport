@@ -21,7 +21,7 @@ export default async function EditCategoryPage({ params }: { params: Promise<{ i
     <main className="mx-auto max-w-3xl px-5 py-10">
       <Link href="/admin/categorias" className="text-sm text-white/60">← Categorías</Link>
       <div className="mt-4">
-        <p className="text-xs uppercase tracking-[0.25em] text-[#ff5a00]">Editar</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-[#dc2626]">Editar</p>
         <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight">
           {category.emoji} {category.label}
         </h1>
@@ -37,6 +37,7 @@ export default async function EditCategoryPage({ params }: { params: Promise<{ i
           description: category.description,
           display_order: Number(category.display_order),
           active: Boolean(category.active),
+          kind: category.kind,
         }}
       />
     </main>

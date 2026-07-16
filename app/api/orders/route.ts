@@ -1,25 +1,29 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import type { Json, OrderRow, ProductRow } from "@/lib/supabase/types"
+import { createServiceClient } from "@/lib/supabase/service"
+import { sendOrderConfirmation } from "@/lib/email/send"
+import type { Json, OrderRow, ProductRow, ProductVariantRow } from "@/lib/supabase/types"
 
 const MAX_ITEMS = 50
 const MAX_QTY = 100
 const MAX_BODY_BYTES = 100_000
 
-type OrderItemInput = {
-  kind: "product" | "design"
-  id?: string
-  slug?: string
-  name?: string
-  price?: number
-  qty?: number
-  image?: string
-  designId?: string
-  payload?: Json
-  customPrice?: number
-  previewLabel?: string
-  editorUrl?: string
+type ProductItemInput = {
+  kind: "product"
+  id: string
+  qty: number
+  variantId?: string | null
+  size?: string
+  color?: string
 }
+
+type DesignItemInput = {
+  kind: "design"
+  designId: string
+  payload: Json
+}
+
+type OrderItemInput = ProductItemInput | DesignItemInput
 
 type OrderRequest = {
   items?: unknown
@@ -58,18 +62,29 @@ function parseItems(value: unknown): OrderItemInput[] | null {
   const result: OrderItemInput[] = []
   for (const item of value) {
     if (!isRecord(item) || (item.kind !== "product" && item.kind !== "design")) return null
-    const parsed: OrderItemInput = { kind: item.kind }
     if (item.kind === "product") {
       if (!isUuid(item.id) || !Number.isInteger(item.qty) || Number(item.qty) < 1 || Number(item.qty) > MAX_QTY) return null
-      parsed.id = item.id
-      parsed.qty = Number(item.qty)
+      const p: ProductItemInput = { kind: "product", id: String(item.id), qty: Number(item.qty) }
+      if (item.variantId != null) {
+        if (!isUuid(item.variantId)) return null
+        p.variantId = String(item.variantId)
+      }
+      if (typeof item.size === "string") p.size = item.size.slice(0, 60)
+      if (typeof item.color === "string") p.color = item.color.slice(0, 60)
+      result.push(p)
     } else {
       if (!isUuid(item.designId) || !isRecord(item.payload)) return null
-      parsed.designId = item.designId
-      parsed.payload = item.payload as Json
-      parsed.qty = 1
+      // Limitar tamaño serializado para evitar payloads de diseño arbitrariamente
+      // profundos o grandes en el snapshot del pedido.
+      try {
+        const serialized = JSON.stringify(item.payload)
+        if (serialized.length > 200_000) return null
+      } catch {
+        return null
+      }
+      const d: DesignItemInput = { kind: "design", designId: String(item.designId), payload: item.payload as Json }
+      result.push(d)
     }
-    result.push(parsed)
   }
   return result
 }
@@ -95,41 +110,101 @@ export async function POST(request: Request) {
   const email = text(customer.email, 254)
   const phone = text(customer.phone, 40)
   const address = text(customer.address, 300)
-  const paymentMethod = validPaymentMethod(body.paymentMethod) ? body.paymentMethod : "whatsapp"
-  const paymentReceiptUrl = safeUrl(body.paymentReceiptUrl, 1000)
   if (!items || !name || !email || !phone) return NextResponse.json({ error: "Completá nombre, email, teléfono y productos." }, { status: 400 })
+  // paymentMethod: requerido y debe ser uno de los válidos. Si no, rechazamos
+  // explícitamente en vez de caer a un default silencioso.
+  if (!validPaymentMethod(body.paymentMethod)) {
+    return NextResponse.json({ error: "Método de pago inválido." }, { status: 400 })
+  }
+  const paymentMethod = body.paymentMethod
+  const paymentReceiptUrl = safeUrl(body.paymentReceiptUrl, 1000)
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "El email no es válido." }, { status: 400 })
 
   const supabase = await createClient()
   const { data: authData } = await supabase.auth.getUser()
-  const productIds = items.filter((item) => item.kind === "product").map((item) => item.id as string)
-  const { data: products, error: productsError } = await supabase.from("products").select("id, name, slug, price, images, stock, active").in("id", productIds)
+  const productItems: ProductItemInput[] = []
+  for (const it of items) if (it.kind === "product") productItems.push(it)
+  const productIds = productItems.map((item) => item.id)
+  const variantIds = productItems
+    .map((item) => item.variantId)
+    .filter((v): v is string => typeof v === "string")
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select("id, name, slug, price, images, stock, active")
+    .in("id", productIds)
   if (productsError) return NextResponse.json({ error: "No se pudo verificar el catálogo." }, { status: 503 })
   const productRows = (products ?? []) as unknown as Array<Pick<ProductRow, "id" | "name" | "slug" | "price" | "images" | "stock" | "active">>
   const productMap = new Map(productRows.map((product) => [product.id, product]))
+
+  // Si hay variantIds, cargar variantes en una sola query.
+  const variantMap = new Map<string, ProductVariantRow>()
+  if (variantIds.length > 0) {
+    const { data: variantRows, error: variantsError } = await supabase
+      .from("product_variants")
+      .select("id, product_id, size, color, sku, stock, price_override, active")
+      .in("id", variantIds)
+    if (variantsError) return NextResponse.json({ error: "No se pudo verificar el stock." }, { status: 503 })
+    for (const v of (variantRows ?? []) as unknown as ProductVariantRow[]) {
+      variantMap.set(v.id, v)
+    }
+  }
+
   const snapshot: Json[] = []
   let subtotal = 0
   let hasPhysical = false
+  const variantConsumption: { id: string; qty: number; stockBefore: number }[] = []
   for (const item of items) {
     if (item.kind === "design") {
       snapshot.push({ kind: "design", designId: item.designId!, payload: item.payload!, customPrice: 0, qty: 1, previewLabel: "Diseño personalizado" })
       continue
     }
     const product = productMap.get(item.id!)
+    if (!product || !product.active) {
+      return NextResponse.json({ error: "Uno de los productos ya no está disponible." }, { status: 409 })
+    }
     const quantity = item.qty!
-    if (!product || !product.active || product.stock < quantity) return NextResponse.json({ error: "Uno de los productos ya no tiene stock disponible." }, { status: 409 })
-    const price = Number(product.price)
-    subtotal += price * quantity
+
+    let unitPrice = Number(product.price)
+    let stockAvailable = Number(product.stock ?? 0)
+
+    if (item.variantId) {
+      const variant = variantMap.get(item.variantId)
+      if (!variant || variant.product_id !== product.id || !variant.active) {
+        return NextResponse.json({ error: "Una de las variantes ya no está disponible." }, { status: 409 })
+      }
+      stockAvailable = Number(variant.stock)
+      if (variant.price_override != null) unitPrice = Number(variant.price_override)
+    }
+
+    if (stockAvailable < quantity) {
+      return NextResponse.json({ error: `Sin stock suficiente para "${product.name}". Quedan ${stockAvailable}.` }, { status: 409 })
+    }
+
+    subtotal += unitPrice * quantity
     hasPhysical = true
-    snapshot.push({ kind: "product", id: product.id, slug: product.slug, name: product.name, price, qty: quantity, image: product.images[0] ?? null })
+    snapshot.push({
+      kind: "product",
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      price: unitPrice,
+      qty: quantity,
+      image: product.images[0] ?? null,
+      variantId: item.variantId ?? null,
+      size: item.size ?? null,
+      color: item.color ?? null,
+    })
+    if (item.variantId) {
+      variantConsumption.push({ id: item.variantId, qty: quantity, stockBefore: stockAvailable })
+    } else {
+      // Legacy: registrar consumo contra el producto top-level
+      variantConsumption.push({ id: `legacy:${product.id}`, qty: quantity, stockBefore: stockAvailable })
+    }
   }
 
   const shipping = hasPhysical ? 250 : 0
   const total = subtotal + shipping
   const shippingDetails: Json = { name, email, phone, address: address ?? "", source: "checkout" }
-  // Insert base sin payment_receipt_url: esa columna se setea después desde
-  // /api/orders/[id]/receipt para que el alta del pedido no rompa si la
-  // migración 20260723 todavía no se aplicó.
   const insert: Partial<OrderRow> = {
     user_id: authData.user?.id ?? null,
     items: snapshot,
@@ -150,8 +225,7 @@ export async function POST(request: Request) {
   }
   const orderId = (order as { id: string }).id
 
-  // Best-effort: si el cliente ya tenía un comprobante previo (re-intento), lo guardamos.
-  // Si la columna no existe todavía, lo ignoramos silenciosamente.
+  // Best-effort: comprobante.
   if (paymentReceiptUrl) {
     await supabase
       .from("orders")
@@ -159,9 +233,66 @@ export async function POST(request: Request) {
       .eq("id", orderId)
   }
 
+  // Decrementar stock. Usamos service role para bypassear RLS y aplicamos
+  // gte('stock', qty) para evitar vender sobre stock negativo (concurrencia).
+  const service = createServiceClient()
+  if (!service) {
+    // Sin service role no podemos decrementar de forma confiable → deshacemos
+    // la orden para no cobrar algo que no podemos garantizar.
+    await supabase.from("orders").delete().eq("id", orderId)
+    return NextResponse.json(
+      { error: "Servicio no disponible. Contactanos por WhatsApp para finalizar tu pedido." },
+      { status: 503 },
+    )
+  }
+  for (const cons of variantConsumption) {
+    const table = cons.id.startsWith("legacy:") ? "products" : "product_variants"
+    const eq = cons.id.startsWith("legacy:") ? cons.id.slice("legacy:".length) : cons.id
+    const { error: decErr, count } = await service
+      .from(table)
+      .update({ stock: cons.stockBefore - cons.qty } as never, { count: "exact" })
+      .eq("id", eq)
+      .gte("stock", cons.qty)
+    if (decErr || count === 0) {
+      // Otro request se llevó la última unidad. Rollback de la orden.
+      await service.from("orders").delete().eq("id", orderId)
+      return NextResponse.json(
+        { error: "Sin stock suficiente para uno de los productos. Volvé a intentar." },
+        { status: 409 },
+      )
+    }
+  }
+
+  // Email: fire-and-forget (no bloquea la respuesta).
+  if (paymentMethod === "transfer" || paymentMethod === "mercadopago") {
+    sendOrderConfirmation({
+      orderId,
+      customer: { name, email, phone, address: address ?? "" },
+      items: snapshot as unknown as Json,
+      subtotal,
+      shipping,
+      total,
+      paymentMethod,
+    }).catch((err) => console.warn("[orders:email] failed", err))
+  }
+
   return NextResponse.json({ orderId, subtotal, shipping, total, requiresCoordination: items.some((item) => item.kind === "design") }, { status: 201 })
 }
 
+// GET: devuelve los pedidos del usuario logueado (no anónimos).
 export async function GET() {
-  return NextResponse.json({ error: "Método no permitido." }, { status: 405, headers: { Allow: "POST" } })
+  const supabase = await createClient()
+  const { data: authData } = await supabase.auth.getUser()
+  const user = authData.user
+  if (!user) return NextResponse.json({ error: "No autenticado." }, { status: 401 })
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id, total, subtotal, status, payment_method, payment_status, items, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(100)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 503 })
+  return NextResponse.json({ orders: data ?? [] })
 }

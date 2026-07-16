@@ -47,6 +47,7 @@ export interface CategoryRow {
   description: string
   display_order: number
   active: boolean
+  kind: "ropa" | "pelota" | "otro"
   created_at: string
   updated_at: string
 }
@@ -75,11 +76,25 @@ export interface ProductRow {
   images: string[]
   tags: string[]
   category: Category
+  category_id: string | null
   stock: number
   active: boolean
   featured: boolean
   on_sale: boolean
   section_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ProductVariantRow {
+  id: string
+  product_id: string
+  size: string
+  color: string
+  sku: string | null
+  stock: number
+  price_override: number | null
+  active: boolean
   created_at: string
   updated_at: string
 }
@@ -132,6 +147,7 @@ export interface Database {
       categories: { Row: CategoryRow; Insert: Partial<CategoryRow> & { slug: string; label: string }; Update: Partial<CategoryRow> }
       hero_slides: { Row: HeroSlideRow; Insert: Partial<HeroSlideRow> & { kind: "image" | "video"; url: string }; Update: Partial<HeroSlideRow> }
       products: { Row: ProductRow; Insert: Partial<ProductRow>; Update: Partial<ProductRow> }
+      product_variants: { Row: ProductVariantRow; Insert: Partial<ProductVariantRow> & { product_id: string }; Update: Partial<ProductVariantRow> }
       templates: { Row: TemplateRow; Insert: Partial<TemplateRow>; Update: Partial<TemplateRow> }
       designs: { Row: DesignRow; Insert: Partial<DesignRow> & { user_id: string }; Update: Partial<DesignRow> }
       orders: { Row: OrderRow; Insert: Partial<OrderRow>; Update: Partial<OrderRow> }
@@ -143,4 +159,4 @@ export interface Database {
 }
 
 export type Product = Pick<ProductRow, "id" | "slug" | "name" | "price" | "images" | "tags" | "category" | "description"> &
-  Partial<Pick<ProductRow, "stock" | "featured" | "active" | "on_sale" | "section_id">>
+  Partial<Pick<ProductRow, "stock" | "featured" | "active" | "on_sale" | "section_id" | "category_id">>

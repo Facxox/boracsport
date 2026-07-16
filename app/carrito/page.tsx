@@ -68,6 +68,13 @@ export default function CarritoPage() {
                   {it.kind === "product" ? (
                     <>
                       <p className="font-semibold">{it.name}</p>
+                      {(it.size || it.color) && (
+                        <p className="text-muted-foreground text-sm">
+                          {it.size ? `Talle: ${it.size}` : ""}
+                          {it.size && it.color ? " · " : ""}
+                          {it.color ? `Color: ${it.color}` : ""}
+                        </p>
+                      )}
                       <p className="text-muted-foreground text-sm">
                         {formatUYU(it.price)} c/u
                       </p>
@@ -90,11 +97,17 @@ export default function CarritoPage() {
                           variant="outline"
                           size="icon"
                           className="h-7 w-7"
+                          disabled={it.stockCap != null && it.qty >= it.stockCap}
                           onClick={() => updateQty(it.key, it.qty + 1)}
                           aria-label="Sumar"
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
+                        {it.stockCap != null && (
+                          <span className="text-muted-foreground ml-1 text-xs">
+                            / {it.stockCap} disp.
+                          </span>
+                        )}
                       </div>
                     </>
                   ) : (

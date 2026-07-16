@@ -16,7 +16,7 @@ export function HeroCinematic() {
           <h1 className="font-display mt-5 text-4xl leading-[1.05] font-extrabold tracking-tight md:text-6xl lg:text-7xl">Diseñá tu equipo <span className="text-brand-red">a tu medida</span> y recibí tu pedido en Uruguay.</h1>
           <p className="text-muted-foreground mt-5 max-w-2xl text-base text-balance md:text-lg">Indumentaria deportiva, uniformes corporativos, impresión DTF y merchandising personalizado. Una experiencia premium desde el primer boceto.</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}><ButtonLink href="/personalizar" size="lg" className="bg-brand-red text-foreground hover:bg-[#ff6a1f] glow-red w-full text-base font-bold sm:w-auto"><Sparkles className="mr-2 h-4 w-4" />Diseñá tu equipo<ArrowRight className="ml-2 h-4 w-4" /></ButtonLink></motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}><ButtonLink href="/personalizar" size="lg" className="bg-brand-red text-foreground hover:bg-[#ef4444] glow-red w-full text-base font-bold sm:w-auto"><Sparkles className="mr-2 h-4 w-4" />Diseñá tu equipo<ArrowRight className="ml-2 h-4 w-4" /></ButtonLink></motion.div>
             <ButtonLink href="/productos" variant="outline" size="lg" className="w-full text-base sm:w-auto">Ver catálogo</ButtonLink>
           </div>
         </motion.div>
@@ -26,5 +26,5 @@ export function HeroCinematic() {
 }
 
 function Beams() {
-  return <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden opacity-40"><div className="absolute -top-40 -left-40 h-80 w-80 rounded-full bg-[#ff5a00] opacity-20 blur-3xl" /><div className="absolute -right-40 -bottom-40 h-80 w-80 rounded-full bg-[#00e676] opacity-15 blur-3xl" /></div>
+  return <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden opacity-40"><div className="absolute -top-40 -left-40 h-80 w-80 rounded-full bg-[#dc2626] opacity-20 blur-3xl" /><div className="absolute -right-40 -bottom-40 h-80 w-80 rounded-full bg-[#00e676] opacity-15 blur-3xl" /></div>
 }

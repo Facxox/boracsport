@@ -24,6 +24,16 @@ const ACCEPT_BY_KIND: Record<DropzoneKind, string> = {
   media: "image/jpeg,image/png,image/webp,video/mp4,video/webm",
 }
 
+function safeUrl(u: string): string | null {
+  try {
+    const url = new URL(u, "https://placeholder.local")
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null
+    return u
+  } catch {
+    return null
+  }
+}
+
 export function FileDropzone({
   bucket,
   prefix,
@@ -46,12 +56,25 @@ export function FileDropzone({
   const upload = useCallback(
     async (files: File[]) => {
       if (files.length === 0) return
+      // Dedupe por nombre+tamaño en este lote y contra los ya subidos.
+      // (No leemos bytes para no duplicar trabajo; la key es estable para
+      // archivos idénticos seleccionados dos veces.)
+      const seen = new Set<string>()
+      const unique = files.filter((f) => {
+        const k = `${f.name}|${f.size}|${f.lastModified}`
+        if (seen.has(k)) return false
+        seen.add(k)
+        return true
+      })
+      const dupes = files.length - unique.length
+      if (dupes > 0) toast.message(`${dupes} archivo${dupes === 1 ? "" : "s"} duplicado${dupes === 1 ? "" : "s"} se omitió${dupes === 1 ? "" : "n"}.`)
+      if (unique.length === 0) return
       const remaining = Math.max(0, maxFiles - value.length)
       if (remaining <= 0) {
         toast.error(`Máximo ${maxFiles} archivos`)
         return
       }
-      const slice = files.slice(0, remaining)
+      const slice = unique.slice(0, remaining)
       setBusy(true)
       setProgress(slice.map((f) => ({ name: f.name, pct: 0 })))
       try {
@@ -140,20 +163,20 @@ export function FileDropzone({
         className={
           "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-colors " +
           (dragging
-            ? "border-[#ff5a00] bg-[#ff5a00]/5"
+            ? "border-[#dc2626] bg-[#dc2626]/5"
             : "border-white/15 bg-black/20 hover:border-white/30")
         }
       >
         {busy ? (
           <>
-            <Loader2 className="h-6 w-6 animate-spin text-[#ff5a00]" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#dc2626]" />
             <p className="text-sm">Subiendo {progress.length} archivo{progress.length === 1 ? "" : "s"}…</p>
           </>
         ) : (
           <>
             <UploadCloud className="h-6 w-6 text-white/60" />
             <p className="text-sm">
-              <span className="font-semibold text-[#ff5a00]">Arrastrá</span> o hacé click para subir
+              <span className="font-semibold text-[#dc2626]">Arrastrá</span> o hacé click para subir
             </p>
             <p className="text-xs text-white/50">
               {label ?? (kind === "model" ? ".glb / .gltf" : kind === "media" ? "Imágenes o video" : "Imágenes JPG, PNG o WebP")}
@@ -209,7 +232,7 @@ export function FileDropzone({
                 </button>
               </div>
               {idx === 0 && kind !== "model" ? (
-                <span className="absolute bottom-1 left-1 rounded bg-[#ff5a00] px-1.5 py-0.5 text-[10px] font-bold text-black">
+                <span className="absolute bottom-1 left-1 rounded bg-[#dc2626] px-1.5 py-0.5 text-[10px] font-bold text-black">
                   Portada
                 </span>
               ) : null}

@@ -21,7 +21,7 @@ export default async function EditSlidePage({ params }: { params: Promise<{ id: 
     <main className="mx-auto max-w-3xl px-5 py-10">
       <Link href="/admin/hero" className="text-sm text-white/60">← Hero</Link>
       <div className="mt-4">
-        <p className="text-xs uppercase tracking-[0.25em] text-[#ff5a00]">Editar slide</p>
+        <p className="text-xs uppercase tracking-[0.25em] text-[#dc2626]">Editar slide</p>
         <h1 className="mt-2 font-sans text-3xl font-extrabold tracking-tight">{slide.heading || "(sin título)"}</h1>
         <p className="mt-1 text-sm text-white/50">Orden {slide.display_order} · {slide.kind}</p>
       </div>

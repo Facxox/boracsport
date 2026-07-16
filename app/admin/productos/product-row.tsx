@@ -71,7 +71,7 @@ export function ProductRow({ id, name, price, stock, active, featured, onSale }:
   return (
     <tr className="border-t border-white/10 align-middle">
       <td className="p-4 font-semibold">
-        <Link href={`/admin/productos/${id}`} className="hover:text-[#ff5a00]">
+        <Link href={`/admin/productos/${id}`} className="hover:text-[#dc2626]">
           {name}
         </Link>
       </td>
@@ -84,7 +84,7 @@ export function ProductRow({ id, name, price, stock, active, featured, onSale }:
             checked={active}
             disabled={pending}
             onChange={(e) => handleToggleActive(e.target.checked)}
-            className="size-4 accent-[#ff5a00]"
+            className="size-4 accent-[#dc2626]"
           />
           <span className={active ? "text-emerald-400" : "text-white/40"}>
             {active ? "Activo" : "Inactivo"}
@@ -96,7 +96,7 @@ export function ProductRow({ id, name, price, stock, active, featured, onSale }:
             checked={featured}
             disabled={pending}
             onChange={(e) => handleToggleFeatured(e.target.checked)}
-            className="size-4 accent-[#ff5a00]"
+            className="size-4 accent-[#dc2626]"
           />
           <span className={featured ? "text-amber-400" : "text-white/40"}>
             {featured ? "Destacado" : "Normal"}
@@ -108,7 +108,7 @@ export function ProductRow({ id, name, price, stock, active, featured, onSale }:
             checked={onSale}
             disabled={pending}
             onChange={(e) => handleToggleOnSale(e.target.checked)}
-            className="size-4 accent-[#ff5a00]"
+            className="size-4 accent-[#dc2626]"
           />
           <span className={onSale ? "text-orange-400" : "text-white/40"}>
             {onSale ? "En oferta" : "Sin oferta"}

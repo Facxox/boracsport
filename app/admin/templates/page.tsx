@@ -18,7 +18,7 @@ export default async function AdminTemplatesPage() {
       <Link href="/admin" className="text-sm text-white/60">← Panel</Link>
       <div className="mt-4 flex items-end justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-[#ff5a00]">Configurador</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-[#dc2626]">Configurador</p>
           <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight">Plantillas 3D</h1>
           <p className="mt-1 text-sm text-white/60">
             Subí mockups y modelos GLB/GLTF para que los clientes personalicen.
@@ -26,7 +26,7 @@ export default async function AdminTemplatesPage() {
         </div>
         <Link
           href="/admin/templates/nuevo"
-          className="rounded-xl bg-[#ff5a00] px-4 py-2 text-sm font-bold text-black"
+          className="rounded-xl bg-[#dc2626] px-4 py-2 text-sm font-bold text-black"
         >
           + Nueva plantilla 3D
         </Link>
@@ -35,7 +35,7 @@ export default async function AdminTemplatesPage() {
       {templates.length === 0 ? (
         <div className="mt-12 rounded-2xl border border-dashed border-white/15 p-12 text-center text-white/50">
           Todavía no hay plantillas.{" "}
-          <Link href="/admin/templates/nuevo" className="text-[#ff5a00] underline">
+          <Link href="/admin/templates/nuevo" className="text-[#dc2626] underline">
             Crear la primera
           </Link>
           .

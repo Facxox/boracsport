@@ -88,7 +88,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlideRow[] }) {
             <ButtonLink
               href={slide.cta_href}
               size="lg"
-              className="bg-brand-red text-foreground hover:bg-[#ff6a1f] glow-red w-full text-base font-bold sm:w-auto"
+              className="bg-brand-red text-foreground hover:bg-[#ef4444] glow-red w-full text-base font-bold sm:w-auto"
             >
               <Sparkles className="mr-2 h-4 w-4" />
               {slide.cta_label || "Diseñá tu equipo"}

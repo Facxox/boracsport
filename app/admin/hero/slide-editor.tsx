@@ -77,7 +77,7 @@ export function SlideEditor({ id, initial }: SlideEditorProps) {
               key={k}
               className={
                 "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm " +
-                (kind === k ? "border-[#ff5a00] bg-[#ff5a00]/10" : "border-white/10 hover:bg-white/5")
+                (kind === k ? "border-[#dc2626] bg-[#dc2626]/10" : "border-white/10 hover:bg-white/5")
               }
             >
               <input
@@ -85,7 +85,7 @@ export function SlideEditor({ id, initial }: SlideEditorProps) {
                 name="kind-radio"
                 checked={kind === k}
                 onChange={() => setKind(k)}
-                className="accent-[#ff5a00]"
+                className="accent-[#dc2626]"
               />
               {k === "image" ? "Imagen" : "Video"}
             </label>
@@ -141,7 +141,7 @@ export function SlideEditor({ id, initial }: SlideEditorProps) {
           type="checkbox"
           name="active"
           defaultChecked={initial.active}
-          className="size-4 accent-[#ff5a00]"
+          className="size-4 accent-[#dc2626]"
         />
         Activo (visible en el hero público)
       </label>
@@ -167,7 +167,7 @@ export function SlideEditor({ id, initial }: SlideEditorProps) {
         </div>
         <button
           disabled={pending}
-          className="rounded-xl bg-[#ff5a00] px-5 py-2 font-bold text-black disabled:opacity-50"
+          className="rounded-xl bg-[#dc2626] px-5 py-2 font-bold text-black disabled:opacity-50"
         >
           {pending ? "Guardando…" : "Guardar cambios"}
         </button>

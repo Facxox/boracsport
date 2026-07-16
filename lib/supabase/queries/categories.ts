@@ -7,7 +7,7 @@ export async function getActiveCategories(): Promise<CategoryRow[]> {
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("categories")
-      .select("id, slug, label, emoji, description, display_order, active, created_at, updated_at")
+      .select("id, slug, label, emoji, description, display_order, active, kind, created_at, updated_at")
       .eq("active", true)
       .order("display_order", { ascending: true })
     if (error) {
@@ -26,7 +26,7 @@ export async function listAllCategories(): Promise<CategoryRow[]> {
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("categories")
-      .select("id, slug, label, emoji, description, display_order, active, created_at, updated_at")
+      .select("id, slug, label, emoji, description, display_order, active, kind, created_at, updated_at")
       .order("display_order", { ascending: true })
     if (error) {
       console.warn("[listAllCategories] error:", error.message)

@@ -20,7 +20,7 @@ export default async function AdminCategoriasPage() {
       <Link href="/admin" className="text-sm text-white/60">← Panel</Link>
       <div className="mt-4 flex items-end justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-[#ff5a00]">Taxonomía</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-[#dc2626]">Taxonomía</p>
           <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight">Categorías</h1>
           <p className="mt-1 text-sm text-white/60">
             Estas categorías se muestran en el filtro del catálogo y en el paso de intereses del registro.

@@ -43,7 +43,7 @@ export function PersonalizarTopBar() {
           <ShoppingBag className="mr-1.5 h-4 w-4" />
           Carrito
           {hasHydrated && cartCount > 0 && (
-            <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ff5a00] px-1.5 text-xs font-bold text-white">
+            <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#dc2626] px-1.5 text-xs font-bold text-white">
               {cartCount}
             </span>
           )}

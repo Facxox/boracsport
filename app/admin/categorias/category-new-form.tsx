@@ -28,6 +28,21 @@ export function CategoryNewForm() {
         <Field name="display_order" label="Orden" type="number" defaultValue="100" />
       </div>
       <label className="grid gap-2 text-sm">
+        Tipo
+        <select
+          name="kind"
+          defaultValue="otro"
+          className="rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+        >
+          <option value="ropa">Ropa (muestra matriz de talles y colores)</option>
+          <option value="pelota">Pelota (sin variantes — solo stock)</option>
+          <option value="otro">Otro (sin variantes — DTF, merchandising, etc.)</option>
+        </select>
+        <span className="text-xs text-white/50">
+          Elegí "Ropa" si los productos tienen talles/colores. Para el resto, "Otro" oculta la matriz.
+        </span>
+      </label>
+      <label className="grid gap-2 text-sm">
         Descripción
         <textarea
           name="description"
@@ -35,12 +50,12 @@ export function CategoryNewForm() {
         />
       </label>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="active" defaultChecked className="size-4 accent-[#ff5a00]" />
+        <input type="checkbox" name="active" defaultChecked className="size-4 accent-[#dc2626]" />
         Activa
       </label>
       <button
         disabled={pending}
-        className="justify-self-start rounded-xl bg-[#ff5a00] px-5 py-2 font-bold text-black disabled:opacity-50"
+        className="justify-self-start rounded-xl bg-[#dc2626] px-5 py-2 font-bold text-black disabled:opacity-50"
       >
         {pending ? "Creando…" : "Crear categoría"}
       </button>

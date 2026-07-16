@@ -4,7 +4,7 @@ import { NewProductForm } from "./new-product-form"
 
 export default async function NewProductPage() {
   const categories = await listAllCategories()
-  const categoryOptions = categories.map((c) => ({ slug: c.slug, label: c.label }))
+  const categoryOptions = categories.map((c) => ({ slug: c.slug, label: c.label, kind: c.kind }))
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-10">

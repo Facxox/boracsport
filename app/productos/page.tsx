@@ -15,21 +15,36 @@ export default async function ProductosPage({
   searchParams: SearchParams
 }) {
   const sp = await searchParams
-  const category = sp.category as Category | undefined
-  const safeCategory =
-    category && (CATEGORIES as readonly string[]).includes(category)
-      ? (category as Category)
-      : undefined
+  const requestedCategory = sp.category as Category | undefined
 
-  const [products, dbCategories] = await Promise.all([
+  const [dbCategories, products] = await Promise.all([
+    getActiveCategories(),
     getProducts({
-      category: safeCategory,
+      category: undefined,
       search: sp.q,
       from: 0,
       to: 23,
     }),
-    getActiveCategories(),
   ])
+
+  // Validamos el slug de categoría contra la DB y el set legacy hardcoded.
+  const known = new Set<string>([
+    ...dbCategories.map((c) => c.slug),
+    ...(CATEGORIES as readonly string[]),
+  ])
+  const safeCategory =
+    requestedCategory && known.has(requestedCategory)
+      ? (requestedCategory as Category)
+      : undefined
+
+  const filteredProducts = safeCategory
+    ? await getProducts({
+        category: safeCategory,
+        search: sp.q,
+        from: 0,
+        to: 23,
+      })
+    : products
 
   const filterCategories = dbCategories.length > 0
     ? dbCategories.map((c) => ({ slug: c.slug, label: c.label, emoji: c.emoji }))
@@ -52,7 +67,7 @@ export default async function ProductosPage({
       <Suspense>
         <CategoryFilter categories={filterCategories} />
       </Suspense>
-      <ProductGrid products={products} />
+      <ProductGrid products={filteredProducts} />
     </div>
   )
 }

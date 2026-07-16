@@ -46,7 +46,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       <Link href="/admin/pedidos" className="text-sm text-white/60">← Pedidos</Link>
       <div className="mt-4 flex items-end justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-[#ff5a00]">Pedido</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-[#dc2626]">Pedido</p>
           <h1 className="mt-2 font-mono text-2xl font-extrabold tracking-tight">{order.id}</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {new Date(order.created_at).toLocaleString("es-UY")}
@@ -80,7 +80,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                   href={receiptUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-[#ff5a00] hover:underline"
+                  className="inline-flex items-center gap-1 text-xs text-[#dc2626] hover:underline"
                 >
                   Abrir en nueva pestaña <ExternalLink className="h-3 w-3" />
                 </a>

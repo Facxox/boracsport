@@ -13,8 +13,16 @@ import "./globals.css"
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" })
 
+function safeMetadataBase(): URL {
+  try {
+    return new URL(getBaseUrl())
+  } catch {
+    return new URL("http://localhost:3000")
+  }
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(getBaseUrl()),
+  metadataBase: safeMetadataBase(),
   title: { default: `${siteConfig.name} — ${siteConfig.tagline}`, template: `%s | ${siteConfig.name}` },
   description: siteConfig.description,
   openGraph: { type: "website", title: siteConfig.name, description: siteConfig.description, locale: "es_UY" },

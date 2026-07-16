@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { CATEGORIES } from "@/lib/constants"
 import { createClient } from "@/lib/supabase/server"
 import type { Json, UserRole } from "@/lib/supabase/types"
 
@@ -25,21 +24,25 @@ async function requireAdmin() {
   return supabase
 }
 
-function parseProduct(formData: FormData) {
+function parseProductFields(formData: FormData) {
   const name = text(formData.get("name"), 120)
   const slug = text(formData.get("slug"), 120).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")
   const description = text(formData.get("description"), 4000)
   const category = text(formData.get("category"), 60)
   const price = Number(formData.get("price"))
   const stock = Number(formData.get("stock"))
-  const tags = text(formData.get("tags"), 500).split(",").map((tag) => tag.trim()).filter(Boolean)
+  const tags = text(formData.get("tags"), 500)
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 250)
   const images = text(formData.get("images"), 4000)
     .split(/[\n,]+/)
     .map((url) => url.trim())
     .filter(Boolean)
   if (!name) throw new Error("Nombre requerido")
   if (!slug) throw new Error("Slug requerido")
-  if (!(CATEGORIES as readonly string[]).includes(category)) throw new Error("Categoría inválida")
+  if (!category) throw new Error("Categoría requerida")
   if (!Number.isFinite(price) || price < 0) throw new Error("Precio inválido")
   if (!Number.isInteger(stock) || stock < 0) throw new Error("Stock inválido")
   return {
@@ -57,38 +60,238 @@ function parseProduct(formData: FormData) {
   }
 }
 
-export async function createProductAction(formData: FormData) {
-  const supabase = await requireAdmin()
-  const data = parseProduct(formData)
-  const { data: row, error } = await supabase.from("products").insert([data] as never).select("id").single()
-  if (error) throw new Error(error.message)
-  revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/")
-  redirect(`/admin/productos/${(row as { id: string }).id}`)
+async function parseProduct(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>,
+  formData: FormData,
+) {
+  const fields = parseProductFields(formData)
+  // Validamos contra la tabla `categories` (fuente de verdad). Cualquier
+  // categoría creada desde /admin/categorias se acepta automáticamente.
+  const { data: cat, error: catErr } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("slug", fields.category)
+    .maybeSingle()
+  if (catErr) throw new Error(`Error al validar categoría: ${catErr.message}`)
+  if (!cat) throw new Error(`Categoría inválida: "${fields.category}" no existe`)
+  return { ...fields, category_id: (cat as { id: string }).id }
 }
 
-export async function updateProductAction(id: string, formData: FormData) {
-  if (!isUuid(id)) throw new Error("ID inválido")
-  const supabase = await requireAdmin()
-  const data = parseProduct(formData)
-  const { error } = await supabase.from("products").update(data as never).eq("id", id)
-  if (error) throw new Error(error.message)
-  revalidatePath("/admin/productos"); revalidatePath(`/admin/productos/${id}`); revalidatePath("/productos"); revalidatePath("/")
+interface ParsedVariant {
+  size: string
+  color: string
+  sku: string | null
+  stock: number
+  price_override: number | null
 }
 
-export async function deleteProductAction(id: string) {
-  if (!isUuid(id)) throw new Error("ID inválido")
-  const supabase = await requireAdmin()
-  const { error } = await supabase.from("products").delete().eq("id", id)
-  if (error) throw new Error(error.message)
-  revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/")
-  redirect("/admin/productos")
+function parseVariants(formData: FormData): ParsedVariant[] {
+  const variants: ParsedVariant[] = []
+  for (const key of Array.from(formData.keys())) {
+    const match = key.match(/^variants\[(\d+)\]\[size\]$/)
+    if (!match) continue
+    const idx = match[1]
+    const size = text(formData.get(`variants[${idx}][size]`), 60)
+    const color = text(formData.get(`variants[${idx}][color]`), 60)
+    const sku = text(formData.get(`variants[${idx}][sku]`), 60) || null
+    const stockRaw = formData.get(`variants[${idx}][stock]`)
+    const priceRaw = formData.get(`variants[${idx}][price_override]`)
+    const stock = Number(stockRaw ?? 0)
+    const priceOverride = priceRaw == null || String(priceRaw) === "" ? null : Number(priceRaw)
+    if (!Number.isInteger(stock) || stock < 0) {
+      throw new Error(`Variante #${idx}: stock inválido`)
+    }
+    if (priceOverride != null && (!Number.isFinite(priceOverride) || priceOverride < 0)) {
+      throw new Error(`Variante #${idx}: precio inválido`)
+    }
+    variants.push({ size, color, sku, stock, price_override: priceOverride })
+  }
+  // Si NO hay variants en el form, devolvemos una default con el stock legacy.
+  if (variants.length === 0) {
+    variants.push({ size: "", color: "", sku: null, stock: 0, price_override: null })
+  }
+  return variants
+}
+
+async function replaceVariants(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>,
+  productId: string,
+  variants: ParsedVariant[],
+) {
+  // 1) Borrar TODAS las variantes previas de este producto (delete + insert
+  //    es más simple que diff y suficiente porque el admin edita raramente).
+  const { error: delError } = await supabase
+    .from("product_variants")
+    .delete()
+    .eq("product_id", productId)
+  if (delError) {
+    throw new Error(describeSupabaseError(delError, "No se pudieron limpiar las variantes anteriores"))
+  }
+
+  if (variants.length === 0) return
+
+  // 2) Filtrar filas vacías (sin size, color ni stock > 0) que romperían
+  //    el UNIQUE constraint con rows default que ya existían.
+  const validRows = variants.filter(
+    (v) => ((v.size || "").trim() !== "" || (v.color || "").trim() !== "") && v.stock >= 0,
+  )
+  if (validRows.length === 0) return
+
+  // 3) Deduplicar por (size, color) — si la matriz tiene duplicados,
+  //    sumamos el stock.
+  const dedup = new Map<string, ParsedVariant>()
+  for (const v of validRows) {
+    const key = `${(v.size || "").trim()}|${(v.color || "").trim()}`
+    const prev = dedup.get(key)
+    if (prev) {
+      dedup.set(key, { ...prev, stock: prev.stock + v.stock })
+    } else {
+      dedup.set(key, v)
+    }
+  }
+
+  const rows = Array.from(dedup.values()).map((v) => ({ ...v, product_id: productId }))
+  const { error: insError } = await supabase.from("product_variants").insert(rows as never)
+  if (insError) {
+    throw new Error(describeSupabaseError(insError, "No se pudieron insertar las variantes"))
+  }
+}
+
+function describeSupabaseError(
+  error: { message?: string; details?: string; hint?: string; code?: string } | null | undefined,
+  fallback: string,
+): string {
+  if (!error) return fallback
+  // Mensajes amigables para errores comunes de unicidad (Postgres 23505).
+  if (error.code === "23505") {
+    const m = error.message ?? ""
+    if (m.includes("products_slug_key")) return "Ya existe un producto con ese slug. Elegí otro."
+    if (m.includes("categories_slug_key")) return "Ya existe una categoría con ese slug. Elegí otro."
+    return "Ya existe un registro con esos datos únicos."
+  }
+  // En producción NO exponemos details/hint (pueden leakear schema). En dev
+  // los incluimos para debugging.
+  const isDev = process.env.NODE_ENV !== "production"
+  const parts: string[] = []
+  if (error.message) parts.push(error.message)
+  if (isDev) {
+    if (error.details) parts.push(`detalles: ${error.details}`)
+    if (error.hint) parts.push(`sugerencia: ${error.hint}`)
+    if (error.code) parts.push(`[${error.code}]`)
+  }
+  return parts.length > 0 ? parts.join(" — ") : fallback
+}
+
+// Server Actions de Next.js lanzan una excepción especial `redirect()` que
+// NO debe tratarse como error. La reconocemos por el digest "NEXT_REDIRECT".
+function isNextRedirect(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false
+  const digest = (err as { digest?: unknown }).digest
+  return typeof digest === "string" && digest.startsWith("NEXT_REDIRECT")
+}
+
+export async function createProductAction(
+  formData: FormData,
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  let createdProductId: string | null = null
+  try {
+    const supabase = await requireAdmin()
+    const data = await parseProduct(supabase, formData)
+    const variants = parseVariants(formData)
+    const totalStock = variants.reduce((acc, v) => acc + v.stock, 0)
+    const { data: row, error } = await supabase
+      .from("products")
+      .insert([{ ...data, stock: totalStock }] as never)
+      .select("id")
+      .single()
+    if (error || !row) {
+      const msg = describeSupabaseError(error, "No se pudo crear el producto")
+      console.error("[createProductAction] insert error:", msg)
+      throw new Error(msg)
+    }
+    const productId = (row as { id: string }).id
+    createdProductId = productId
+    await replaceVariants(supabase, productId, variants)
+    revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/")
+    redirect(`/admin/productos/${productId}`)
+  } catch (err) {
+    // El `redirect()` de Next.js lanza una excepción especial con digest
+    // "NEXT_REDIRECT" — es flujo exitoso, no error. Re-lanzar tal cual.
+    if (isNextRedirect(err)) throw err
+    // Rollback si creamos un producto antes del fallo.
+    if (createdProductId) {
+      try {
+        const supabase = await requireAdmin()
+        await supabase.from("products").delete().eq("id", createdProductId)
+        console.warn(`[createProductAction] rollback: producto ${createdProductId} eliminado`)
+      } catch (rollbackErr) {
+        console.error("[createProductAction] rollback falló:", rollbackErr)
+      }
+    }
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[createProductAction] failed:", message)
+    return { ok: false, error: message }
+  }
+  // Inalcanzable (redirect lanza), pero TS lo exige.
+  return { ok: false, error: "unexpected" }
+}
+
+export async function updateProductAction(
+  id: string,
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isUuid(id)) return { ok: false, error: "ID inválido" }
+  try {
+    const supabase = await requireAdmin()
+    const data = await parseProduct(supabase, formData)
+    const variants = parseVariants(formData)
+    const totalStock = variants.reduce((acc, v) => acc + v.stock, 0)
+    const { error } = await supabase
+      .from("products")
+      .update({ ...data, stock: totalStock } as never)
+      .eq("id", id)
+    if (error) {
+      const msg = describeSupabaseError(error, "No se pudo actualizar el producto")
+      console.error("[updateProductAction] update error:", msg)
+      throw new Error(msg)
+    }
+    await replaceVariants(supabase, id, variants)
+    revalidatePath("/admin/productos"); revalidatePath(`/admin/productos/${id}`); revalidatePath("/productos"); revalidatePath("/")
+    return { ok: true }
+  } catch (err) {
+    if (isNextRedirect(err)) throw err
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[updateProductAction] failed:", message)
+    return { ok: false, error: message }
+  }
+}
+
+export async function deleteProductAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isUuid(id)) return { ok: false, error: "ID inválido" }
+  try {
+    const supabase = await requireAdmin()
+    const { error } = await supabase.from("products").delete().eq("id", id)
+    if (error) {
+      const msg = describeSupabaseError(error, "No se pudo eliminar el producto")
+      console.error("[deleteProductAction] delete error:", msg)
+      throw new Error(msg)
+    }
+    revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/")
+    redirect("/admin/productos")
+    return { ok: true }
+  } catch (err) {
+    if (isNextRedirect(err)) throw err
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[deleteProductAction] failed:", message)
+    return { ok: false, error: message }
+  }
 }
 
 export async function toggleProductActiveAction(id: string, active: boolean) {
   if (!isUuid(id)) throw new Error("ID inválido")
   const supabase = await requireAdmin()
   const { error } = await supabase.from("products").update({ active } as never).eq("id", id)
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(describeSupabaseError(error, "No se pudo actualizar el estado"))
   revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/")
 }
 
@@ -96,7 +299,7 @@ export async function toggleProductFeaturedAction(id: string, featured: boolean)
   if (!isUuid(id)) throw new Error("ID inválido")
   const supabase = await requireAdmin()
   const { error } = await supabase.from("products").update({ featured } as never).eq("id", id)
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(describeSupabaseError(error, "No se pudo actualizar destacado"))
   revalidatePath("/admin/productos"); revalidatePath("/")
 }
 
@@ -104,7 +307,7 @@ export async function toggleProductOnSaleAction(id: string, onSale: boolean) {
   if (!isUuid(id)) throw new Error("ID inválido")
   const supabase = await requireAdmin()
   const { error } = await supabase.from("products").update({ on_sale: onSale } as never).eq("id", id)
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(describeSupabaseError(error, "No se pudo actualizar oferta"))
   revalidatePath("/admin/productos")
   revalidatePath("/")
   revalidatePath("/productos")
@@ -196,6 +399,9 @@ function parseCategory(formData: FormData) {
   const emoji = text(formData.get("emoji"), 16)
   const description = text(formData.get("description"), 500)
   const displayOrder = Number(formData.get("display_order") ?? 0)
+  const kindRaw = text(formData.get("kind"), 16)
+  const kind: "ropa" | "pelota" | "otro" =
+    kindRaw === "ropa" || kindRaw === "pelota" || kindRaw === "otro" ? kindRaw : "otro"
   if (!slug) throw new Error("Slug requerido")
   if (!label) throw new Error("Label requerido")
   if (!Number.isInteger(displayOrder) || displayOrder < 0) throw new Error("display_order inválido")
@@ -205,70 +411,125 @@ function parseCategory(formData: FormData) {
     emoji,
     description,
     display_order: displayOrder,
+    kind,
     active: formData.get("active") === "on",
   }
 }
 
-export async function createCategoryAction(formData: FormData) {
-  const supabase = await requireAdmin()
-  const data = parseCategory(formData)
-  const { data: row, error } = await supabase.from("categories").insert([data] as never).select("id").single()
-  if (error) throw new Error(error.message)
-  revalidatePath("/admin/categorias")
-  revalidatePath("/")
-  revalidatePath("/registro")
-  revalidatePath("/cuenta")
-  redirect(`/admin/categorias/${(row as { id: string }).id}`)
+export async function createCategoryAction(
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const supabase = await requireAdmin()
+    const data = parseCategory(formData)
+    const { data: row, error } = await supabase.from("categories").insert([data] as never).select("id").single()
+    if (error || !row) {
+      const msg = describeSupabaseError(error, "No se pudo crear la categoría")
+      console.error("[createCategoryAction] error:", msg)
+      throw new Error(msg)
+    }
+    revalidatePath("/admin/categorias")
+    revalidatePath("/")
+    revalidatePath("/registro")
+    revalidatePath("/cuenta")
+    redirect(`/admin/categorias/${(row as { id: string }).id}`)
+  } catch (err) {
+    if (isNextRedirect(err)) throw err
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[createCategoryAction] failed:", message)
+    return { ok: false, error: message }
+  }
 }
 
-export async function updateCategoryAction(id: string, formData: FormData) {
-  if (!isUuid(id)) throw new Error("ID inválido")
-  const supabase = await requireAdmin()
-  const data = parseCategory(formData)
-  const { error } = await supabase.from("categories").update(data as never).eq("id", id)
-  if (error) throw new Error(error.message)
-  revalidatePath("/admin/categorias")
-  revalidatePath(`/admin/categorias/${id}`)
-  revalidatePath("/")
-  revalidatePath("/registro")
-  revalidatePath("/cuenta")
+export async function updateCategoryAction(
+  id: string,
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isUuid(id)) return { ok: false, error: "ID inválido" }
+  try {
+    const supabase = await requireAdmin()
+    const data = parseCategory(formData)
+    const { error } = await supabase.from("categories").update(data as never).eq("id", id)
+    if (error) {
+      const msg = describeSupabaseError(error, "No se pudo actualizar la categoría")
+      console.error("[updateCategoryAction] error:", msg)
+      throw new Error(msg)
+    }
+    revalidatePath("/admin/categorias")
+    revalidatePath(`/admin/categorias/${id}`)
+    revalidatePath("/")
+    revalidatePath("/registro")
+    revalidatePath("/cuenta")
+    return { ok: true }
+  } catch (err) {
+    if (isNextRedirect(err)) throw err
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[updateCategoryAction] failed:", message)
+    return { ok: false, error: message }
+  }
 }
 
-export async function deleteCategoryAction(id: string) {
-  if (!isUuid(id)) throw new Error("ID inválido")
-  const supabase = await requireAdmin()
-  const { error } = await supabase.from("categories").delete().eq("id", id)
-  if (error) throw new Error(error.message)
-  revalidatePath("/admin/categorias")
-  revalidatePath("/")
-  revalidatePath("/registro")
+export async function deleteCategoryAction(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isUuid(id)) return { ok: false, error: "ID inválido" }
+  try {
+    const supabase = await requireAdmin()
+    const { error } = await supabase.from("categories").delete().eq("id", id)
+    if (error) {
+      const msg = describeSupabaseError(error, "No se pudo eliminar la categoría")
+      console.error("[deleteCategoryAction] error:", msg)
+      throw new Error(msg)
+    }
+    revalidatePath("/admin/categorias")
+    revalidatePath("/")
+    revalidatePath("/registro")
   revalidatePath("/cuenta")
-  redirect("/admin/categorias")
+    redirect("/admin/categorias")
+    return { ok: true }
+  } catch (err) {
+    if (isNextRedirect(err)) throw err
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[deleteCategoryAction] failed:", message)
+    return { ok: false, error: message }
+  }
 }
 
-export async function toggleCategoryActiveAction(id: string, active: boolean) {
-  if (!isUuid(id)) throw new Error("ID inválido")
-  const supabase = await requireAdmin()
-  const { error } = await supabase.from("categories").update({ active } as never).eq("id", id)
-  if (error) throw new Error(error.message)
-  revalidatePath("/admin/categorias")
-  revalidatePath("/")
-  revalidatePath("/registro")
-  revalidatePath("/cuenta")
+export async function toggleCategoryActiveAction(id: string, active: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isUuid(id)) return { ok: false, error: "ID inválido" }
+  try {
+    const supabase = await requireAdmin()
+    const { error } = await supabase.from("categories").update({ active } as never).eq("id", id)
+    if (error) {
+      const msg = describeSupabaseError(error, "No se pudo actualizar el estado")
+      throw new Error(msg)
+    }
+    revalidatePath("/admin/categorias")
+    revalidatePath("/")
+    revalidatePath("/registro")
+    revalidatePath("/cuenta")
+    return { ok: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[toggleCategoryActiveAction] failed:", message)
+    return { ok: false, error: message }
+  }
 }
 
 export async function reorderCategoriesAction(orderedIds: string[]) {
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) throw new Error("Lista vacía")
   for (const id of orderedIds) if (!isUuid(id)) throw new Error("ID inválido")
   const supabase = await requireAdmin()
-  for (let i = 0; i < orderedIds.length; i++) {
-    const id = orderedIds[i]
-    const { error } = await supabase
-      .from("categories")
-      .update({ display_order: (i + 1) * 10 } as never)
-      .eq("id", id)
-    if (error) throw new Error(error.message)
-  }
+  // Las updates son independientes (cada fila es su propia fila). Las
+  // disparamos en paralelo para reducir N round-trips a 1 latencia.
+  const results = await Promise.all(
+    orderedIds.map((id, i) =>
+      supabase
+        .from("categories")
+        .update({ display_order: (i + 1) * 10 } as never)
+        .eq("id", id),
+    ),
+  )
+  const failed = results.find((r) => r.error)
+  if (failed?.error) throw new Error(failed.error.message)
   revalidatePath("/admin/categorias")
   revalidatePath("/")
   revalidatePath("/registro")
@@ -347,14 +608,16 @@ export async function reorderSlidesAction(orderedIds: string[]) {
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) throw new Error("Lista vacía")
   for (const id of orderedIds) if (!isUuid(id)) throw new Error("ID inválido")
   const supabase = await requireAdmin()
-  for (let i = 0; i < orderedIds.length; i++) {
-    const id = orderedIds[i]
-    const { error } = await supabase
-      .from("hero_slides")
-      .update({ display_order: i + 1 } as never)
-      .eq("id", id)
-    if (error) throw new Error(error.message)
-  }
+  const results = await Promise.all(
+    orderedIds.map((id, i) =>
+      supabase
+        .from("hero_slides")
+        .update({ display_order: i + 1 } as never)
+        .eq("id", id),
+    ),
+  )
+  const failed = results.find((r) => r.error)
+  if (failed?.error) throw new Error(failed.error.message)
   revalidatePath("/admin/hero")
   revalidatePath("/")
 }
