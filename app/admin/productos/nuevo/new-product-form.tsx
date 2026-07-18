@@ -48,7 +48,12 @@ export function NewProductForm({ categories }: NewProductFormProps) {
     <form action={handleSubmit} className="mt-8 grid gap-4 rounded-2xl border border-white/10 bg-[#101012] p-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field name="name" label="Nombre" required />
-        <Field name="slug" label="Slug" required placeholder="ej: camiseta-titular-2026" />
+        <div className="grid min-w-0 gap-2 text-sm">
+          <Field name="slug" label="Slug" required placeholder="ej: camiseta-titular-2026" />
+          <p className="text-xs text-white/50">
+            Es el nombre único que aparece en la URL. Usá minúsculas y guiones, por ejemplo: camiseta-titular-2026.
+          </p>
+        </div>
       </div>
 
       <label className="grid gap-2 text-sm">
