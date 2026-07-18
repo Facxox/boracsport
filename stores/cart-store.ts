@@ -100,7 +100,7 @@ export const useCartStore = create<CartState>()(
             variantId,
             size: input.size,
             color: input.color,
-            stockCap: stockCap ?? null,
+            stockCap: stockCap ?? undefined,
           }
           return { items: [...state.items, line], isOpen: true }
         }),
