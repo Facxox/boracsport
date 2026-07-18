@@ -198,7 +198,8 @@ export async function createProductAction(
     authenticatedClient = supabase
     const data = await parseProduct(supabase, formData)
     const variants = parseVariants(formData)
-    const totalStock = variants.reduce((acc, v) => acc + v.stock, 0)
+    const variantStock = variants.reduce((acc, v) => acc + v.stock, 0)
+    const totalStock = variants.length > 0 ? variantStock : data.stock
     const { data: row, error } = await supabase
       .from("products")
       .insert([{ ...data, stock: totalStock }] as never)
@@ -217,7 +218,7 @@ export async function createProductAction(
     const productId = (row as { id: string }).id
     createdProductId = productId
     await replaceVariants(supabase, productId, variants)
-    revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/")
+    revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
     redirect(`/admin/productos/${productId}`)
   } catch (err) {
     // El `redirect()` de Next.js lanza una excepción especial con digest
@@ -261,7 +262,8 @@ export async function updateProductAction(
     const supabase = await requireAdmin()
     const data = await parseProduct(supabase, formData)
     const variants = parseVariants(formData)
-    const totalStock = variants.reduce((acc, v) => acc + v.stock, 0)
+    const variantStock = variants.reduce((acc, v) => acc + v.stock, 0)
+    const totalStock = variants.length > 0 ? variantStock : data.stock
     const { error } = await supabase
       .from("products")
       .update({ ...data, stock: totalStock } as never)
@@ -272,7 +274,7 @@ export async function updateProductAction(
       throw new Error(msg)
     }
     await replaceVariants(supabase, id, variants)
-    revalidatePath("/admin/productos"); revalidatePath(`/admin/productos/${id}`); revalidatePath("/productos"); revalidatePath("/")
+    revalidatePath("/admin/productos"); revalidatePath(`/admin/productos/${id}`); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
     return { ok: true }
   } catch (err) {
     if (isNextRedirect(err)) throw err
@@ -292,7 +294,7 @@ export async function deleteProductAction(id: string): Promise<{ ok: true } | { 
       console.error("[deleteProductAction] delete error:", msg)
       throw new Error(msg)
     }
-    revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/")
+    revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
     redirect("/admin/productos")
     return { ok: true }
   } catch (err) {
@@ -308,7 +310,7 @@ export async function toggleProductActiveAction(id: string, active: boolean) {
   const supabase = await requireAdmin()
   const { error } = await supabase.from("products").update({ active } as never).eq("id", id)
   if (error) throw new Error(describeSupabaseError(error, "No se pudo actualizar el estado"))
-  revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/")
+  revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
 }
 
 export async function toggleProductFeaturedAction(id: string, featured: boolean) {
@@ -316,7 +318,7 @@ export async function toggleProductFeaturedAction(id: string, featured: boolean)
   const supabase = await requireAdmin()
   const { error } = await supabase.from("products").update({ featured } as never).eq("id", id)
   if (error) throw new Error(describeSupabaseError(error, "No se pudo actualizar destacado"))
-  revalidatePath("/admin/productos"); revalidatePath("/")
+  revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
 }
 
 export async function toggleProductOnSaleAction(id: string, onSale: boolean) {
@@ -327,6 +329,7 @@ export async function toggleProductOnSaleAction(id: string, onSale: boolean) {
   revalidatePath("/admin/productos")
   revalidatePath("/")
   revalidatePath("/productos")
+  revalidatePath("/productos/[slug]", "page")
 }
 
 function parseTemplate(formData: FormData) {

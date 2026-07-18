@@ -91,14 +91,14 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
       </label>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <label className="grid gap-2 text-sm">
+        <label className="grid min-w-0 gap-2 text-sm">
           Categoría
           <select
             name="category"
             value={categorySlug}
             onChange={(e) => setCategorySlug(e.target.value)}
             required
-            className="rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+            className="w-full min-w-0 rounded-xl border border-white/10 bg-black/20 px-3 py-3"
           >
             {categories.map((c) => (
               <option key={c.slug} value={c.slug}>
@@ -211,14 +211,14 @@ function Field({
   defaultValue?: string
 }) {
   return (
-    <label className="grid gap-2 text-sm">
+    <label className="grid min-w-0 gap-2 text-sm">
       {label}
       <input
         name={name}
         type={type}
         required={required}
         defaultValue={defaultValue}
-        className="rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+        className="w-full min-w-0 rounded-xl border border-white/10 bg-black/20 px-3 py-3"
       />
     </label>
   )
