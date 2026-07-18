@@ -1,7 +1,9 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
+import { AdminField } from "@/components/admin/admin-field"
 import { FileDropzone } from "@/components/admin/file-dropzone"
 import {
   VariantMatrixEditor,
@@ -25,11 +27,10 @@ export function NewProductForm({ categories }: NewProductFormProps) {
   const [variants, setVariants] = useState<VariantFormValue[]>([])
   const [categorySlug, setCategorySlug] = useState<string>(categories[0]?.slug ?? "")
 
-  const selectedCategory = categories.find((c) => c.slug === categorySlug)
+  const selectedCategory = categories.find((category) => category.slug === categorySlug)
   const currentKind = selectedCategory?.kind ?? "otro"
   const showVariants = currentKind === "ropa"
-
-  const variantStock = variants.reduce((acc, v) => acc + (Number(v.stock) || 0), 0)
+  const variantStock = variants.reduce((total, variant) => total + (Number(variant.stock) || 0), 0)
 
   function handleSubmit(formData: FormData) {
     formData.delete("images")
@@ -37,162 +38,334 @@ export function NewProductForm({ categories }: NewProductFormProps) {
     if (images.length === 0) formData.append("images", "")
     startTransition(async () => {
       const result = await createProductAction(formData)
-      if (!result.ok) {
-        toast.error(result.error)
-      }
-      // Si ok=true, el server action ya hizo redirect.
+      if (!result.ok) toast.error(result.error)
     })
   }
 
   return (
-    <form action={handleSubmit} className="mt-8 grid gap-4 rounded-2xl border border-white/10 bg-[#101012] p-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field name="name" label="Nombre" required />
-        <div className="grid min-w-0 gap-2 text-sm">
-          <Field name="slug" label="Slug" required placeholder="ej: camiseta-titular-2026" />
-          <p className="text-xs text-white/50">
-            Es el nombre único que aparece en la URL. Usá minúsculas y guiones, por ejemplo: camiseta-titular-2026.
-          </p>
-        </div>
-      </div>
-
-      <label className="grid gap-2 text-sm">
-        Descripción
-        <textarea
-          name="description"
-          className="min-h-28 rounded-xl border border-white/10 bg-black/20 p-3"
-        />
-      </label>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <label className="grid min-w-0 gap-2 text-sm">
-          Categoría
-          <select
-            name="category"
-            value={categorySlug}
-            onChange={(e) => setCategorySlug(e.target.value)}
-            required
-            className="w-full min-w-0 rounded-xl border border-white/10 bg-black/20 px-3 py-3"
-          >
-            {categories.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.label}
-                {c.kind === "ropa" ? " · ropa" : c.kind === "pelota" ? " · pelota" : ""}
-              </option>
-            ))}
-          </select>
-          <span className="text-xs text-white/50">
-            {currentKind === "ropa"
-              ? "Vas a poder cargar talles y colores abajo."
-              : currentKind === "pelota"
-                ? "Solo se carga stock (sin talles ni colores)."
-                : "Esta categoría no usa variantes — solo stock."}
-          </span>
-        </label>
-        <Field name="price" label="Precio UYU" type="number" required defaultValue="0" />
-        {showVariants ? (
-          <div className="grid gap-2 text-sm">
-            <span className="font-medium">Stock total (calculado)</span>
-            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white/70">
-              {variantStock} u.
-            </div>
-            <p className="text-xs text-white/50">Se calcula de las variantes de abajo.</p>
+    <form
+      id="new-product-form"
+      action={handleSubmit}
+      className="mt-8 grid gap-6 pb-28 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:pb-0"
+    >
+      <div className="grid min-w-0 gap-6">
+        <FormSection
+          title="Información básica"
+          description="Datos que identifican el producto dentro del catálogo."
+        >
+          <div className="grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(260px,2fr)]">
+            <AdminField name="name" label="Nombre" required />
+            <AdminField
+              name="slug"
+              label="Slug"
+              required
+              placeholder="ej: camiseta-titular-2026"
+              hint="Nombre único de la URL. Usá minúsculas y guiones."
+            />
           </div>
-        ) : (
-          <Field
-            name="stock"
-            label="Stock"
-            type="number"
-            required
-            defaultValue="0"
+          <AdminField
+            name="description"
+            label="Descripción"
+            type="textarea"
+            hint="Contá brevemente qué ofrece el producto y sus características principales."
           />
-        )}
-      </div>
+          <AdminField
+            name="tags"
+            label="Tags"
+            placeholder="futbol, titular, 2026"
+            hint="Separalos por comas para facilitar la organización y búsqueda."
+          />
+        </FormSection>
 
-      <Field name="tags" label="Tags separados por coma" placeholder="futbol, titular, 2026" />
-
-      <div>
-        <p className="mb-2 text-sm font-semibold">Imágenes</p>
-        <FileDropzone
-          bucket="boracsport_products"
-          prefix="draft"
-          kind="image"
-          value={images}
-          onChange={setImages}
-        />
-        <p className="mt-2 text-xs text-white/50">
-          Las imágenes se guardan en <code>boracsport_products/draft/</code>; podés re-ordenarlas y
-          agregar más desde la página de edición después de crear el producto.
-        </p>
-      </div>
-
-      {showVariants ? (
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-semibold">Variantes (talle × color × stock)</p>
-            <span className="text-xs text-white/50">
-              {variants.length} variante{variants.length === 1 ? "" : "s"}
+        <FormSection
+          title="Organización y precio"
+          description="La categoría define cómo se administra el inventario."
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid min-w-0 gap-2 text-sm">
+              Categoría
+              <select
+                name="category"
+                value={categorySlug}
+                onChange={(event) => setCategorySlug(event.target.value)}
+                required
+                className="h-11 w-full min-w-0 rounded-xl border border-white/10 bg-black/20 px-3"
+              >
+                {categories.map((category) => (
+                  <option key={category.slug} value={category.slug}>
+                    {category.label}
+                    {category.kind === "ropa"
+                      ? " · ropa"
+                      : category.kind === "pelota"
+                        ? " · pelota"
+                        : ""}
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs leading-5 text-white/50">
+                {showVariants
+                  ? "Esta categoría usa talles, colores y stock por combinación."
+                  : "Esta categoría utiliza un único valor de stock."}
+              </span>
+            </label>
+            <AdminField name="price" label="Precio UYU" type="number" required defaultValue="0" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
+            <span className="text-xs font-medium uppercase tracking-wider text-white/40">Inventario</span>
+            <span className="rounded-full border border-[#dc2626]/30 bg-[#dc2626]/10 px-3 py-1 text-xs font-semibold text-[#f87171]">
+              {showVariants ? "Variantes por talle y color" : "Stock simple"}
             </span>
           </div>
-          <VariantMatrixEditor value={variants} onChange={setVariants} />
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-white/60">
-          Esta categoría no muestra la matriz de variantes. Solo cargás el stock arriba.
-        </div>
-      )}
+        </FormSection>
 
-      <div className="flex flex-wrap gap-6 text-sm">
-        <label className="flex items-center gap-2">
-          <input type="checkbox" name="active" defaultChecked className="size-4 accent-[#dc2626]" />
-          Activo
-        </label>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" name="featured" className="size-4 accent-[#dc2626]" />
-          Destacado
-        </label>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" name="on_sale" className="size-4 accent-[#dc2626]" />
-          En oferta
-        </label>
+        <FormSection
+          title="Inventario"
+          description={
+            showVariants
+              ? "Agregá colores y cargá el stock disponible para cada talle."
+              : "Indicá cuántas unidades están disponibles."
+          }
+          action={
+            showVariants ? (
+              <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-white/60">
+                {variants.length} variante{variants.length === 1 ? "" : "s"}
+              </span>
+            ) : null
+          }
+        >
+          {showVariants ? (
+            <>
+              <DerivedStockSummary value={variantStock} />
+              <VariantMatrixEditor value={variants} onChange={setVariants} />
+            </>
+          ) : (
+            <div className="max-w-sm">
+              <AdminField
+                name="stock"
+                label="Stock disponible"
+                type="number"
+                required
+                defaultValue="0"
+                hint="Podrás actualizarlo después desde la edición del producto."
+              />
+            </div>
+          )}
+        </FormSection>
+
+        <FormSection
+          title="Imágenes"
+          description="Mostrá el producto con fotos claras y ordenadas."
+          action={
+            <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-white/60">
+              {images.length} imagen{images.length === 1 ? "" : "es"}
+            </span>
+          }
+        >
+          <div className="rounded-xl border border-white/10 bg-black/15 p-3 sm:p-4">
+            <FileDropzone
+              bucket="boracsport_products"
+              prefix="draft"
+              kind="image"
+              value={images}
+              onChange={setImages}
+            />
+          </div>
+          <p className="text-xs leading-5 text-white/50">
+            La primera imagen se usa como portada. Podrás reordenarlas y agregar más después de crear el producto.
+          </p>
+        </FormSection>
+
+        <FormSection
+          title="Visibilidad"
+          description="Elegí cómo querés presentar el producto cuando se cree."
+        >
+          <div className="grid gap-3 sm:grid-cols-3">
+            <VisibilityOption
+              name="active"
+              label="Activo"
+              description="Visible en el catálogo público."
+              defaultChecked
+            />
+            <VisibilityOption
+              name="featured"
+              label="Destacado"
+              description="Puede aparecer en espacios principales."
+            />
+            <VisibilityOption
+              name="on_sale"
+              label="En oferta"
+              description="Se identifica como producto en oferta."
+            />
+          </div>
+        </FormSection>
       </div>
 
-      <button
-        disabled={pending}
-        className="mt-2 rounded-xl bg-[#dc2626] px-5 py-3 font-bold text-black disabled:opacity-50"
-      >
-        {pending ? "Creando…" : "Crear producto"}
-      </button>
+      <ProductSummary
+        category={selectedCategory?.label ?? "Sin categoría"}
+        images={images}
+        showVariants={showVariants}
+        variantsCount={variants.length}
+        variantStock={variantStock}
+        pending={pending}
+      />
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#09090b]/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-6xl items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-white">
+              {selectedCategory?.label ?? "Nuevo producto"}
+            </p>
+            <p className="text-[11px] text-white/50">
+              {showVariants ? `${variants.length} variantes · ${variantStock} u.` : `${images.length} imágenes`}
+            </p>
+          </div>
+          <button
+            type="submit"
+            form="new-product-form"
+            disabled={pending}
+            className="h-11 shrink-0 rounded-xl bg-[#dc2626] px-5 text-sm font-bold text-black disabled:opacity-50"
+          >
+            {pending ? "Creando…" : "Crear producto"}
+          </button>
+        </div>
+      </div>
     </form>
   )
 }
 
-function Field({
-  name,
-  label,
-  type = "text",
-  required = false,
-  defaultValue,
-  placeholder,
+function FormSection({
+  title,
+  description,
+  action,
+  children,
 }: {
-  name: string
-  label: string
-  type?: string
-  required?: boolean
-  defaultValue?: string
-  placeholder?: string
+  title: string
+  description: string
+  action?: ReactNode
+  children: ReactNode
 }) {
   return (
-    <label className="grid min-w-0 gap-2 text-sm">
-      {label}
+    <section className="rounded-2xl border border-white/10 bg-[#101012] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.16)] sm:p-6">
+      <header className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
+        <div>
+          <h2 className="font-sans text-lg font-bold tracking-tight">{title}</h2>
+          <p className="mt-1 max-w-xl text-xs leading-5 text-white/50">{description}</p>
+        </div>
+        {action}
+      </header>
+      <div className="grid gap-4">{children}</div>
+    </section>
+  )
+}
+
+function DerivedStockSummary({ value }: { value: number }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#dc2626]/25 bg-[#dc2626]/5 p-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-[#f87171]">Stock total calculado</p>
+        <p className="mt-1 text-xs text-white/50">Suma de todas las combinaciones con stock.</p>
+      </div>
+      <p className="font-sans text-3xl font-extrabold tracking-tight">
+        {value} <span className="text-sm font-medium text-white/50">unidades</span>
+      </p>
+    </div>
+  )
+}
+
+function VisibilityOption({
+  name,
+  label,
+  description,
+  defaultChecked = false,
+}: {
+  name: "active" | "featured" | "on_sale"
+  label: string
+  description: string
+  defaultChecked?: boolean
+}) {
+  return (
+    <label className="flex min-h-24 cursor-pointer items-start justify-between gap-3 rounded-xl border border-white/10 bg-black/20 p-4 transition-colors has-[:checked]:border-[#dc2626]/60 has-[:checked]:bg-[#dc2626]/5">
+      <span>
+        <span className="block text-sm font-semibold">{label}</span>
+        <span className="mt-1 block text-xs leading-5 text-white/50">{description}</span>
+      </span>
       <input
+        type="checkbox"
         name={name}
-        type={type}
-        required={required}
-        defaultValue={defaultValue}
-        placeholder={placeholder}
-        className="w-full min-w-0 rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+        defaultChecked={defaultChecked}
+        className="mt-0.5 size-5 shrink-0 accent-[#dc2626]"
       />
     </label>
+  )
+}
+
+function ProductSummary({
+  category,
+  images,
+  showVariants,
+  variantsCount,
+  variantStock,
+  pending,
+}: {
+  category: string
+  images: string[]
+  showVariants: boolean
+  variantsCount: number
+  variantStock: number
+  pending: boolean
+}) {
+  return (
+    <aside className="hidden lg:block">
+      <div className="sticky top-6 grid gap-5 rounded-2xl border border-white/10 bg-[#101012] p-5 shadow-[0_18px_50px_rgba(0,0,0,0.2)]">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#dc2626]">Resumen</p>
+          <h2 className="mt-2 font-sans text-xl font-bold">Listo para crear</h2>
+        </div>
+
+        <div className="aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-black/30">
+          {images[0] ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={images[0]} alt="Portada del nuevo producto" className="h-full w-full object-cover" />
+          ) : (
+            <div className="grid h-full place-items-center px-4 text-center text-xs leading-5 text-white/40">
+              La primera imagen cargada aparecerá como portada.
+            </div>
+          )}
+        </div>
+
+        <dl className="grid gap-3 border-y border-white/10 py-4">
+          <SummaryRow label="Categoría" value={category} />
+          <SummaryRow label="Imágenes" value={`${images.length} cargadas`} />
+          <SummaryRow label="Inventario" value={showVariants ? "Por variantes" : "Stock simple"} />
+          {showVariants ? (
+            <>
+              <SummaryRow label="Variantes" value={String(variantsCount)} />
+              <SummaryRow label="Stock total" value={`${variantStock} u.`} highlight />
+            </>
+          ) : null}
+        </dl>
+
+        <button
+          type="submit"
+          form="new-product-form"
+          disabled={pending}
+          className="h-12 w-full rounded-xl bg-[#dc2626] px-5 text-sm font-bold text-black disabled:opacity-50"
+        >
+          {pending ? "Creando producto…" : "Crear producto"}
+        </button>
+        <p className="text-center text-[11px] leading-4 text-white/40">
+          Revisá inventario, imágenes y visibilidad antes de continuar.
+        </p>
+      </div>
+    </aside>
+  )
+}
+
+function SummaryRow({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3 text-sm">
+      <dt className="text-white/50">{label}</dt>
+      <dd className={highlight ? "font-bold text-[#f87171]" : "text-right font-medium text-white"}>{value}</dd>
+    </div>
   )
 }

@@ -92,7 +92,7 @@ export function CategoryList({ initial }: { initial: CategoryItem[] }) {
             </span>
             <Link
               href={`/admin/categorias/${cat.id}`}
-              className="rounded-lg border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5"
+              className="h-9 inline-flex items-center rounded-lg border border-white/10 px-3 text-xs hover:bg-white/5"
             >
               Editar
             </Link>

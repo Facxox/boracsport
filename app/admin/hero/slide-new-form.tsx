@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
+import { AdminField } from "@/components/admin/admin-field"
 import { FileDropzone } from "@/components/admin/file-dropzone"
 import { createSlideAction } from "@/app/admin/actions"
 
@@ -67,51 +68,24 @@ export function SlideNewForm({ nextOrder }: { nextOrder: number }) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field name="heading" label="Título" placeholder="Diseñá tu equipo a tu medida" />
-        <Field name="subheading" label="Subtítulo" placeholder="Indumentaria deportiva, DTF y merchandising" />
+        <AdminField name="heading" label="Título" placeholder="Diseñá tu equipo a tu medida" />
+        <AdminField name="subheading" label="Subtítulo" placeholder="Indumentaria deportiva, DTF y merchandising" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field name="cta_label" label="Texto del botón" defaultValue="Diseñá tu equipo" />
-        <Field name="cta_href" label="Link del botón" defaultValue="/personalizar" />
+        <AdminField name="cta_label" label="Texto del botón" defaultValue="Diseñá tu equipo" />
+        <AdminField name="cta_href" label="Link del botón" defaultValue="/personalizar" />
       </div>
-      <Field name="display_order" label="Orden" type="number" defaultValue={String(nextOrder)} />
+      <AdminField name="display_order" label="Orden" type="number" defaultValue={String(nextOrder)} />
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" name="active" defaultChecked className="size-4 accent-[#dc2626]" />
         Activo
       </label>
       <button
         disabled={pending}
-        className="justify-self-start rounded-xl bg-[#dc2626] px-5 py-2 font-bold text-black disabled:opacity-50"
+        className="h-10 justify-self-start rounded-xl bg-[#dc2626] px-5 font-bold text-black disabled:opacity-50"
       >
         {pending ? "Creando…" : "Crear slide"}
       </button>
     </form>
-  )
-}
-
-function Field({
-  name,
-  label,
-  type = "text",
-  defaultValue,
-  placeholder,
-}: {
-  name: string
-  label: string
-  type?: string
-  defaultValue?: string
-  placeholder?: string
-}) {
-  return (
-    <label className="grid gap-2 text-sm">
-      {label}
-      <input
-        name={name}
-        type={type}
-        defaultValue={defaultValue}
-        placeholder={placeholder}
-        className="rounded-xl border border-white/10 bg-black/20 px-3 py-3"
-      />
-    </label>
   )
 }

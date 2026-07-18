@@ -41,7 +41,7 @@ export default async function AdminHeroPage() {
             {slides.map((slide) => (
               <li
                 key={slide.id}
-                className="overflow-hidden rounded-xl border border-white/10 bg-[#101012]"
+                className="flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-[#101012]"
               >
                 <div className="relative aspect-video w-full bg-black">
                   {slide.kind === "video" ? (
@@ -70,13 +70,13 @@ export default async function AdminHeroPage() {
                     {slide.kind}
                   </span>
                 </div>
-                <div className="p-3">
+                <div className="flex flex-1 flex-col p-3">
                   <p className="font-sans text-sm font-bold">{slide.heading || "(sin título)"}</p>
                   <p className="mt-0.5 text-xs text-white/50">Orden {slide.display_order}</p>
-                  <div className="mt-3 flex items-center justify-between gap-2">
+                  <div className="mt-auto flex items-center justify-between gap-2 pt-3">
                     <Link
                       href={`/admin/hero/${slide.id}`}
-                      className="rounded-lg border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5"
+                      className="h-9 inline-flex items-center rounded-lg border border-white/10 px-3 text-xs hover:bg-white/5"
                     >
                       Editar
                     </Link>

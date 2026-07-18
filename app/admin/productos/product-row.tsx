@@ -119,7 +119,7 @@ export function ProductRow({ id, name, price, stock, active, featured, onSale }:
         <div className="flex items-center justify-end gap-2">
           <Link
             href={`/admin/productos/${id}`}
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5"
+            className="h-9 inline-flex items-center rounded-lg border border-white/10 px-3 text-xs hover:bg-white/5"
           >
             Editar
           </Link>
@@ -127,7 +127,7 @@ export function ProductRow({ id, name, price, stock, active, featured, onSale }:
             type="button"
             onClick={handleDelete}
             disabled={pending}
-            className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+            className="h-9 rounded-lg border border-red-500/30 px-3 text-xs text-red-400 hover:bg-red-500/10 disabled:opacity-50"
           >
             Eliminar
           </button>

@@ -44,7 +44,7 @@ export function TemplateRow({ id, name, active, price, modelFormat, zoneCount }:
   }
 
   return (
-    <article className="flex flex-col rounded-2xl border border-white/10 bg-[#101012] p-5">
+    <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#101012] p-5">
       <div className="flex items-start justify-between gap-2">
         <h2 className="font-sans text-xl font-bold tracking-tight">
           <Link href={`/admin/templates/${id}`} className="hover:text-[#dc2626]">
@@ -67,7 +67,7 @@ export function TemplateRow({ id, name, active, price, modelFormat, zoneCount }:
         {Number(price).toLocaleString("es-UY")}
       </p>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-4">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-4">
         <label className="flex items-center gap-2 text-xs">
           <input
             type="checkbox"
@@ -84,7 +84,7 @@ export function TemplateRow({ id, name, active, price, modelFormat, zoneCount }:
         <div className="flex items-center gap-2">
           <Link
             href={`/admin/templates/${id}`}
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs hover:bg-white/5"
+            className="h-9 inline-flex items-center rounded-lg border border-white/10 px-3 text-xs hover:bg-white/5"
           >
             Editar
           </Link>
@@ -92,7 +92,7 @@ export function TemplateRow({ id, name, active, price, modelFormat, zoneCount }:
             type="button"
             onClick={handleDelete}
             disabled={pending}
-            className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+            className="h-9 rounded-lg border border-red-500/30 px-3 text-xs text-red-400 hover:bg-red-500/10 disabled:opacity-50"
           >
             Eliminar
           </button>

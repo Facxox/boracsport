@@ -103,7 +103,7 @@ export function TemplateForm({ id, initial = defaultInitial }: TemplateFormProps
           name="name"
           required
           defaultValue={initial.name}
-          className="rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+          className="h-10 rounded-xl border border-white/10 bg-black/20 px-3"
         />
       </label>
 
@@ -150,7 +150,7 @@ export function TemplateForm({ id, initial = defaultInitial }: TemplateFormProps
           <select
             name="model_format"
             defaultValue={initial.model_format ?? ""}
-            className="rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+            className="h-10 rounded-xl border border-white/10 bg-black/20 px-3"
           >
             <option value="">Sin modelo 3D</option>
             <option value="glb">GLB</option>
@@ -167,7 +167,7 @@ export function TemplateForm({ id, initial = defaultInitial }: TemplateFormProps
           min="0"
           required
           defaultValue={String(initial.price)}
-          className="rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+          className="h-10 rounded-xl border border-white/10 bg-black/20 px-3"
         />
       </label>
 
@@ -221,7 +221,7 @@ export function TemplateForm({ id, initial = defaultInitial }: TemplateFormProps
             type="button"
             onClick={handleDelete}
             disabled={pending}
-            className="rounded-xl border border-red-500/40 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+            className="h-10 rounded-xl border border-red-500/40 px-4 text-sm font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50"
           >
             Eliminar plantilla
           </button>
@@ -230,7 +230,7 @@ export function TemplateForm({ id, initial = defaultInitial }: TemplateFormProps
         )}
         <button
           disabled={pending}
-          className="rounded-xl bg-[#dc2626] px-5 py-2 font-bold text-black disabled:opacity-50"
+          className="h-10 rounded-xl bg-[#dc2626] px-5 font-bold text-black disabled:opacity-50"
         >
           {pending ? "Guardando…" : isEdit ? "Guardar cambios" : "Crear plantilla"}
         </button>

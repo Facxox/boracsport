@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
+import { AdminField } from "@/components/admin/admin-field"
 import { FileDropzone } from "@/components/admin/file-dropzone"
 import {
   VariantMatrixEditor,
@@ -77,23 +78,22 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
   return (
     <form action={handleSubmit} className="mt-8 grid gap-4 rounded-2xl border border-white/10 bg-[#101012] p-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field name="name" label="Nombre" required defaultValue={initial.name} />
-        <div className="grid min-w-0 gap-2 text-sm">
-          <Field name="slug" label="Slug" required defaultValue={initial.slug} />
-          <p className="text-xs text-white/50">
-            Es el nombre único que aparece en la URL. Usá minúsculas y guiones, por ejemplo: camiseta-titular-2026.
-          </p>
-        </div>
+        <AdminField name="name" label="Nombre" required defaultValue={initial.name} />
+        <AdminField
+          name="slug"
+          label="Slug"
+          required
+          defaultValue={initial.slug}
+          hint="Es el nombre único que aparece en la URL. Usá minúsculas y guiones, por ejemplo: camiseta-titular-2026."
+        />
       </div>
 
-      <label className="grid gap-2 text-sm">
-        Descripción
-        <textarea
-          name="description"
-          defaultValue={initial.description}
-          className="min-h-28 rounded-xl border border-white/10 bg-black/20 p-3"
-        />
-      </label>
+      <AdminField
+        name="description"
+        label="Descripción"
+        type="textarea"
+        defaultValue={initial.description}
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <label className="grid min-w-0 gap-2 text-sm">
@@ -103,7 +103,7 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
             value={categorySlug}
             onChange={(e) => setCategorySlug(e.target.value)}
             required
-            className="w-full min-w-0 rounded-xl border border-white/10 bg-black/20 px-3 py-3"
+            className="h-10 w-full min-w-0 rounded-xl border border-white/10 bg-black/20 px-3"
           >
             {categories.map((c) => (
               <option key={c.slug} value={c.slug}>
@@ -120,17 +120,17 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
                 : "Esta categoría no usa variantes — solo stock."}
           </span>
         </label>
-        <Field name="price" label="Precio UYU" type="number" required defaultValue={String(initial.price)} />
+        <AdminField name="price" label="Precio UYU" type="number" required defaultValue={String(initial.price)} />
         {showVariants ? (
           <div className="grid gap-2 text-sm">
             <span className="font-medium">Stock total (calculado)</span>
-            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white/70">
+            <div className="h-10 rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white/70">
               {totalStock} u.
             </div>
             <p className="text-muted-foreground text-xs">Se calcula de las variantes de abajo.</p>
           </div>
         ) : (
-          <Field
+          <AdminField
             name="stock"
             label="Stock"
             type="number"
@@ -140,7 +140,7 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
         )}
       </div>
 
-      <Field name="tags" label="Tags separados por coma" defaultValue={initial.tags.join(", ")} />
+      <AdminField name="tags" label="Tags separados por coma" defaultValue={initial.tags.join(", ")} />
 
       <div>
         <p className="mb-2 text-sm font-semibold">Imágenes</p>
@@ -187,44 +187,17 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
           type="button"
           onClick={handleDelete}
           disabled={pending}
-          className="rounded-xl border border-red-500/40 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+          className="h-10 rounded-xl border border-red-500/40 px-4 text-sm font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50"
         >
           Eliminar producto
         </button>
         <button
           disabled={pending}
-          className="rounded-xl bg-[#dc2626] px-5 py-2 font-bold text-black disabled:opacity-50"
+          className="h-10 rounded-xl bg-[#dc2626] px-5 font-bold text-black disabled:opacity-50"
         >
           {pending ? "Guardando…" : "Guardar cambios"}
         </button>
       </div>
     </form>
-  )
-}
-
-function Field({
-  name,
-  label,
-  type = "text",
-  required = false,
-  defaultValue,
-}: {
-  name: string
-  label: string
-  type?: string
-  required?: boolean
-  defaultValue?: string
-}) {
-  return (
-    <label className="grid min-w-0 gap-2 text-sm">
-      {label}
-      <input
-        name={name}
-        type={type}
-        required={required}
-        defaultValue={defaultValue}
-        className="w-full min-w-0 rounded-xl border border-white/10 bg-black/20 px-3 py-3"
-      />
-    </label>
   )
 }

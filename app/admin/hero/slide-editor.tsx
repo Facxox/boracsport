@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
+import { AdminField } from "@/components/admin/admin-field"
 import { FileDropzone } from "@/components/admin/file-dropzone"
 import {
   deleteSlideAction,
@@ -121,15 +122,15 @@ export function SlideEditor({ id, initial }: SlideEditorProps) {
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field name="heading" label="Título" defaultValue={initial.heading} placeholder="Diseñá tu equipo" />
-        <Field name="subheading" label="Subtítulo" defaultValue={initial.subheading} placeholder="A tu medida, en Uruguay" />
+        <AdminField name="heading" label="Título" defaultValue={initial.heading} placeholder="Diseñá tu equipo" />
+        <AdminField name="subheading" label="Subtítulo" defaultValue={initial.subheading} placeholder="A tu medida, en Uruguay" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field name="cta_label" label="Texto del botón" defaultValue={initial.cta_label} />
-        <Field name="cta_href" label="Link del botón" defaultValue={initial.cta_href} placeholder="/personalizar" />
+        <AdminField name="cta_label" label="Texto del botón" defaultValue={initial.cta_label} />
+        <AdminField name="cta_href" label="Link del botón" defaultValue={initial.cta_href} placeholder="/personalizar" />
       </div>
 
-      <Field
+      <AdminField
         name="display_order"
         label="Orden en el carrusel"
         type="number"
@@ -152,7 +153,7 @@ export function SlideEditor({ id, initial }: SlideEditorProps) {
             type="button"
             onClick={() => handleToggle(!initial.active)}
             disabled={pending}
-            className="rounded-xl border border-white/10 px-4 py-2 text-sm hover:bg-white/5 disabled:opacity-50"
+            className="h-10 rounded-xl border border-white/10 px-4 text-sm hover:bg-white/5 disabled:opacity-50"
           >
             {initial.active ? "Ocultar" : "Publicar"}
           </button>
@@ -160,45 +161,18 @@ export function SlideEditor({ id, initial }: SlideEditorProps) {
             type="button"
             onClick={handleDelete}
             disabled={pending}
-            className="rounded-xl border border-red-500/40 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+            className="h-10 rounded-xl border border-red-500/40 px-4 text-sm font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50"
           >
             Eliminar
           </button>
         </div>
         <button
           disabled={pending}
-          className="rounded-xl bg-[#dc2626] px-5 py-2 font-bold text-black disabled:opacity-50"
+          className="h-10 rounded-xl bg-[#dc2626] px-5 font-bold text-black disabled:opacity-50"
         >
           {pending ? "Guardando…" : "Guardar cambios"}
         </button>
       </div>
     </form>
-  )
-}
-
-function Field({
-  name,
-  label,
-  type = "text",
-  defaultValue,
-  placeholder,
-}: {
-  name: string
-  label: string
-  type?: string
-  defaultValue?: string
-  placeholder?: string
-}) {
-  return (
-    <label className="grid gap-2 text-sm">
-      {label}
-      <input
-        name={name}
-        type={type}
-        defaultValue={defaultValue}
-        placeholder={placeholder}
-        className="rounded-xl border border-white/10 bg-black/20 px-3 py-3"
-      />
-    </label>
   )
 }

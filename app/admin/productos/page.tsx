@@ -24,14 +24,14 @@ export default async function AdminProductsPage() {
         </div>
         <Link
           href="/admin/productos/nuevo"
-          className="rounded-xl bg-[#dc2626] px-4 py-2 text-sm font-bold text-black"
+          className="inline-flex h-10 items-center rounded-xl bg-[#dc2626] px-4 text-sm font-bold text-black"
         >
           + Nuevo producto
         </Link>
       </div>
 
-      <div className="mt-8 overflow-hidden rounded-2xl border border-white/10">
-        <table className="w-full text-left text-sm">
+      <div className="mt-8 overflow-x-auto rounded-2xl border border-white/10">
+        <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-white/5 text-white/60">
             <tr>
               <th className="p-4">Producto</th>
