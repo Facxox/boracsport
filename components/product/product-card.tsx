@@ -69,7 +69,7 @@ export function ProductCard({ product }: { product: Product }) {
                 slug: product.slug,
                 name: product.name,
                 price: product.price,
-                image,
+                image: image ?? undefined,
                 qty: 1,
               })
             }

@@ -104,11 +104,9 @@ function parseVariants(formData: FormData): ParsedVariant[] {
     if (priceOverride != null && (!Number.isFinite(priceOverride) || priceOverride < 0)) {
       throw new Error(`Variante #${idx}: precio inválido`)
     }
-    variants.push({ size, color, sku, stock, price_override: priceOverride })
-  }
-  // Si NO hay variants en el form, devolvemos una default con el stock legacy.
-  if (variants.length === 0) {
-    variants.push({ size: "", color: "", sku: null, stock: 0, price_override: null })
+    if (size && color) {
+      variants.push({ size, color, sku, stock, price_override: priceOverride })
+    }
   }
   return variants
 }
@@ -194,8 +192,10 @@ export async function createProductAction(
   formData: FormData,
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   let createdProductId: string | null = null
+  let authenticatedClient: Awaited<ReturnType<typeof requireAdmin>> | null = null
   try {
     const supabase = await requireAdmin()
+    authenticatedClient = supabase
     const data = await parseProduct(supabase, formData)
     const variants = parseVariants(formData)
     const totalStock = variants.reduce((acc, v) => acc + v.stock, 0)
@@ -206,7 +206,12 @@ export async function createProductAction(
       .single()
     if (error || !row) {
       const msg = describeSupabaseError(error, "No se pudo crear el producto")
-      console.error("[createProductAction] insert error:", msg)
+      console.error("[createProductAction] insert error:", {
+        code: error?.code,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+      })
       throw new Error(msg)
     }
     const productId = (row as { id: string }).id
@@ -219,11 +224,22 @@ export async function createProductAction(
     // "NEXT_REDIRECT" — es flujo exitoso, no error. Re-lanzar tal cual.
     if (isNextRedirect(err)) throw err
     // Rollback si creamos un producto antes del fallo.
-    if (createdProductId) {
+    if (createdProductId && authenticatedClient) {
       try {
-        const supabase = await requireAdmin()
-        await supabase.from("products").delete().eq("id", createdProductId)
-        console.warn(`[createProductAction] rollback: producto ${createdProductId} eliminado`)
+        const { error: rollbackError } = await authenticatedClient
+          .from("products")
+          .delete()
+          .eq("id", createdProductId)
+        if (rollbackError) {
+          console.error("[createProductAction] rollback falló:", {
+            code: rollbackError.code,
+            message: rollbackError.message,
+            details: rollbackError.details,
+            hint: rollbackError.hint,
+          })
+        } else {
+          console.warn(`[createProductAction] rollback: producto ${createdProductId} eliminado`)
+        }
       } catch (rollbackErr) {
         console.error("[createProductAction] rollback falló:", rollbackErr)
       }
