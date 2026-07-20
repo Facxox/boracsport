@@ -30,7 +30,13 @@ function parseProductFields(formData: FormData) {
   const description = text(formData.get("description"), 4000)
   const category = text(formData.get("category"), 60)
   const price = Number(formData.get("price"))
-  const stock = Number(formData.get("stock"))
+  // Stock: si el campo no está presente (productos con variantes, donde se
+  // muestra "Stock total calculado" en lugar del input), no exigimos validación
+  // ni fallamos. Lo dejamos en 0 y la lógica posterior lo sobrescribe con la
+  // suma de variantes.
+  const stockRaw = formData.get("stock")
+  const stock =
+    stockRaw == null || stockRaw === "" ? 0 : Number(stockRaw)
   const tags = text(formData.get("tags"), 500)
     .split(",")
     .map((tag) => tag.trim())
@@ -44,7 +50,10 @@ function parseProductFields(formData: FormData) {
   if (!slug) throw new Error("Slug requerido")
   if (!category) throw new Error("Categoría requerida")
   if (!Number.isFinite(price) || price < 0) throw new Error("Precio inválido")
-  if (!Number.isInteger(stock) || stock < 0) throw new Error("Stock inválido")
+  // Validamos stock sólo si el campo fue enviado.
+  if (stockRaw != null && (!Number.isInteger(stock) || stock < 0)) {
+    throw new Error("Stock inválido")
+  }
   return {
     name,
     slug,
@@ -115,7 +124,16 @@ async function replaceVariants(
   supabase: Awaited<ReturnType<typeof requireAdmin>>,
   productId: string,
   variants: ParsedVariant[],
+  formData: FormData,
 ) {
+  // Si el form NO trae inputs `variants[N][size]`, el producto no está
+  // usando la matriz (categoría sin variantes como pelota/otro). No tocamos
+  // las variantes existentes — borrarlas accidentalmente destruye stock.
+  const hasMatrixInputs = Array.from(formData.keys()).some((k) =>
+    /^variants\[\d+\]\[size\]$/.test(k),
+  )
+  if (!hasMatrixInputs) return
+
   // 1) Borrar TODAS las variantes previas de este producto (delete + insert
   //    es más simple que diff y suficiente porque el admin edita raramente).
   const { error: delError } = await supabase
@@ -217,7 +235,7 @@ export async function createProductAction(
     }
     const productId = (row as { id: string }).id
     createdProductId = productId
-    await replaceVariants(supabase, productId, variants)
+    await replaceVariants(supabase, productId, variants, formData)
     revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
     redirect(`/admin/productos/${productId}`)
   } catch (err) {
@@ -273,7 +291,7 @@ export async function updateProductAction(
       console.error("[updateProductAction] update error:", msg)
       throw new Error(msg)
     }
-    await replaceVariants(supabase, id, variants)
+    await replaceVariants(supabase, id, variants, formData)
     revalidatePath("/admin/productos"); revalidatePath(`/admin/productos/${id}`); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
     return { ok: true }
   } catch (err) {

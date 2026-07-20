@@ -43,7 +43,6 @@ function matrixToVariants(
   matrix: Record<string, Record<string, number>>,
 ): VariantFormValue[] {
   const out: VariantFormValue[] = []
-  let idx = 0
   for (const color of colors) {
     for (const size of STANDARD_SIZES) {
       const stock = matrix[color]?.[size] ?? 0
@@ -55,7 +54,6 @@ function matrixToVariants(
           stock,
           price_override: "",
         })
-        idx++
       }
     }
   }
@@ -311,6 +309,23 @@ export function VariantMatrixEditor({ value, onChange }: VariantMatrixEditorProp
       <p className="text-muted-foreground text-[11px]">
         Las celdas con stock &gt; 0 generan variantes (size, color, stock) al enviar el formulario. Talles: S, M, L, XL, XXL.
       </p>
+
+      {/* Hidden inputs para que las variantes viajen con el form. Sin esto,
+          el server action no podría reconstruirlas y replaceVariants borraría
+          todas las existentes. */}
+      {value.map((v, idx) => (
+        <span key={`hidden-${idx}`} aria-hidden style={{ display: "none" }}>
+          <input type="hidden" name={`variants[${idx}][size]`} value={v.size} />
+          <input type="hidden" name={`variants[${idx}][color]`} value={v.color} />
+          <input type="hidden" name={`variants[${idx}][sku]`} value={v.sku ?? ""} />
+          <input type="hidden" name={`variants[${idx}][stock]`} value={String(v.stock)} />
+          <input
+            type="hidden"
+            name={`variants[${idx}][price_override]`}
+            value={v.price_override ?? ""}
+          />
+        </span>
+      ))}
     </div>
   )
 }
