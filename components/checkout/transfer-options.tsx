@@ -158,46 +158,68 @@ export function TransferOptions({ items, customer }: TransferOptionsProps) {
 
       {/* Acciones */}
       {items && customer ? (
-        <div className="space-y-3">
-          {!orderId ? (
-            <button
-              type="button"
-              onClick={() => void registerOrder()}
-              disabled={!canRegister || registering}
-              className="inline-flex w-full items-center justify-center rounded-xl bg-[#dc2626] px-4 py-3 text-sm font-bold text-black disabled:opacity-50"
-            >
-              {registering ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Registrando pedido…
-                </>
-              ) : (
-                <>
-                  Registrar pedido por transferencia
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </>
-              )}
-            </button>
-          ) : (
-            <>
-              <p className="text-muted-foreground text-center text-xs">
-                Pedido <span className="font-mono text-white/70">#{orderId.slice(0, 8)}</span> registrado.
-              </p>
-              <ReceiptUploader
-                orderId={orderId}
-                uploading={uploading}
-                onUpload={uploadReceipt}
-                receiptUrl={receiptUrl}
-              />
-              <WhatsAppReceiptButton orderId={orderId} customer={customer} accountNumber={ACCOUNT.accountNumber} />
-            </>
-          )}
-          {error ? (
-            <p className="text-sm text-red-400" role="alert">
-              {error}
+        <>
+          <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-white/60">
+            <p className="font-medium text-white/80">Paso a paso</p>
+            <ol className="mt-2 space-y-1.5">
+              <li className="flex gap-2">
+                <span className="bg-white/10 mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">1</span>
+                <span>Registrá el pedido con el botón de abajo.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="bg-white/10 mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">2</span>
+                <span>Transferí a la cuenta BROU de arriba.</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="bg-white/10 mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold">3</span>
+                <span>Subí el comprobante y avisanos por WhatsApp.</span>
+              </li>
+            </ol>
+            <p className="text-muted-foreground mt-3 inline-flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5" /> Confirmamos en horario laboral.
             </p>
-          ) : null}
-        </div>
+          </div>
+          <div className="space-y-3">
+            {!orderId ? (
+              <button
+                type="button"
+                onClick={() => void registerOrder()}
+                disabled={!canRegister || registering}
+                className="inline-flex w-full items-center justify-center rounded-xl bg-[#dc2626] px-4 py-3 text-sm font-bold text-black disabled:opacity-50"
+              >
+                {registering ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Registrando pedido…
+                  </>
+                ) : (
+                  <>
+                    Registrar pedido por transferencia
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </>
+                )}
+              </button>
+            ) : (
+              <>
+                <p className="text-muted-foreground text-center text-xs">
+                  Pedido <span className="font-mono text-white/70">#{orderId.slice(0, 8)}</span> registrado.
+                </p>
+                <ReceiptUploader
+                  orderId={orderId}
+                  uploading={uploading}
+                  onUpload={uploadReceipt}
+                  receiptUrl={receiptUrl}
+                />
+                <WhatsAppReceiptButton orderId={orderId} customer={customer} accountNumber={ACCOUNT.accountNumber} />
+              </>
+            )}
+            {error ? (
+              <p className="text-sm text-red-400" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
+        </>
       ) : null}
     </div>
   )

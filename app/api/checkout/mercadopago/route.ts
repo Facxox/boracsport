@@ -14,7 +14,13 @@ export async function POST(request: Request) {
   if (!response.ok) return NextResponse.json(order, { status: response.status })
   if (order.requiresCoordination || Number(order.total) <= 0) return NextResponse.json({ error: "Este pedido requiere coordinación antes de pagar." }, { status: 422 })
   const baseUrl = getBaseUrl()
+  // Pasamos email y teléfono del cliente a back_urls para que la página de
+  // confirmación pueda autorizar al visitante anónimo a ver el pedido.
+  const customer = data.customer && typeof data.customer === "object" ? (data.customer as Record<string, unknown>) : {}
+  const email = typeof customer.email === "string" ? encodeURIComponent(customer.email) : ""
+  const phone = typeof customer.phone === "string" ? encodeURIComponent(customer.phone.replace(/\D/g, "")) : ""
+  const qs = `order=${order.orderId}${email ? `&email=${email}` : ""}${phone ? `&phone=${phone}` : ""}`
   const preference = new Preference({ accessToken })
-  const created = await preference.create({ body: { external_reference: order.orderId, items: [{ id: order.orderId, title: `Pedido Borac Sport #${String(order.orderId).slice(0, 8)}`, quantity: 1, unit_price: Number(order.total), currency_id: "UYU" }], back_urls: { success: `${baseUrl}/checkout?status=success&order=${order.orderId}`, failure: `${baseUrl}/checkout?status=failure&order=${order.orderId}`, pending: `${baseUrl}/checkout?status=pending&order=${order.orderId}` }, auto_return: "approved", notification_url: `${baseUrl}/api/checkout/mercadopago/webhook` } })
+  const created = await preference.create({ body: { external_reference: order.orderId, items: [{ id: order.orderId, title: `Pedido Borac Sport #${String(order.orderId).slice(0, 8)}`, quantity: 1, unit_price: Number(order.total), currency_id: "UYU" }], back_urls: { success: `${baseUrl}/checkout/confirmacion?status=success&${qs}`, failure: `${baseUrl}/checkout/confirmacion?status=failure&${qs}`, pending: `${baseUrl}/checkout/confirmacion?status=pending&${qs}` }, auto_return: "approved", notification_url: `${baseUrl}/api/checkout/mercadopago/webhook` } })
   return NextResponse.json({ orderId: order.orderId, initPoint: created.init_point ?? created.sandbox_init_point ?? null })
 }

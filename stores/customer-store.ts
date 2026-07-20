@@ -20,6 +20,7 @@ type CustomerState = {
 
   setProfile: (next: Partial<CustomerProfile>) => void
   reset: () => void
+  clearProfile: () => void
   _setHasHydrated: (b: boolean) => void
 }
 
@@ -36,6 +37,10 @@ export const useCustomerStore = create<CustomerState>()(
           profile: { ...state.profile, ...next },
         })),
       reset: () => set({ profile: EMPTY }),
+      // Alias explícito para "limpiar la info personal del cliente en este
+      // dispositivo". Útil cuando el usuario cierra sesión y no queremos que
+      // el siguiente usuario del mismo navegador vea los datos.
+      clearProfile: () => set({ profile: EMPTY }),
       _setHasHydrated: (b) => set({ _hasHydrated: b }),
     }),
     {
