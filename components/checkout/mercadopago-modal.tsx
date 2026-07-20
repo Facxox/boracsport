@@ -12,10 +12,17 @@ export function MercadoPagoModal({
   open,
   onOpenChange,
   customer,
+  forceNew = false,
 }: {
   open: boolean
   onOpenChange: (b: boolean) => void
   customer?: { name: string; email: string; phone: string }
+  /**
+   * Bug 1.3: si el cliente repite el mismo carrito en <5min, el server
+   * dedupe por cartHash. Permitimos forzar "es un pedido nuevo" para no
+   * pisar la orden anterior.
+   */
+  forceNew?: boolean
 }) {
   const items = useCartStore((state) => state.items)
   const totals = selectTotal(items)
@@ -32,7 +39,7 @@ export function MercadoPagoModal({
       const response = await fetch("/api/checkout/mercadopago", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, customer, cartHash }),
+        body: JSON.stringify({ items, customer, cartHash, forceNew }),
       })
       const data = (await response.json().catch(() => ({}))) as {
         error?: string
@@ -90,10 +97,18 @@ export function MercadoPagoModal({
             Pago procesado por Mercado Pago.
           </p>
           <div className="flex flex-1 gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="min-h-[44px] flex-1"
+            >
               Cancelar
             </Button>
-            <Button onClick={() => void onPay()} disabled={loading} className="flex-1">
+            <Button
+              onClick={() => void onPay()}
+              disabled={loading}
+              className="min-h-[44px] flex-1"
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

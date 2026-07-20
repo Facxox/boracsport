@@ -36,6 +36,12 @@ type OrderRequest = {
   paymentMethod?: unknown
   paymentReceiptUrl?: unknown
   cartHash?: unknown
+  /**
+   * Bug 1.3: cuando el cliente repite un carrito idéntico al anterior
+   * (mismo cartHash) y quiere registrar un pedido NUEVO en vez de ser
+   * redirigido al viejo. Por defecto false.
+   */
+  forceNew?: unknown
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -128,6 +134,7 @@ export async function POST(request: Request) {
     typeof body.cartHash === "string" && body.cartHash.length > 0 && body.cartHash.length <= 200
       ? body.cartHash
       : null
+  const forceNew = body.forceNew === true
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "El email no es válido." }, { status: 400 })
 
   const supabase = await createClient()
@@ -248,7 +255,10 @@ export async function POST(request: Request) {
   // confirme que el carrito es válido (stock, variantes, etc). Si la
   // orden nueva calza con una previa, borramos la nueva y devolvemos la
   // vieja. Esto evita crear pedidos fantasma por una doble-click.
-  if (cartHash) {
+  //
+  // Bug 1.3: el cliente puede pedir explícitamente `forceNew: true` para
+  // omitir el dedupe (caso: dos pedidos idénticos en <5min intencionalmente).
+  if (cartHash && !forceNew) {
     const sinceIso = new Date(Date.now() - DEDUPE_WINDOW_MS).toISOString()
     const { data: existing } = await supabase
       .from("orders")

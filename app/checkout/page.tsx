@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Banknote, CreditCard, MessageCircle, ArrowRight, ShieldCheck, Truck, Check, Lock, ShoppingBag } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button, ButtonLink } from "@/components/ui/button"
@@ -23,11 +24,15 @@ import { WhatsAppCTA } from "@/components/checkout/whatsapp-cta"
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const MP_STATUS_VALUES = new Set(["success", "failure", "pending", "approved", "rejected", "in_process", "cancelled", "in_mediation"])
+
 export default function CheckoutPage() {
   const items = useCartStore((s) => s.items)
   const hasHydrated = useCartHasHydrated()
   const storedProfile = useCustomerStore((s) => s.profile)
   const setStoredProfile = useCustomerStore((s) => s.setProfile)
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [hydrated, setHydrated] = useState(false)
 
   const [name, setName] = useState("")
@@ -36,12 +41,35 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("")
   const [touched, setTouched] = useState<{ name?: boolean; email?: boolean; phone?: boolean }>({})
   const [mpOpen, setMpOpen] = useState(false)
+  // Bug 1.3: si el cliente repite el mismo carrito en <5min, el server
+  // dedupe por cartHash. Permitimos forzar "es un pedido nuevo" para no
+  // pisar la orden anterior. Por defecto false.
+  const [forceNew, setForceNew] = useState(false)
 
   const subtotal = selectSubtotal(items)
   const totals = selectTotal(items)
   const empty = hasHydrated && items.length === 0
 
   useEffect(() => { setHydrated(true) }, [])
+
+  // Bug 1.1: si llegamos con ?status= o ?order= de un redirect de Mercado
+  // Pago, derivamos a /checkout/confirmacion para que el cliente vea el
+  // estado del pago en vez de un formulario vacío.
+  useEffect(() => {
+    const status = searchParams.get("status")
+    const order = searchParams.get("order")
+    const hasStatus = status && MP_STATUS_VALUES.has(status)
+    const hasOrder = order && order.length > 0
+    if (!hasStatus && !hasOrder) return
+    const next = new URLSearchParams()
+    if (status) next.set("status", status)
+    if (order) next.set("order", order)
+    const email = searchParams.get("email")
+    const phone = searchParams.get("phone")
+    if (email) next.set("email", email)
+    if (phone) next.set("phone", phone)
+    router.replace(`/checkout/confirmacion?${next.toString()}`)
+  }, [searchParams, router])
 
   useEffect(() => {
     if (!hydrated) return
@@ -215,7 +243,7 @@ export default function CheckoutPage() {
                       Completá nombre, email y teléfono para registrar el pedido por transferencia.
                     </p>
                   ) : null}
-                  <TransferOptions items={items} customer={customer} />
+                  <TransferOptions items={items} customer={customer} forceNew={forceNew} />
                 </TabsContent>
 
                 <TabsContent value="mp" className="mt-4 space-y-3">
@@ -315,6 +343,28 @@ export default function CheckoutPage() {
                 : "El envío se coordina según el tipo de pedido."}
             </p>
 
+            {hasDesign ? (
+              <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-100/90">
+                Los diseños personalizados se cotizan por WhatsApp de forma independiente al total mostrado ({formatUYU(totals.total)}).
+              </p>
+            ) : null}
+
+            <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] text-white/70 select-none">
+              <input
+                type="checkbox"
+                checked={forceNew}
+                onChange={(e) => setForceNew(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-black/40 accent-[#dc2626]"
+                aria-describedby="force-new-help"
+              />
+              <span>
+                <span className="text-white/85">Es un nuevo pedido (independiente al anterior)</span>
+                <span id="force-new-help" className="text-muted-foreground block">
+                  Activá esto si querés registrar este pedido aunque coincida con uno reciente.
+                </span>
+              </span>
+            </label>
+
             <div className="mt-5 space-y-2 border-t border-white/5 pt-4 text-xs text-white/70">
               <p className="flex items-center gap-2"><ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />Pago seguro Mercado Pago o BROU.</p>
               <p className="flex items-center gap-2"><Truck className="h-3.5 w-3.5 text-emerald-300" />Envíos 24-72h hábiles a todo Uruguay.</p>
@@ -323,7 +373,7 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      <MercadoPagoModal open={mpOpen} onOpenChange={setMpOpen} customer={customer} />
+      <MercadoPagoModal open={mpOpen} onOpenChange={setMpOpen} customer={customer} forceNew={forceNew} />
     </div>
   )
 }

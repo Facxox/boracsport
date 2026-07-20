@@ -18,9 +18,15 @@ const ACCOUNT = BANK_ACCOUNTS[0]
 interface TransferOptionsProps {
   items?: CartItem[]
   customer?: { name: string; email: string; phone: string; address?: string }
+  /**
+   * Bug 1.3: si el cliente repite el mismo carrito en <5min, el server
+   * dedupe por cartHash. Permitimos forzar "es un pedido nuevo" para no
+   * pisar la orden anterior.
+   */
+  forceNew?: boolean
 }
 
-export function TransferOptions({ items, customer }: TransferOptionsProps) {
+export function TransferOptions({ items, customer, forceNew = false }: TransferOptionsProps) {
   const [orderId, setOrderId] = useState<string | null>(null)
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [registering, setRegistering] = useState(false)
@@ -40,6 +46,7 @@ export function TransferOptions({ items, customer }: TransferOptionsProps) {
           items,
           paymentMethod: "transfer",
           customer: { name: customer.name, email: customer.email, phone: customer.phone, address: customer.address },
+          forceNew,
         }),
       })
       const data = await res.json().catch(() => ({}))

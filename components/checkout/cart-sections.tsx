@@ -11,6 +11,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Minus, Plus, ShoppingBag, Sparkles, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { DesignBadge } from "@/components/ui/design-badge"
 import { formatUYU } from "@/lib/format"
 import { FLAT_SHIPPING_UYU } from "@/lib/constants"
 import { safeImageUrl } from "@/lib/safe-image"
@@ -181,9 +182,7 @@ function DesignCard({
 }) {
   return (
     <li className="bg-card flex items-start gap-4 rounded-xl border border-amber-500/20 p-4">
-      <div className="bg-muted/30 flex h-16 w-16 shrink-0 items-center justify-center rounded-md">
-        <span className="text-brand-red font-display text-lg font-extrabold">3D</span>
-      </div>
+      <DesignBadge size="md" className="shrink-0" />
       <div className="flex-1">
         <p className="font-semibold">{item.previewLabel}</p>
         <p className="text-muted-foreground text-sm">
