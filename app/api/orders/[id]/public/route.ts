@@ -14,7 +14,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-const RECENT_WINDOW_MS = 2 * 60 * 60 * 1000 // 2 horas
+const RECENT_WINDOW_MS = 30 * 60 * 1000 // 30 minutos
 
 function isUuid(v: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)

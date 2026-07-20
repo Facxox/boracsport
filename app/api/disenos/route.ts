@@ -34,8 +34,11 @@ export async function POST(request: Request) {
     body.payload,
   )
   if (!result.ok) {
+    // No exponemos el error de Supabase al cliente (puede leakear schema).
+    // Logueamos server-side para debugging.
+    console.error("[disenos] persist failed:", result.error)
     return NextResponse.json(
-      { error: "PERSIST_FAILED", details: result.error },
+      { error: "PERSIST_FAILED" },
       { status: 500 },
     )
   }

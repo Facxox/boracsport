@@ -20,7 +20,9 @@ const RULES: Record<Bucket, { kinds: Kind[]; mimes: Record<Kind, string[]>; maxB
     kinds: ["image", "model"],
     mimes: {
       image: ["image/jpeg", "image/png", "image/webp"],
-      model: ["model/gltf-binary", "model/gltf+json", "application/octet-stream"],
+      // application/octet-stream removido: permite subir cualquier binario
+      // (exe, php, etc.) haciéndose pasar por .glb. Exigimos MIME explícito.
+      model: ["model/gltf-binary", "model/gltf+json"],
       media: [],
     },
     maxBytes: 30 * 1024 * 1024,

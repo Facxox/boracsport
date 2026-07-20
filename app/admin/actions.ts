@@ -134,6 +134,10 @@ async function replaceVariants(
   )
   if (!hasMatrixInputs) return
 
+  // Calcular el total de stock ANTES de tocar la DB. Si después del
+  // delete+insert falla algo, queremos volver a este valor coherente.
+  const variantStock = variants.reduce((acc, v) => acc + (Number.isInteger(v.stock) && v.stock >= 0 ? v.stock : 0), 0)
+
   // 1) Borrar TODAS las variantes previas de este producto (delete + insert
   //    es más simple que diff y suficiente porque el admin edita raramente).
   const { error: delError } = await supabase
@@ -142,6 +146,19 @@ async function replaceVariants(
     .eq("product_id", productId)
   if (delError) {
     throw new Error(describeSupabaseError(delError, "No se pudieron limpiar las variantes anteriores"))
+  }
+
+  // Reconciliar products.stock con la suma de variantes. Sin esto, el stock
+  // top-level queda inconsistente con la realidad (los pedidos decrementan
+  // variants.stock; el catálogo lee products.stock).
+  const { error: stockSyncError } = await supabase
+    .from("products")
+    .update({ stock: variantStock } as never)
+    .eq("id", productId)
+  if (stockSyncError) {
+    // No podemos recuperar el stock previo sin otra query; logueamos y
+    // continuamos. El admin verá el stock desfasado y lo corrige.
+    console.error("[replaceVariants] no se pudo sincronizar products.stock:", stockSyncError.message)
   }
 
   if (variants.length === 0) return
@@ -242,8 +259,19 @@ export async function createProductAction(
     // El `redirect()` de Next.js lanza una excepción especial con digest
     // "NEXT_REDIRECT" — es flujo exitoso, no error. Re-lanzar tal cual.
     if (isNextRedirect(err)) throw err
-    // Rollback si creamos un producto antes del fallo.
+    // Rollback si creamos un producto antes del fallo. Limpiamos primero
+    // las variantes (si quedaron insertadas parcialmente) y luego el
+    // producto. Si el delete de variantes falla por RLS, intentamos igual
+    // borrar el producto para que la fila no quede huérfana en cascada.
     if (createdProductId && authenticatedClient) {
+      try {
+        await authenticatedClient
+          .from("product_variants")
+          .delete()
+          .eq("product_id", createdProductId)
+      } catch (rollbackVariantsErr) {
+        console.error("[createProductAction] rollback variantes falló:", rollbackVariantsErr)
+      }
       try {
         const { error: rollbackError } = await authenticatedClient
           .from("products")

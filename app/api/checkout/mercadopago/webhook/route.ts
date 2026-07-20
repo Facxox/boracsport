@@ -31,13 +31,33 @@ const STATUS_RANK: Record<PaymentStatus, number> = {
 export async function POST(request: Request) {
   try {
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
-    if (!accessToken || accessToken.includes("REPLACE")) return NextResponse.json({ error: "Webhook no configurado." }, { status: 503 })
+    if (!accessToken || accessToken.includes("REPLACE")) {
+      console.error("[mp-webhook] MERCADOPAGO_ACCESS_TOKEN no configurado")
+      return NextResponse.json({ error: "Webhook no configurado." }, { status: 503 })
+    }
+    const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET
+    if (!secret || secret.includes("REPLACE")) {
+      console.error("[mp-webhook] MERCADOPAGO_WEBHOOK_SECRET no configurado")
+      return NextResponse.json({ error: "Webhook no configurado." }, { status: 503 })
+    }
     const body = await request.json().catch(() => null) as { type?: string; data?: { id?: string }; action?: string } | null
     const paymentId = body?.data?.id
     if (!paymentId || (body.type !== "payment" && body.action !== "payment.created" && body.action !== "payment.updated")) return NextResponse.json({ received: true })
     if (!isValidSignature(request, paymentId)) return NextResponse.json({ error: "Firma inválida." }, { status: 401 })
     const payment = new Payment({ accessToken })
-    const detail = await payment.get({ id: paymentId })
+    let detail: Awaited<ReturnType<typeof payment.get>>
+    try {
+      detail = await payment.get({ id: paymentId })
+    } catch (mpErr: unknown) {
+      // Si MP devuelve 404 o el payment no existe, dejamos de reintentar con
+      // un 200 acknowledged. Cualquier otro error sigue siendo 500.
+      const status = (mpErr as { status?: number })?.status
+      if (status === 404 || status === 400) {
+        console.warn(`[mp-webhook] payment ${paymentId} no existe en MP, ignorando`)
+        return NextResponse.json({ received: true, ignored: "payment_not_found" })
+      }
+      throw mpErr
+    }
     const orderId = detail.external_reference
     if (!orderId) return NextResponse.json({ received: true })
     const supabase = await createClient()

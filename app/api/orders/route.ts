@@ -123,6 +123,9 @@ export async function POST(request: Request) {
   const phone = text(customer.phone, 40)
   const address = text(customer.address, 300)
   if (!items || !name || !email || !phone) return NextResponse.json({ error: "Completá nombre, email, teléfono y productos." }, { status: 400 })
+  // Validamos el formato del teléfono en server (defensa en profundidad — el
+  // cliente ya lo valida, pero si alguien bypasea la UI puede mandar basura).
+  if (phone.replace(/\D/g, "").length < 6) return NextResponse.json({ error: "Teléfono inválido." }, { status: 400 })
   // paymentMethod: requerido y debe ser uno de los válidos. Si no, rechazamos
   // explícitamente en vez de caer a un default silencioso.
   if (!validPaymentMethod(body.paymentMethod)) {
@@ -217,6 +220,11 @@ export async function POST(request: Request) {
       // Legacy: registrar consumo contra el producto top-level
       variantConsumption.push({ id: `legacy:${product.id}`, qty: quantity, stockBefore: stockAvailable })
     }
+  }
+
+  // Defensa contra overflow si el admin inventó un precio absurdo.
+  if (!Number.isFinite(subtotal) || subtotal > Number.MAX_SAFE_INTEGER / 4) {
+    return NextResponse.json({ error: "Totales fuera de rango." }, { status: 400 })
   }
 
   const shipping = hasPhysical ? 250 : 0

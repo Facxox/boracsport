@@ -11,6 +11,32 @@ const EXT_BY_MIME: Record<string, string> = {
   "image/webp": "webp",
 }
 
+// Magic bytes para verificar que el contenido coincide con el MIME declarado.
+// Sin esta verificación, el cliente puede declarar image/jpeg y subir un
+// ejecutable o un script PHP. Esto NO es defensa completa (los atacantes
+// sofisticados pueden polimorfar payloads en imágenes válidas), pero
+// filtra los casos triviales.
+const MAGIC_BYTES: Record<string, { offset: number; bytes: number[] }[]> = {
+  "image/jpeg": [{ offset: 0, bytes: [0xff, 0xd8, 0xff] }],
+  "image/png": [{ offset: 0, bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] }],
+  "image/webp": [
+    { offset: 0, bytes: [0x52, 0x49, 0x46, 0x46] },
+    { offset: 8, bytes: [0x57, 0x45, 0x42, 0x50] },
+  ],
+}
+
+function verifyMagicBytes(buffer: Buffer, mime: string): boolean {
+  const checks = MAGIC_BYTES[mime]
+  if (!checks) return false
+  for (const c of checks) {
+    if (buffer.length < c.offset + c.bytes.length) return false
+    for (let i = 0; i < c.bytes.length; i++) {
+      if (buffer[c.offset + i] !== c.bytes[i]) return false
+    }
+  }
+  return true
+}
+
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
@@ -171,6 +197,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const path = `${id}/${crypto.randomUUID()}.${ext}`
 
   const buffer = Buffer.from(await file.arrayBuffer())
+  if (!verifyMagicBytes(buffer, file.type)) {
+    return NextResponse.json({ error: "Contenido del archivo no coincide con el tipo declarado." }, { status: 415 })
+  }
   const { error: uploadError } = await service.storage
     .from("boracsport_orders")
     .upload(path, buffer, { contentType: file.type, upsert: true })
