@@ -77,6 +77,14 @@ export default function LoginPage() {
           {loading ? "Ingresando…" : "Ingresar"}
         </Button>
       </form>
+      <div className="mt-3 flex justify-end">
+        <Link
+          href="/recuperar-contrasena"
+          className="text-muted-foreground hover:text-foreground text-xs underline-offset-2 hover:underline"
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </div>
       <p className="text-muted-foreground mt-5 text-center text-sm">
         ¿No tenés cuenta?{" "}
         <Link href="/registro" className="text-brand-red font-semibold">
