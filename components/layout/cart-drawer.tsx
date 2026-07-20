@@ -11,6 +11,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Button, ButtonLink } from "@/components/ui/button"
+import { DesignBadge } from "@/components/ui/design-badge"
 import { Separator } from "@/components/ui/separator"
 import {
   useCartHasHydrated,
@@ -101,9 +102,7 @@ function DrawerDesignRow({
 }) {
   return (
     <li className="bg-bg-titanium flex items-start gap-3 rounded-lg border border-amber-500/20 p-3">
-      <div className="bg-background flex h-14 w-14 shrink-0 items-center justify-center rounded-md border border-amber-500/20">
-        <Sparkles className="h-5 w-5 text-amber-300" />
-      </div>
+      <DesignBadge size="sm" className="shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{item.previewLabel}</p>
         <p className="text-muted-foreground text-xs">Diseño a coordinar</p>
@@ -160,9 +159,9 @@ export function CartDrawer() {
               size="icon"
               onClick={close}
               aria-label="Cerrar"
-              className="-mr-2"
+              className="-mr-1 min-h-[44px] min-w-[44px]"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
         </SheetHeader>

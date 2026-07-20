@@ -74,7 +74,7 @@ export function CategoryFilter({ categories }: { categories: CategoryOption[] })
           <button
             type="button"
             onClick={clearAll}
-            className="text-muted-foreground hover:text-foreground inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-white/10 px-2.5 text-xs font-medium transition-colors hover:border-white/30"
+            className="text-muted-foreground hover:text-foreground inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-full border border-white/10 px-3 text-xs font-medium transition-colors hover:border-white/30"
             aria-label="Limpiar filtros"
           >
             <X className="h-3 w-3" />

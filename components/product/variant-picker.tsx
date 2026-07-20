@@ -159,6 +159,24 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
   const effectivePrice = selected?.priceOverride ?? basePrice
   const stock = selected?.stock ?? 0
 
+  // Bug 2.3: si no hay match exacto (size+color), sugerimos una variante
+  // alternativa disponible para suavizar el "Sin stock" confuso.
+  const fallbackHint = useMemo(() => {
+    if (selected) return null
+    if (variants.length === 0) return null
+    const candidate =
+      variants.find((v) => v.color === color && v.stock > 0) ??
+      variants.find((v) => v.size === size && v.stock > 0) ??
+      variants.find((v) => v.stock > 0)
+    if (!candidate) return null
+    const parts = [
+      candidate.size && hasSizes ? `talle ${candidate.size}` : null,
+      candidate.color && hasColors ? `color ${candidate.color}` : null,
+    ].filter(Boolean)
+    if (parts.length === 0) return null
+    return parts.join(" · ")
+  }, [selected, variants, color, size, hasSizes, hasColors])
+
   return (
     <div className="space-y-5" role="group" aria-label="Elegí las opciones del producto">
       {hasColors && (
@@ -249,6 +267,12 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
           <StockBadge stock={stock} />
         </div>
       </div>
+
+      {!selected && fallbackHint ? (
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100/90">
+          No hay stock con esta combinación, pero tenemos disponibilidad en {fallbackHint}. Probá cambiando talle o color.
+        </p>
+      ) : null}
     </div>
   )
 }
