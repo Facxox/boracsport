@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { useState, useTransition } from "react"
+import Image from "next/image"
 import { toast } from "sonner"
 import { AdminField } from "@/components/admin/admin-field"
 import { FileDropzone } from "@/components/admin/file-dropzone"
@@ -10,6 +11,7 @@ import {
   type VariantFormValue,
 } from "@/components/admin/variant-matrix-editor"
 import { createProductAction } from "@/app/admin/actions"
+import { safeImageUrl } from "@/lib/safe-image"
 
 interface CategoryOption {
   slug: string
@@ -322,10 +324,15 @@ function ProductSummary({
           <h2 className="mt-2 font-sans text-xl font-bold">Listo para crear</h2>
         </div>
 
-        <div className="aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-black/30">
-          {images[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={images[0]} alt="Portada del nuevo producto" className="h-full w-full object-cover" />
+        <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-white/10 bg-black/30">
+          {safeImageUrl(images[0]) ? (
+            <Image
+              src={safeImageUrl(images[0]) as string}
+              alt="Portada del nuevo producto"
+              fill
+              sizes="(min-width: 1024px) 320px, 100vw"
+              className="object-cover"
+            />
           ) : (
             <div className="grid h-full place-items-center px-4 text-center text-xs leading-5 text-white/40">
               La primera imagen cargada aparecerá como portada.

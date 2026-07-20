@@ -1,8 +1,10 @@
 "use client"
 
 import { useCallback, useId, useRef, useState } from "react"
+import Image from "next/image"
 import { ArrowDown, ArrowUp, Loader2, Trash2, UploadCloud } from "lucide-react"
 import { toast } from "sonner"
+import { safeImageUrl } from "@/lib/safe-image"
 
 export type DropzoneKind = "image" | "model" | "media"
 
@@ -199,8 +201,19 @@ export function FileDropzone({
                 ) : kind === "model" ? (
                   <div className="flex h-full w-full items-center justify-center text-xs text-white/60">.glb / .gltf</div>
                 ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  safeImageUrl(url) ? (
+                    <Image
+                      src={safeImageUrl(url) as string}
+                      alt=""
+                      fill
+                      sizes="(min-width: 768px) 25vw, 50vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center text-[10px] text-white/40">
+                      URL no válida
+                    </div>
+                  )
                 )}
               </div>
               <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-1 bg-black/60 p-1 opacity-0 transition-opacity group-hover:opacity-100">

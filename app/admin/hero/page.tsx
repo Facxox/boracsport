@@ -1,6 +1,8 @@
 import Link from "next/link"
+import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
 import type { HeroSlideRow } from "@/lib/supabase/types"
+import { safeImageUrl } from "@/lib/safe-image"
 import { SlideNewForm } from "./slide-new-form"
 
 export default async function AdminHeroPage() {
@@ -52,9 +54,18 @@ export default async function AdminHeroPage() {
                       muted
                       playsInline
                     />
+                  ) : safeImageUrl(slide.url) ? (
+                    <Image
+                      src={safeImageUrl(slide.url) as string}
+                      alt=""
+                      fill
+                      sizes="(min-width: 640px) 50vw, 100vw"
+                      className="object-cover"
+                    />
                   ) : (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={slide.url} alt="" className="h-full w-full object-cover" />
+                    <div className="grid h-full w-full place-items-center text-xs text-white/40">
+                      URL no válida
+                    </div>
                   )}
                   <span
                     className={

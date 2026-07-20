@@ -1,9 +1,11 @@
 import Link from "next/link"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import { ExternalLink } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import type { OrderRow } from "@/lib/supabase/types"
+import { safeImageUrl } from "@/lib/safe-image"
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
@@ -66,15 +68,19 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         <div className="space-y-6">
           <section className="rounded-2xl border border-white/10 bg-[#101012] p-5">
             <h2 className="font-display text-lg font-extrabold">Comprobante de transferencia</h2>
-            {receiptUrl ? (
+            {receiptUrl && safeImageUrl(receiptUrl) ? (
               <div className="mt-4 space-y-3">
                 <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="block">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={receiptUrl}
-                    alt="Comprobante de transferencia"
-                    className="max-h-[640px] w-full rounded-xl border border-white/10 bg-black/40 object-contain"
-                  />
+                  <div className="relative max-h-[640px] w-full overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                    <Image
+                      src={safeImageUrl(receiptUrl) as string}
+                      alt="Comprobante de transferencia"
+                      width={1280}
+                      height={640}
+                      sizes="(min-width: 768px) 720px, 100vw"
+                      className="h-auto max-h-[640px] w-full object-contain"
+                    />
+                  </div>
                 </a>
                 <a
                   href={receiptUrl}
