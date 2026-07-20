@@ -1,9 +1,11 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import Image from "next/image"
 import { ArrowRight, Sparkles } from "lucide-react"
 import { ButtonLink } from "@/components/ui/button"
 import type { HeroSlideRow } from "@/lib/supabase/types"
+import { safeImageUrl } from "@/lib/safe-image"
 
 const AUTOPLAY_MS = 6000
 
@@ -33,39 +35,48 @@ export function HeroCarousel({ slides }: { slides: HeroSlideRow[] }) {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {slides.map((s, i) => (
-        <div
-          key={s.id}
-          aria-hidden={i !== index}
-          className={
-            "absolute inset-0 -z-10 transition-opacity duration-700 " +
-            (i === index ? "opacity-100" : "opacity-0")
-          }
-        >
-          {s.kind === "video" ? (
-            <video
-              src={s.url}
-              poster={s.poster_url ?? undefined}
-              className="h-full w-full object-cover"
-              autoPlay
-              muted
-              loop
-              playsInline
-            />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={s.url} alt="" className="h-full w-full object-cover" />
-          )}
+      {slides.map((s, i) => {
+        const image = safeImageUrl(s.kind === "image" ? s.url : s.poster_url ?? null)
+        return (
           <div
-            aria-hidden
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(5,5,5,0.65) 0%, rgba(5,5,5,0.45) 40%, rgba(5,5,5,0.9) 100%)",
-            }}
-          />
-        </div>
-      ))}
+            key={s.id}
+            aria-hidden={i !== index}
+            className={
+              "absolute inset-0 -z-10 motion-safe:transition-opacity motion-safe:duration-700 " +
+              (i === index ? "opacity-100" : "opacity-0")
+            }
+          >
+            {s.kind === "video" ? (
+              <video
+                src={s.url}
+                poster={s.poster_url ?? undefined}
+                className="h-full w-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            ) : image ? (
+              <Image
+                src={image}
+                alt=""
+                fill
+                sizes="100vw"
+                className="object-cover"
+                priority={i === 0}
+              />
+            ) : null}
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(5,5,5,0.65) 0%, rgba(5,5,5,0.45) 40%, rgba(5,5,5,0.9) 100%)",
+              }}
+            />
+          </div>
+        )
+      })}
 
       <div className="mx-auto max-w-7xl px-4 py-20 md:py-32">
         <div className="max-w-3xl" key={slide.id}>
@@ -116,7 +127,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlideRow[] }) {
               aria-current={i === index}
               onClick={() => setIndex(i)}
               className={
-                "h-2 rounded-full transition-all " +
+                "h-2 rounded-full motion-safe:transition-all " +
                 (i === index ? "w-8 bg-brand-red" : "w-2 bg-white/40 hover:bg-white/70")
               }
             />

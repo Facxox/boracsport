@@ -183,7 +183,7 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
                   onClick={() => pickColor(c)}
                   disabled={!anyInStock}
                   className={cn(
-                    "group/swatch relative inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all min-h-[44px]",
+                    "group/swatch relative inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium motion-safe:transition-all min-h-[44px]",
                     color === c
                       ? "border-[#dc2626] bg-[#dc2626]/10 text-[#dc2626]"
                       : "border-white/10 hover:border-white/30",
@@ -226,7 +226,7 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
                   onClick={() => pickSize(s)}
                   disabled={!anyInStock}
                   className={cn(
-                    "min-h-[44px] min-w-12 rounded-lg border px-4 py-2 text-sm font-medium transition-all",
+                    "min-h-[44px] min-w-12 rounded-lg border px-4 py-2 text-sm font-medium motion-safe:transition-all",
                     size === s
                       ? "border-[#dc2626] bg-[#dc2626]/10 text-[#dc2626]"
                       : "border-white/10 hover:border-white/30",

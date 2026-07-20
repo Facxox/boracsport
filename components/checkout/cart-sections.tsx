@@ -8,10 +8,12 @@
 // presentación visual.
 
 import Link from "next/link"
+import Image from "next/image"
 import { Minus, Plus, ShoppingBag, Sparkles, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatUYU } from "@/lib/format"
 import { FLAT_SHIPPING_UYU } from "@/lib/constants"
+import { safeImageUrl } from "@/lib/safe-image"
 import type { CartItem, ProductLine, DesignLine } from "@/types/cart"
 
 interface CartItemBaseProps {
@@ -104,12 +106,18 @@ function ProductCard({
   onUpdateQty: (key: string, qty: number) => void
 }) {
   const variantLabel = [item.size, item.color].filter(Boolean).join(" · ")
+  const image = safeImageUrl(item.image)
   return (
     <li className="bg-card flex items-start gap-4 rounded-xl border border-white/5 p-4">
-      <div className="bg-muted/30 flex h-16 w-16 shrink-0 items-center justify-center rounded-md">
-        {item.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.image} alt={item.name} className="h-full w-full rounded-md object-cover" />
+      <div className="bg-muted/30 relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md">
+        {image ? (
+          <Image
+            src={image}
+            alt={item.name}
+            fill
+            sizes="64px"
+            className="object-cover"
+          />
         ) : (
           <ShoppingBag className="text-muted-foreground h-5 w-5" />
         )}

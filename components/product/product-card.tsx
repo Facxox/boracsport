@@ -10,6 +10,7 @@
 // - Muestra "Últimas unidades" si stock <= 5 (visible) y "Sin stock" si 0.
 
 import Link from "next/link"
+import Image from "next/image"
 import { Plus, ShoppingBag } from "lucide-react"
 import { Button, ButtonLink } from "@/components/ui/button"
 import { useCartStore } from "@/stores/cart-store"
@@ -17,6 +18,7 @@ import { formatUYU } from "@/lib/format"
 import { CATEGORY_LABELS, type Category } from "@/lib/constants"
 import type { Product } from "@/lib/supabase/types"
 import { cn } from "@/lib/utils"
+import { safeImageUrl } from "@/lib/safe-image"
 
 const LOW_STOCK_THRESHOLD = 5
 
@@ -24,17 +26,6 @@ type ProductWithFlags = Product & {
   stock?: number | null
   on_sale?: boolean | null
   category_id?: string | null
-}
-
-function safeImageUrl(u: unknown): string | null {
-  if (typeof u !== "string" || u.length === 0 || u.length > 2048) return null
-  try {
-    const url = new URL(u, "https://placeholder.local")
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null
-    return u
-  } catch {
-    return null
-  }
 }
 
 export function ProductCard({
@@ -60,12 +51,12 @@ export function ProductCard({
         className="bg-muted/30 relative block aspect-square overflow-hidden"
       >
         {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={image}
             alt={product.name}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            fill
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+            className="object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:group-hover:scale-105"
           />
         ) : (
           <div className="text-muted-foreground flex h-full w-full flex-col items-center justify-center gap-1 text-xs">

@@ -6,27 +6,17 @@
 //   debajo, con scroll-snap. aria-live al cambiar la imagen activa.
 
 import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { safeImageUrl } from "@/lib/safe-image"
 
 interface ImageGalleryProps {
   images: string[]
   alt: string
 }
 
-// Solo aceptamos http/https. Bloquea javascript:, data:, vbscript:, etc.
-function safeImgUrl(u: string): string | null {
-  if (typeof u !== "string" || u.length === 0 || u.length > 2048) return null
-  try {
-    const url = new URL(u, "https://placeholder.local")
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null
-    return u
-  } catch {
-    return null
-  }
-}
-
 export function ImageGallery({ images, alt }: ImageGalleryProps) {
-  const safeImages = images.map(safeImgUrl).filter((u): u is string => u != null)
+  const safeImages = images.map(safeImageUrl).filter((u): u is string => u != null)
   const [activeIdx, setActiveIdx] = useState(0)
   const mainRef = useRef<HTMLDivElement | null>(null)
   const touchStartX = useRef<number | null>(null)
@@ -70,12 +60,14 @@ export function ImageGallery({ images, alt }: ImageGalleryProps) {
         onTouchEnd={onTouchEnd}
         className="bg-muted/30 relative aspect-square w-full overflow-hidden rounded-2xl border border-white/5"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={active}
           alt={alt}
-          className="h-full w-full object-cover"
+          fill
+          sizes="(min-width: 768px) 50vw, 100vw"
+          className="object-cover"
           draggable={false}
+          priority
         />
         {safeImages.length > 1 ? (
           <>
@@ -104,15 +96,14 @@ export function ImageGallery({ images, alt }: ImageGalleryProps) {
               aria-label={`Ver imagen ${idx + 1}`}
               onClick={() => setActiveIdx(idx)}
               className={cn(
-                "bg-muted/30 aspect-square w-16 shrink-0 snap-center overflow-hidden rounded-md border transition-all md:w-full",
+                "bg-muted/30 relative aspect-square w-16 shrink-0 snap-center overflow-hidden rounded-md border transition-all md:w-full",
                 "min-h-[64px] min-w-[64px]",
                 idx === activeIdx
                   ? "border-[#dc2626] ring-1 ring-[#dc2626]"
                   : "border-white/10 hover:border-white/30",
               )}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" className="h-full w-full object-cover" />
+              <Image src={src} alt="" fill sizes="64px" className="object-cover" />
             </button>
           ))}
         </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Minus, Plus, ShoppingBag, Sparkles, Trash2, X } from "lucide-react"
 import {
   Sheet,
@@ -17,6 +18,7 @@ import {
 } from "@/stores/cart-store"
 import { formatUYU } from "@/lib/format"
 import { FLAT_SHIPPING_UYU } from "@/lib/constants"
+import { safeImageUrl } from "@/lib/safe-image"
 import { WhatsAppCTA } from "@/components/checkout/whatsapp-cta"
 import { ProductSection, DesignSection, summarizeCart } from "@/components/checkout/cart-sections"
 
@@ -30,12 +32,12 @@ function DrawerProductRow({
   onRemove: (key: string) => void
 }) {
   const variantLabel = [item.size, item.color].filter(Boolean).join(" · ")
+  const image = safeImageUrl(item.image)
   return (
     <li className="bg-bg-titanium flex items-start gap-3 rounded-lg border border-white/5 p-3">
-      <div className="bg-background flex h-14 w-14 shrink-0 items-center justify-center rounded-md border border-white/5">
-        {item.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.image} alt={item.name} className="h-full w-full rounded-md object-cover" />
+      <div className="bg-background relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/5">
+        {image ? (
+          <Image src={image} alt={item.name} fill sizes="56px" className="object-cover" />
         ) : (
           <ShoppingBag className="text-muted-foreground h-5 w-5" />
         )}
