@@ -5,7 +5,10 @@ import { ProductGrid } from "@/components/product/product-grid"
 import { OnSaleRail } from "@/components/home/on-sale-rail"
 import { RecommendedForYou } from "@/components/home/recommended-for-you"
 import { TrustRibbon } from "@/components/layout/trust-ribbon"
-import { getProducts } from "@/lib/supabase/queries/products"
+import {
+  getProducts,
+  getProductIdsWithVariants,
+} from "@/lib/supabase/queries/products"
 import { getActiveCategories } from "@/lib/supabase/queries/categories"
 
 import { CATEGORIES, type Category } from "@/lib/constants"
@@ -31,6 +34,10 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
     ? await getProducts({ category: safeCategory, from: 0, to: 11 })
     : products
 
+  const hasVariantsByProduct = await getProductIdsWithVariants(
+    finalProducts.map((p) => p.id),
+  )
+
   return (
     <>
       <div className="hidden"><TrustRibbon /></div>
@@ -48,7 +55,7 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
             categories={categories.map((c) => ({ slug: c.slug, label: c.label, emoji: c.emoji }))}
           />
         </Suspense>
-        <ProductGrid products={finalProducts} />
+        <ProductGrid products={finalProducts} hasVariantsByProduct={hasVariantsByProduct} />
       </section>
       <Suspense><RecommendedForYou /></Suspense>
     </>

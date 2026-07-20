@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, ShoppingBag, Sparkles, User } from "lucide-react"
+import { Menu, Search, ShoppingBag, Sparkles, User } from "lucide-react"
 import { useState } from "react"
 import { Button, ButtonLink } from "@/components/ui/button"
 import {
@@ -78,6 +78,14 @@ export function SiteHeader() {
             <Sparkles className="mr-1.5 h-4 w-4" />
             Diseñá en 3D
           </ButtonLink>
+          <ButtonLink
+            href="/productos"
+            variant="ghost"
+            size="icon"
+            aria-label="Buscar productos"
+          >
+            <Search className="h-4 w-4" />
+          </ButtonLink>
           <AdminNavLink />
           <ThemeToggle />
           <ButtonLink
@@ -125,6 +133,14 @@ export function SiteHeader() {
               </SheetHeader>
               <Separator className="my-3" />
               <nav className="flex flex-col gap-1">
+                <Link
+                  href="/productos"
+                  onClick={() => setMobileOpen(false)}
+                  className="hover:bg-muted flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
+                >
+                  <Search className="h-4 w-4" />
+                  Buscar productos
+                </Link>
                 {NAV.map((item) => (
                   <Link
                     key={item.href}

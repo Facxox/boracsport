@@ -8,7 +8,7 @@ import type { Product, ProductVariantRow } from "../types"
 import type { Category } from "@/lib/constants"
 
 const PRODUCT_COLUMNS =
-  "id, slug, name, description, price, images, tags, category" as const
+  "id, slug, name, description, price, images, tags, category, stock, on_sale" as const
 
 const PRODUCT_DETAIL_COLUMNS =
   "id, slug, name, description, price, images, tags, category, stock, active, featured, on_sale, product_variants:product_variants(id, size, color, sku, stock, price_override, active)" as const
@@ -16,6 +16,11 @@ const PRODUCT_DETAIL_COLUMNS =
 export type ProductWithVariants = Product & {
   stock: number
   variants: ProductVariantRow[]
+}
+
+export type ProductWithFlags = Product & {
+  stock: number | null
+  on_sale: boolean | null
 }
 
 export type GetProductsParams = {
@@ -30,7 +35,7 @@ export async function getProducts({
   search,
   from = 0,
   to = 11,
-}: GetProductsParams = {}): Promise<Product[]> {
+}: GetProductsParams = {}): Promise<ProductWithFlags[]> {
   try {
     const supabase = await createClient()
     let query = supabase
@@ -41,14 +46,25 @@ export async function getProducts({
       .range(from, to)
 
     if (category) query = query.eq("category", category)
-    if (search) query = query.ilike("name", `%${search}%`)
+    if (search) {
+      const term = search.trim()
+      if (term.length > 0) {
+        // El PostgREST .or() permite combinar búsquedas sobre múltiples columnas.
+        // Usamos ilike case-insensitive contra nombre, categoría y tags.
+        const escaped = term.replace(/[%_]/g, (m) => `\\${m}`)
+        const like = `%${escaped}%`
+        query = query.or(
+          `name.ilike.${like},category.ilike.${like},tags.cs.{"${term.replace(/"/g, '\\"')}"}`,
+        )
+      }
+    }
 
     const { data, error } = await query
     if (error) {
       console.warn("[getProducts] error:", error.message)
       return []
     }
-    return (data ?? []) as unknown as Product[]
+    return (data ?? []) as unknown as ProductWithFlags[]
   } catch (err) {
     console.warn("[getProducts] exception:", err)
     return []
@@ -163,5 +179,32 @@ export async function getOnSaleProducts(limit = 8, from = 0): Promise<Product[]>
   } catch (err) {
     console.warn("[getOnSaleProducts] exception:", err)
     return []
+  }
+}
+
+/**
+ * Devuelve un Set con los IDs de los productos que tienen al menos una
+ * variante activa. Pensado para tarjetas del catálogo: si el producto
+ * tiene variantes, la acción rápida debe ser "Elegir opciones" en lugar
+ * de "Agregar". Tolerante a fallos: devuelve Set vacío si la query falla.
+ */
+export async function getProductIdsWithVariants(productIds: string[]): Promise<Set<string>> {
+  if (productIds.length === 0) return new Set()
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("product_variants")
+      .select("product_id")
+      .in("product_id", productIds)
+      .eq("active", true)
+    if (error) {
+      console.warn("[getProductIdsWithVariants] error:", error.message)
+      return new Set()
+    }
+    const ids = (data ?? []) as unknown as Array<{ product_id: string }>
+    return new Set(ids.map((r) => r.product_id))
+  } catch (err) {
+    console.warn("[getProductIdsWithVariants] exception:", err)
+    return new Set()
   }
 }
