@@ -5,6 +5,7 @@ import { Loader2, ShieldCheck } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { selectTotal, useCartStore } from "@/stores/cart-store"
+import { computeCartHash, rememberOrder } from "@/lib/cart/hash"
 import { formatUYU } from "@/lib/format"
 
 export function MercadoPagoModal({
@@ -27,10 +28,11 @@ export function MercadoPagoModal({
     setLoading(true)
     setError(null)
     try {
+      const cartHash = computeCartHash(items)
       const response = await fetch("/api/checkout/mercadopago", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, customer }),
+        body: JSON.stringify({ items, customer, cartHash }),
       })
       const data = (await response.json().catch(() => ({}))) as {
         error?: string
@@ -40,6 +42,7 @@ export function MercadoPagoModal({
       if (!response.ok || !data.initPoint) {
         throw new Error(data.error || "No se pudo iniciar Mercado Pago")
       }
+      if (data.orderId) rememberOrder(data.orderId, cartHash, "mercadopago")
       window.location.assign(data.initPoint)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "No se pudo iniciar el pago")

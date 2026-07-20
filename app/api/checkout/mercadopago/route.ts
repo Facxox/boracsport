@@ -8,8 +8,9 @@ export async function POST(request: Request) {
   let body: unknown
   try { body = await request.json() } catch { return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 }) }
   if (!body || typeof body !== "object") return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 })
-  const data = body as { items?: unknown; customer?: unknown }
-  const response = await fetch(new URL("/api/orders", request.url), { method: "POST", headers: { "Content-Type": "application/json", cookie: request.headers.get("cookie") ?? "" }, body: JSON.stringify({ items: data.items, customer: data.customer, paymentMethod: "mercadopago" }) })
+  const data = body as { items?: unknown; customer?: unknown; cartHash?: unknown }
+  const cartHash = typeof data.cartHash === "string" && data.cartHash.length > 0 && data.cartHash.length <= 200 ? data.cartHash : null
+  const response = await fetch(new URL("/api/orders", request.url), { method: "POST", headers: { "Content-Type": "application/json", cookie: request.headers.get("cookie") ?? "" }, body: JSON.stringify({ items: data.items, customer: data.customer, paymentMethod: "mercadopago", ...(cartHash ? { cartHash } : {}) }) })
   const order = await response.json().catch(() => ({}))
   if (!response.ok) return NextResponse.json(order, { status: response.status })
   if (order.requiresCoordination || Number(order.total) <= 0) return NextResponse.json({ error: "Este pedido requiere coordinación antes de pagar." }, { status: 422 })

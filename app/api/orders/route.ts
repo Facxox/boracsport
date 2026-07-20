@@ -7,6 +7,11 @@ import type { Json, OrderRow, ProductRow, ProductVariantRow } from "@/lib/supaba
 const MAX_ITEMS = 50
 const MAX_QTY = 100
 const MAX_BODY_BYTES = 100_000
+// Ventana de "carrito reciente": si llega un POST con el mismo cartHash
+// dentro de esta ventana, devolvemos la orden existente en vez de crear
+// una nueva. 5 minutos es suficiente para que el cliente cambie de método
+// de pago sin terminar con dos pedidos idénticos.
+const DEDUPE_WINDOW_MS = 5 * 60 * 1000
 
 type ProductItemInput = {
   kind: "product"
@@ -30,6 +35,7 @@ type OrderRequest = {
   customer?: { name?: unknown; email?: unknown; phone?: unknown; address?: unknown }
   paymentMethod?: unknown
   paymentReceiptUrl?: unknown
+  cartHash?: unknown
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -118,6 +124,10 @@ export async function POST(request: Request) {
   }
   const paymentMethod = body.paymentMethod
   const paymentReceiptUrl = safeUrl(body.paymentReceiptUrl, 1000)
+  const cartHash =
+    typeof body.cartHash === "string" && body.cartHash.length > 0 && body.cartHash.length <= 200
+      ? body.cartHash
+      : null
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "El email no es válido." }, { status: 400 })
 
   const supabase = await createClient()
@@ -204,7 +214,14 @@ export async function POST(request: Request) {
 
   const shipping = hasPhysical ? 250 : 0
   const total = subtotal + shipping
-  const shippingDetails: Json = { name, email, phone, address: address ?? "", source: "checkout" }
+  const shippingDetails: Json = {
+    name,
+    email,
+    phone,
+    address: address ?? "",
+    source: "checkout",
+    ...(cartHash ? { cartHash } : {}),
+  }
   const insert: Partial<OrderRow> = {
     user_id: authData.user?.id ?? null,
     items: snapshot,
@@ -224,6 +241,55 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: orderError?.message ?? "No se pudo registrar el pedido." }, { status: 503 })
   }
   const orderId = (order as { id: string }).id
+
+  // Dedupe: si llegó un cartHash y ya hay una orden reciente con el mismo
+  // hash y mismo email/phone, devolvemos esa en vez de crear la nueva.
+  // Se hace DESPUÉS de crear la orden nueva porque queremos que el insert
+  // confirme que el carrito es válido (stock, variantes, etc). Si la
+  // orden nueva calza con una previa, borramos la nueva y devolvemos la
+  // vieja. Esto evita crear pedidos fantasma por una doble-click.
+  if (cartHash) {
+    const sinceIso = new Date(Date.now() - DEDUPE_WINDOW_MS).toISOString()
+    const { data: existing } = await supabase
+      .from("orders")
+      .select("id, payment_method, total, subtotal, status, payment_status, created_at, shipping_details")
+      .eq("shipping_details->>cartHash", cartHash)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (existing && (existing as { id: string }).id !== orderId) {
+      const ex = existing as {
+        id: string
+        payment_method: string
+        total: number
+        subtotal: number
+        status: string
+        payment_status: string
+        created_at: string
+        shipping_details: Record<string, unknown> | null
+      }
+      const exShipping = ex.shipping_details ?? {}
+      const sameCustomer =
+        (typeof exShipping.email === "string" ? exShipping.email.toLowerCase() : "") === email.toLowerCase() &&
+        (typeof exShipping.phone === "string" ? exShipping.phone.replace(/\D/g, "") : "") === phone.replace(/\D/g, "")
+      if (sameCustomer) {
+        // Rollback: borramos la orden recién creada y devolvemos la previa.
+        await supabase.from("orders").delete().eq("id", orderId)
+        return NextResponse.json(
+          {
+            orderId: ex.id,
+            subtotal: Number(ex.subtotal),
+            shipping: Math.max(0, Number(ex.total) - Number(ex.subtotal)),
+            total: Number(ex.total),
+            requiresCoordination: items.some((item) => item.kind === "design"),
+            reused: true,
+          },
+          { status: 200 },
+        )
+      }
+    }
+  }
 
   // Best-effort: comprobante.
   if (paymentReceiptUrl) {
