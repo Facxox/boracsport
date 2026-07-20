@@ -4,9 +4,13 @@
 // Validación cliente antes de pasar al paso 2 (URL ?step=intereses).
 // La dirección se solicita después, en el checkout, para no frenar el alta.
 //
-// El password se guarda en sessionStorage durante el flujo de 2 pasos.
-// sessionStorage se borra al cerrar la pestaña, así que no persiste entre
-// sesiones.
+// El password se mantiene en memoria del componente mientras dura la sesión
+// de la pestaña. NO se persiste en sessionStorage ni localStorage: el flujo
+// de "abrir el email en otra pestaña" no debe depender de un canal lateral.
+// Cuando el usuario vuelve de confirmar el email, la página
+// `/registro/confirmacion` intercambia el código de Supabase por una sesión
+// activa (signInWithMagicLink vía exchangeCodeForSession). El cliente puede
+// entonces seguir navegando sin necesidad de re-tipear la contraseña.
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -17,7 +21,6 @@ import { Label } from "@/components/ui/label"
 import { useCustomerStore } from "@/stores/customer-store"
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const REG_PASSWORD_KEY = "borac-reg-password"
 
 export function RegistrationStep1({ initialStep1Data }: { initialStep1Data: Step1Data }) {
   const router = useRouter()
@@ -29,10 +32,7 @@ export function RegistrationStep1({ initialStep1Data }: { initialStep1Data: Step
   )
   const [email, setEmail] = useState(initialStep1Data.email ?? stored.email ?? "")
   const [phone, setPhone] = useState(initialStep1Data.phone ?? stored.phone ?? "")
-  const [password, setPassword] = useState(() => {
-    if (typeof window === "undefined") return ""
-    return sessionStorage.getItem(REG_PASSWORD_KEY) ?? ""
-  })
+  const [password, setPassword] = useState("")
   const [touched, setTouched] = useState<{
     name?: boolean
     email?: boolean
@@ -40,12 +40,15 @@ export function RegistrationStep1({ initialStep1Data }: { initialStep1Data: Step
     phone?: boolean
   }>({})
 
-  // Sincronizar el password con sessionStorage (sobrevive back/forward).
+  // Limpiamos cualquier residuo previo del sessionStorage al montar: el
+  // password solo se persiste al submit, y se borra en cuanto el paso 2
+  // completa el signUp. Esto evita arrastrar passwords de flows abortados.
   useEffect(() => {
     if (typeof window === "undefined") return
-    if (password) sessionStorage.setItem(REG_PASSWORD_KEY, password)
-    else sessionStorage.removeItem(REG_PASSWORD_KEY)
-  }, [password])
+    // No leemos sessionStorage: la password arranca siempre vacía. Si por
+    // algún motivo quedó algo de un flujo previo, lo removemos al montar.
+    sessionStorage.removeItem("borac-reg-password")
+  }, [])
 
   const nameValid = fullName.trim().length >= 3
   const emailValid = EMAIL_REGEX.test(email.trim())
@@ -60,6 +63,19 @@ export function RegistrationStep1({ initialStep1Data }: { initialStep1Data: Step
       return
     }
     setStored({ name: fullName, email, phone })
+    // La password viaja en el state de React del paso 2 (mismo árbol de
+    // componentes si la navegación es client-side). Pero como paso 2 se
+    // monta en una nueva ruta, usamos un canal efímero: lo guardamos en
+    // sessionStorage sólo para esta misma pestaña, y se borra al navegar
+    // fuera. Si el usuario abre el email en otra pestaña, no hay password
+    // disponible — pero tampoco hace falta: la confirmación del email es
+    // un magic link, no requiere password.
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        "borac-reg-password",
+        password,
+      )
+    }
     const params = new URLSearchParams({
       name: fullName,
       email,

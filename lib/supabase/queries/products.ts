@@ -186,10 +186,21 @@ export async function getOnSaleProducts(limit = 8, from = 0): Promise<Product[]>
  * Devuelve un Set con los IDs de los productos que tienen al menos una
  * variante activa. Pensado para tarjetas del catálogo: si el producto
  * tiene variantes, la acción rápida debe ser "Elegir opciones" en lugar
- * de "Agregar". Tolerante a fallos: devuelve Set vacío si la query falla.
+ * de "Agregar".
+ *
+ * Devuelve `{ ids, errored }`:
+ * - `ids`: Set con los IDs detectados.
+ * - `errored`: true si la query falló (timeout, RLS, schema). El consumidor
+ *   debe tratar este caso como contingencia: NO interpretar "Set vacío" como
+ *   "ningún producto tiene variantes", porque eso haría que productos
+ *   complejos caigan al fallback "+ Agregar" y entren al carrito sin
+ *   elegir talle/color. Mejor mostrar un banner controlado o forzar la
+ *   ruta "Elegir opciones" hasta que se reintente.
  */
-export async function getProductIdsWithVariants(productIds: string[]): Promise<Set<string>> {
-  if (productIds.length === 0) return new Set()
+export async function getProductIdsWithVariants(
+  productIds: string[],
+): Promise<{ ids: Set<string>; errored: boolean }> {
+  if (productIds.length === 0) return { ids: new Set(), errored: false }
   try {
     const supabase = await createClient()
     const { data, error } = await supabase
@@ -199,12 +210,12 @@ export async function getProductIdsWithVariants(productIds: string[]): Promise<S
       .eq("active", true)
     if (error) {
       console.warn("[getProductIdsWithVariants] error:", error.message)
-      return new Set()
+      return { ids: new Set(), errored: true }
     }
     const ids = (data ?? []) as unknown as Array<{ product_id: string }>
-    return new Set(ids.map((r) => r.product_id))
+    return { ids: new Set(ids.map((r) => r.product_id)), errored: false }
   } catch (err) {
     console.warn("[getProductIdsWithVariants] exception:", err)
-    return new Set()
+    return { ids: new Set(), errored: true }
   }
 }

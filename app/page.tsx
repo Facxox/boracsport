@@ -34,9 +34,11 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
     ? await getProducts({ category: safeCategory, from: 0, to: 11 })
     : products
 
-  const hasVariantsByProduct = await getProductIdsWithVariants(
+  const variantsLookup = await getProductIdsWithVariants(
     finalProducts.map((p) => p.id),
   )
+  const hasVariantsByProduct = variantsLookup.ids
+  const variantsLookupErrored = variantsLookup.errored
 
   return (
     <>
@@ -55,7 +57,11 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
             categories={categories.map((c) => ({ slug: c.slug, label: c.label, emoji: c.emoji }))}
           />
         </Suspense>
-        <ProductGrid products={finalProducts} hasVariantsByProduct={hasVariantsByProduct} />
+        <ProductGrid
+          products={finalProducts}
+          hasVariantsByProduct={hasVariantsByProduct}
+          forceVariantFlow={variantsLookupErrored}
+        />
       </section>
       <Suspense><RecommendedForYou /></Suspense>
     </>

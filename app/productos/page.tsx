@@ -52,9 +52,11 @@ export default async function ProductosPage({
       })
     : products
 
-  const hasVariantsByProduct = await getProductIdsWithVariants(
+  const variantsLookup = await getProductIdsWithVariants(
     filteredProducts.map((p) => p.id),
   )
+  const hasVariantsByProduct = variantsLookup.ids
+  const variantsLookupErrored = variantsLookup.errored
 
   const filterCategories = dbCategories.length > 0
     ? dbCategories.map((c) => ({ slug: c.slug, label: c.label, emoji: c.emoji }))
@@ -103,6 +105,7 @@ export default async function ProductosPage({
       <ProductGrid
         products={filteredProducts}
         hasVariantsByProduct={hasVariantsByProduct}
+        forceVariantFlow={variantsLookupErrored}
         emptyState={<EmptyCatalogState />}
       />
     </div>

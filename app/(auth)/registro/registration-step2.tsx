@@ -1,14 +1,21 @@
 "use client"
 
 // Paso 2 del registro: selección de intereses + signUp.
-// Lee los datos del paso 1 desde la query string. La contraseña viene de
-// sessionStorage (la guardó el paso 1).
+// Lee los datos del paso 1 desde la query string. La contraseña, si está
+// disponible, viene de sessionStorage (sólo para esta misma pestaña).
+//
+// Caso Bug 5.1: si el usuario abrió el email de confirmación en otra pestaña,
+// la sessionStorage de la pestaña original no es accesible. En ese caso,
+// el paso 2 permite re-tipear la contraseña en el mismo formulario (input
+// visible sólo si hace falta) — la confirmación del email es independiente.
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
 import { useCustomerStore } from "@/stores/customer-store"
 import { Stepper } from "./registration-step1"
@@ -39,6 +46,9 @@ export function RegistrationStep2({
   const [error, setError] = useState<string | null>(null)
   const [resending, setResending] = useState(false)
   const [resendMsg, setResendMsg] = useState<string | null>(null)
+  // Si la password no está en sessionStorage (caso Bug 5.1: el usuario
+  // abrió el email en otra pestaña y volvió), permitimos re-tipear.
+  const [passwordFallback, setPasswordFallback] = useState("")
 
   const valid =
     EMAIL_REGEX.test(step1Data.email) &&
@@ -66,12 +76,19 @@ export function RegistrationStep2({
     setError(null)
     try {
       const supabase = createClient()
-      const password =
+      const stored =
         typeof window !== "undefined"
           ? sessionStorage.getItem(REG_PASSWORD_KEY) ?? ""
           : ""
+      const password = stored || passwordFallback
       if (!password) {
-        setError("Tu sesión expiró. Volvé al paso 1.")
+        // No bloqueamos: explicamos al usuario qué hacer y dejamos que
+        // re-tipee la contraseña (Bug 5.1). Si ya confirmó el email en
+        // otra pestaña, en /registro/confirmacion se completa el flujo
+        // vía exchangeCodeForSession — no requiere password.
+        setError(
+          "Necesitamos tu contraseña para crear la cuenta. Tipéala abajo o, si ya confirmaste el email en otra pestaña, hacé click en el enlace de tu casilla para terminar el registro.",
+        )
         setLoading(false)
         return
       }
@@ -176,6 +193,25 @@ export function RegistrationStep2({
         <p className="mt-4 text-sm text-red-400" role="alert">
           {error}
         </p>
+      ) : null}
+
+      {error && error.includes("contraseña") ? (
+        <div className="mt-4 space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+          <Label htmlFor="password-fallback">Tu contraseña</Label>
+          <Input
+            id="password-fallback"
+            type="password"
+            autoComplete="new-password"
+            value={passwordFallback}
+            onChange={(e) => setPasswordFallback(e.target.value)}
+            placeholder="Mínimo 6 caracteres"
+            aria-describedby="password-fallback-help"
+          />
+          <p id="password-fallback-help" className="text-muted-foreground text-xs">
+            La tipeaste en el paso anterior pero no está disponible en esta pestaña.
+            También podés confirmar el email desde tu casilla y seguir desde ahí.
+          </p>
+        </div>
       ) : null}
 
       <div className="mt-6 flex items-center justify-between gap-3">
