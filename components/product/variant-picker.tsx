@@ -1,5 +1,15 @@
 "use client"
 
+// Selector de variantes con flujo explícito:
+//   1. Elegí color.
+//   2. Elegí talle.
+//   3. Revisá disponibilidad.
+//   4. Agregá al carrito (CTA en PDP).
+//
+// Cuando el color es interpretable como CSS color, lo mostramos como
+// swatch (con etiqueta accesible). Si no, mostramos etiqueta de texto.
+// Las opciones sin stock quedan visualmente tachadas y deshabilitadas.
+
 import { useEffect, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 
@@ -30,6 +40,40 @@ function pickInitial<T extends string>(
   match: (value: T) => boolean,
 ): T | "" {
   return values.find(match) ?? ""
+}
+
+// Mapa de nombres de color en español → hex. Sólo lo usamos cuando el
+// color es una palabra reconocible para mostrar un swatch. Si no está en
+// el mapa, caemos a etiqueta de texto.
+const NAMED_COLORS: Record<string, string> = {
+  rojo: "#dc2626",
+  "rojo oscuro": "#7f1d1d",
+  bordó: "#7f1d1d",
+  bordo: "#7f1d1d",
+  azul: "#2563eb",
+  "azul marino": "#1e3a8a",
+  marino: "#1e3a8a",
+  celeste: "#38bdf8",
+  verde: "#16a34a",
+  "verde oscuro": "#14532d",
+  amarillo: "#facc15",
+  negro: "#0a0a0a",
+  blanco: "#f8fafc",
+  gris: "#6b7280",
+  "gris oscuro": "#1f2937",
+  rosa: "#ec4899",
+  fucsia: "#d946ef",
+  violeta: "#7c3aed",
+  naranja: "#f97316",
+  beige: "#d6cfbf",
+  crema: "#fef3c7",
+  marrón: "#78350f",
+  marfil: "#fefce8",
+}
+
+function colorToHex(name: string): string | null {
+  const key = name.trim().toLowerCase()
+  return NAMED_COLORS[key] ?? null
 }
 
 export function VariantPicker({ variants, basePrice, onChange }: VariantPickerProps) {
@@ -116,12 +160,58 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
   const stock = selected?.stock ?? 0
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5" role="group" aria-label="Elegí las opciones del producto">
+      {hasColors && (
+        <fieldset>
+          <legend className="mb-2 flex items-baseline gap-2 text-xs font-semibold tracking-wider text-white/60 uppercase">
+            <span className="text-brand-red mr-1">1.</span>
+            Color
+            {color ? <span className="text-foreground/80 font-normal normal-case">· {color}</span> : null}
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {colors.map((c) => {
+              const anyInStock = variants.some((v) => v.color === c && v.stock > 0)
+              const hex = colorToHex(c)
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={color === c}
+                  aria-current={color === c ? "true" : undefined}
+                  aria-label={`Color ${c}${anyInStock ? "" : " (sin stock)"}`}
+                  onClick={() => pickColor(c)}
+                  disabled={!anyInStock}
+                  className={cn(
+                    "group/swatch relative inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all min-h-[44px]",
+                    color === c
+                      ? "border-[#dc2626] bg-[#dc2626]/10 text-[#dc2626]"
+                      : "border-white/10 hover:border-white/30",
+                    !anyInStock && "cursor-not-allowed opacity-40 line-through",
+                  )}
+                >
+                  {hex ? (
+                    <span
+                      aria-hidden
+                      className="border-border inline-block h-4 w-4 shrink-0 rounded-full border"
+                      style={{ backgroundColor: hex }}
+                    />
+                  ) : null}
+                  <span>{c}</span>
+                </button>
+              )
+            })}
+          </div>
+        </fieldset>
+      )}
+
       {hasSizes && (
-        <div>
-          <p className="mb-2 text-xs font-semibold tracking-wider text-white/60 uppercase">
+        <fieldset>
+          <legend className="mb-2 flex items-baseline gap-2 text-xs font-semibold tracking-wider text-white/60 uppercase">
+            <span className="text-brand-red mr-1">{hasColors ? "2." : "1."}</span>
             Talle
-          </p>
+            {size ? <span className="text-foreground/80 font-normal normal-case">· {size}</span> : null}
+          </legend>
           <div className="flex flex-wrap gap-2">
             {sizes.map((s) => {
               const anyInStock = variants.some((v) => v.size === s && v.stock > 0)
@@ -129,10 +219,14 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
                 <button
                   key={s}
                   type="button"
+                  role="radio"
+                  aria-checked={size === s}
+                  aria-current={size === s ? "true" : undefined}
+                  aria-label={`Talle ${s}${anyInStock ? "" : " (sin stock)"}`}
                   onClick={() => pickSize(s)}
                   disabled={!anyInStock}
                   className={cn(
-                    "min-w-12 rounded-lg border px-3 py-2 text-sm font-medium transition-all",
+                    "min-h-[44px] min-w-12 rounded-lg border px-4 py-2 text-sm font-medium transition-all",
                     size === s
                       ? "border-[#dc2626] bg-[#dc2626]/10 text-[#dc2626]"
                       : "border-white/10 hover:border-white/30",
@@ -144,42 +238,16 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
               )
             })}
           </div>
-        </div>
+        </fieldset>
       )}
-      {hasColors && (
-        <div>
-          <p className="mb-2 text-xs font-semibold tracking-wider text-white/60 uppercase">
-            Color
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {colors.map((c) => {
-              const anyInStock = variants.some((v) => v.color === c && v.stock > 0)
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => pickColor(c)}
-                  disabled={!anyInStock}
-                  className={cn(
-                    "rounded-lg border px-3 py-2 text-sm font-medium transition-all",
-                    color === c
-                      ? "border-[#dc2626] bg-[#dc2626]/10 text-[#dc2626]"
-                      : "border-white/10 hover:border-white/30",
-                    !anyInStock && "cursor-not-allowed opacity-40 line-through",
-                  )}
-                >
-                  {c}
-                </button>
-              )
-            })}
-          </div>
+
+      <div className="bg-card/40 flex items-center justify-between gap-3 rounded-xl border border-white/5 px-4 py-3">
+        <div className="flex items-baseline gap-3">
+          <span className="font-display text-2xl font-bold">
+            {formatPrice(effectivePrice)}
+          </span>
+          <StockBadge stock={stock} />
         </div>
-      )}
-      <div className="flex items-center gap-3">
-        <span className="font-display text-2xl font-bold">
-          {formatPrice(effectivePrice)}
-        </span>
-        <StockBadge stock={stock} />
       </div>
     </div>
   )

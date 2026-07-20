@@ -1,8 +1,17 @@
 "use client"
 
-import { useState } from "react"
+// Client de la página de producto.
+// - Variantes via VariantPicker.
+// - Botón principal "Agregar al carrito" (desktop).
+// - Barra sticky inferior en móvil con precio + variante + stock + agregar.
+// - Banner de feedback persistente durante ~6 s tras agregar (con links
+//   "Ver carrito" / "Seguir comprando"). El drawer del carrito ya se abre
+//   automáticamente por addProduct(), así que el banner es redundancia
+//   accesible.
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Share2 } from "lucide-react"
+import { CheckCircle2, Share2, ShoppingBag } from "lucide-react"
 import { Button, ButtonLink } from "@/components/ui/button"
 import { useCartStore } from "@/stores/cart-store"
 import { VariantPicker, type VariantOption } from "@/components/product/variant-picker"
@@ -26,21 +35,23 @@ interface PDPClientProps {
   variants: VariantOption[]
 }
 
+const FEEDBACK_DURATION_MS = 6000
+
 export function ProductPDPClient({ product, variants }: PDPClientProps) {
-  // null hasta que el VariantPicker emita su selección inicial. Evita el flash
-  // que ocurre si el padre elige variants[0] y el picker resuelve uno distinto
-  // por su propia heurística de stock.
   const [selected, setSelected] = useState<VariantOption | null>(null)
+  const [lastAdded, setLastAdded] = useState<{ qty: number; ts: number } | null>(null)
   const addProduct = useCartStore((s) => s.addProduct)
 
   const hasVariants = variants.length > 0
   const effectivePrice = selected?.priceOverride ?? product.price
   const stock = selected?.stock ?? product.stock ?? 0
-  // canAdd: con variantes exigimos una seleccionada con stock; sin variantes,
-  // usamos el stock top-level para no permitir agregar agotados.
   const canAdd = hasVariants
     ? selected != null && selected.stock > 0
     : stock > 0
+
+  const variantLabel = selected
+    ? [selected.color, selected.size].filter(Boolean).join(" · ")
+    : ""
 
   function handleAdd() {
     if (hasVariants && (!selected || selected.stock <= 0)) {
@@ -59,8 +70,17 @@ export function ProductPDPClient({ product, variants }: PDPClientProps) {
       color: selected?.color || undefined,
       stockCap: hasVariants ? selected?.stock : stock,
     })
+    setLastAdded({ qty: 1, ts: Date.now() })
     toast.success("Producto agregado al carrito")
   }
+
+  // Limpia el banner después del timeout para que no quede en pantalla
+  // indefinidamente al refrescar la página.
+  useEffect(() => {
+    if (!lastAdded) return
+    const handle = setTimeout(() => setLastAdded(null), FEEDBACK_DURATION_MS)
+    return () => clearTimeout(handle)
+  }, [lastAdded])
 
   function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : ""
@@ -98,25 +118,28 @@ export function ProductPDPClient({ product, variants }: PDPClientProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pb-24 md:pb-0">
       {hasVariants ? (
-        <VariantPicker
-          variants={variants}
-          basePrice={product.price}
-          onChange={setSelected}
-        />
+        <VariantPicker variants={variants} basePrice={product.price} onChange={setSelected} />
       ) : (
-        <div className="flex items-center gap-3">
-          <span className="font-display text-2xl font-bold">
-            {formatUYU(product.price)}
-          </span>
+        <div className="bg-card/40 flex items-center justify-between gap-3 rounded-xl border border-white/5 px-4 py-3">
+          <div className="flex items-baseline gap-3">
+            <span className="font-display text-2xl font-bold">{formatUYU(product.price)}</span>
+            {stock > 0 ? (
+              <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+                En stock ({stock})
+              </span>
+            ) : (
+              <span className="rounded-full border border-red-400/40 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-400">
+                Sin stock
+              </span>
+            )}
+          </div>
         </div>
       )}
 
       {product.description && (
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {product.description}
-        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed">{product.description}</p>
       )}
 
       {product.tags && product.tags.length > 0 && (
@@ -132,7 +155,8 @@ export function ProductPDPClient({ product, variants }: PDPClientProps) {
         </div>
       )}
 
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+      {/* Botones desktop */}
+      <div className="mt-2 hidden flex-col gap-2 sm:flex sm:flex-row sm:items-center">
         <Button
           size="lg"
           className="bg-brand-red text-foreground hover:bg-[#ef4444] w-full sm:w-auto"
@@ -141,11 +165,7 @@ export function ProductPDPClient({ product, variants }: PDPClientProps) {
         >
           {canAdd ? "Agregar al carrito" : "Sin stock"}
         </Button>
-        <ButtonLink
-          href="/carrito"
-          variant="outline"
-          className="w-full sm:w-auto"
-        >
+        <ButtonLink href="/carrito" variant="outline" className="w-full sm:w-auto">
           Ver carrito
         </ButtonLink>
         <Button
@@ -179,6 +199,60 @@ export function ProductPDPClient({ product, variants }: PDPClientProps) {
       >
         {/* hidden breadcrumb anchor for SEO */}
       </Link>
+
+      {/* Banner de feedback persistente */}
+      {lastAdded ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="border-emerald-400/30 bg-emerald-500/10 text-emerald-100 flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
+        >
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+            <span>
+              Agregaste <strong className="font-semibold">{product.name}</strong>
+              {variantLabel ? <> · {variantLabel}</> : null} al carrito.
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <ButtonLink href="/carrito" size="sm" variant="outline" className="h-8">
+              Ver carrito
+            </ButtonLink>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setLastAdded(null)}
+              aria-label="Cerrar mensaje"
+              className="text-emerald-200/80 hover:text-emerald-100 h-8 px-2"
+            >
+              Seguir comprando
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Sticky mobile CTA */}
+      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/85 fixed right-0 bottom-0 left-0 z-30 border-t border-white/5 px-4 py-3 backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-7xl items-center gap-3">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="font-display text-lg font-extrabold leading-tight">
+              {formatUYU(effectivePrice)}
+            </span>
+            <span className="text-muted-foreground truncate text-[11px]">
+              {variantLabel || product.name}
+            </span>
+          </div>
+          <Button
+            size="lg"
+            className="bg-brand-red text-foreground hover:bg-[#ef4444] min-h-[44px] shrink-0 px-5"
+            onClick={handleAdd}
+            disabled={!canAdd}
+          >
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            {canAdd ? "Agregar" : "Sin stock"}
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
