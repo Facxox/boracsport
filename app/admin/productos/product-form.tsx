@@ -52,12 +52,40 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
     formData.delete("images")
     for (const url of images) formData.append("images", url)
     if (images.length === 0) formData.append("images", "")
+    if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+      const variantCount = Array.from(formData.keys()).filter((k) => /^variants\[\d+\]\[size\]$/.test(k)).length
+      const stockRaw = formData.get("stock")
+      console.info("[edit-product] submit", {
+        id,
+        name: formData.get("name"),
+        slug: formData.get("slug"),
+        category: formData.get("category"),
+        price: formData.get("price"),
+        stockRaw,
+        images: images.length,
+        variantsInState: variants.length,
+        variantInputsInForm: variantCount,
+      })
+    }
     startTransition(async () => {
-      const result = await updateProductAction(id, formData)
-      if (result.ok) {
-        toast.success("Producto actualizado")
-      } else {
-        toast.error(result.error)
+      try {
+        const result = await updateProductAction(id, formData)
+        if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+          console.info("[edit-product] server action result", result)
+        }
+        if (result.ok) {
+          toast.success("Producto actualizado")
+        } else {
+          toast.error(result.error)
+        }
+      } catch (submitErr) {
+        if (typeof window !== "undefined") {
+          console.error("[edit-product] submit threw", submitErr)
+        }
+        const message = submitErr instanceof Error ? submitErr.message : String(submitErr)
+        if (!message.includes("NEXT_REDIRECT")) {
+          toast.error(message || "Error desconocido al guardar")
+        }
       }
     })
   }
@@ -65,11 +93,22 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
   function handleDelete() {
     if (!window.confirm(`¿Eliminar "${initial.name}"? Esta acción no se puede deshacer.`)) return
     startTransition(async () => {
-      const result = await deleteProductAction(id)
-      if (!result.ok) {
-        toast.error(result.error)
+      try {
+        const result = await deleteProductAction(id)
+        if (!result.ok) {
+          toast.error(result.error)
+          return
+        }
+        toast.success("Producto eliminado")
+        if (typeof window !== "undefined") {
+          window.location.assign("/admin/productos")
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        if (!message.includes("NEXT_REDIRECT")) {
+          toast.error(message)
+        }
       }
-      // Si ok=true, el server action redirige.
     })
   }
 

@@ -28,10 +28,12 @@ function variantsToMatrix(value: VariantFormValue[]): {
   for (const v of value) {
     const colorKey = (v.color || "").trim()
     const sizeKey = (v.size || "").trim()
-    if (!colorKey && !sizeKey && Number(v.stock) === 0) continue
+    if (!colorKey && !sizeKey) continue
     if (colorKey) colorsSet.add(colorKey)
     if (colorKey && sizeKey) {
       if (!matrix[colorKey]) matrix[colorKey] = {}
+      // Mantenemos stock=0 en la matriz para que la celda visual no desaparezca
+      // al navegar. Las variantes con stock=0 viajamos igual al server.
       matrix[colorKey][sizeKey] = Number(v.stock) || 0
     }
   }
@@ -45,16 +47,18 @@ function matrixToVariants(
   const out: VariantFormValue[] = []
   for (const color of colors) {
     for (const size of STANDARD_SIZES) {
-      const stock = matrix[color]?.[size] ?? 0
-      if (stock > 0) {
-        out.push({
-          size,
-          color,
-          sku: "",
-          stock,
-          price_override: "",
-        })
-      }
+      const stock = matrix[color]?.[size]
+      // Incluimos TODAS las celdas (incluso stock=0) para que el form
+      // emita hidden inputs consistentes y el admin pueda borrar stock
+      // (poner 0) sin que la fila desaparezca del state del padre.
+      if (stock === undefined) continue
+      out.push({
+        size,
+        color,
+        sku: "",
+        stock,
+        price_override: "",
+      })
     }
   }
   return out

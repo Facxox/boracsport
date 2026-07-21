@@ -38,9 +38,49 @@ export function NewProductForm({ categories }: NewProductFormProps) {
     formData.delete("images")
     for (const url of images) formData.append("images", url)
     if (images.length === 0) formData.append("images", "")
+    // Debug: ver qué se está enviando al server action.
+    if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+      const variantCount = Array.from(formData.keys()).filter((k) => /^variants\[\d+\]\[size\]$/.test(k)).length
+      const stockRaw = formData.get("stock")
+      console.info("[new-product] submit", {
+        name: formData.get("name"),
+        slug: formData.get("slug"),
+        category: formData.get("category"),
+        price: formData.get("price"),
+        stockRaw,
+        images: images.length,
+        variantsInState: variants.length,
+        variantInputsInForm: variantCount,
+      })
+    }
     startTransition(async () => {
-      const result = await createProductAction(formData)
-      if (!result.ok) toast.error(result.error)
+      try {
+        const result = await createProductAction(formData)
+        if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+          console.info("[new-product] server action result", result)
+        }
+        if (!result.ok) {
+          toast.error(result.error)
+          return
+        }
+        // Si el server action tuvo éxito pero no redirigió (caso edge),
+        // navegamos manualmente al editor del producto.
+        if (typeof window !== "undefined") {
+          window.location.assign(`/admin/productos/${result.id}`)
+        }
+      } catch (submitErr) {
+        // El `redirect()` de Next.js lanza una excepción que Next intercepta.
+        // Si llega acá, fue un error real. Lo logueamos y mostramos al usuario.
+        if (typeof window !== "undefined") {
+          console.error("[new-product] submit threw", submitErr)
+        }
+        const message = submitErr instanceof Error ? submitErr.message : String(submitErr)
+        // Si el mensaje es un NEXT_REDIRECT (digest), no es un error — Next está
+        // navegando. No mostramos toast en ese caso.
+        if (!message.includes("NEXT_REDIRECT")) {
+          toast.error(message || "Error desconocido al guardar")
+        }
+      }
     })
   }
 

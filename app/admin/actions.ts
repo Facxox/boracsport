@@ -113,6 +113,9 @@ function parseVariants(formData: FormData): ParsedVariant[] {
     if (priceOverride != null && (!Number.isFinite(priceOverride) || priceOverride < 0)) {
       throw new Error(`Variante #${idx}: precio inválido`)
     }
+    // Aceptamos size+color con cualquier stock (incluido 0) para preservar
+    // el estado completo de la matriz. El filtrado "sin stock = no guardar"
+    // se hace en validRows dentro de replaceVariants.
     if (size && color) {
       variants.push({ size, color, sku, stock, price_override: priceOverride })
     }
@@ -145,14 +148,18 @@ async function replaceVariants(
     return
   }
 
-  // Filtrar filas vacías (sin size, color ni stock > 0) ANTES de borrar.
-  // Si la matriz está totalmente vacía, NO borramos ni tocamos nada: el
-  // producto sigue siendo de "stock simple" y su `products.stock` top-level
-  // sigue siendo válido.
+  // Si la matriz viene totalmente vacía (admin borró todas las celdas o
+  // quedaron todas en stock=0 con colores vacíos), NO hacemos nada: el
+  // producto sigue siendo de "stock simple" o todas las variantes se
+  // desactivan abajo (active=false).
   const validRows = variants.filter(
     (v) => ((v.size || "").trim() !== "" || (v.color || "").trim() !== "") && v.stock >= 0,
   )
-  if (validRows.length === 0) return
+  // Si no hay ni size ni color en ninguna variante, no tocar.
+  const hasUsableVariant = validRows.some(
+    (v) => (v.size || "").trim() !== "" && (v.color || "").trim() !== "",
+  )
+  if (!hasUsableVariant) return
 
   // 1) Borrar TODAS las variantes previas de este producto (delete + insert
   //    es más simple que diff y suficiente porque el admin edita raramente).
@@ -164,10 +171,10 @@ async function replaceVariants(
     throw new Error(describeSupabaseError(delError, "No se pudieron limpiar las variantes anteriores"))
   }
 
-  // Reconciliar products.stock con la suma de variantes válidas. Sin esto,
-  // el stock top-level queda inconsistente con la realidad (los pedidos
-  // decrementan variants.stock; el catálogo lee products.stock).
-  const variantStock = validRows.reduce(
+  // Reconciliar products.stock con la suma de variantes activas (stock > 0).
+  // Variantes con stock=0 quedan como active=false y no suman.
+  const activeRows = validRows.filter((v) => v.stock > 0)
+  const variantStock = activeRows.reduce(
     (acc, v) => acc + (Number.isInteger(v.stock) && v.stock >= 0 ? v.stock : 0),
     0,
   )
@@ -176,8 +183,6 @@ async function replaceVariants(
     .update({ stock: variantStock } as never)
     .eq("id", productId)
   if (stockSyncError) {
-    // No podemos recuperar el stock previo sin otra query; logueamos y
-    // continuamos. El admin verá el stock desfasado y lo corrige.
     console.error("[replaceVariants] no se pudo sincronizar products.stock:", stockSyncError.message)
   }
 
@@ -194,7 +199,13 @@ async function replaceVariants(
     }
   }
 
-  const rows = Array.from(dedup.values()).map((v) => ({ ...v, product_id: productId }))
+  // 3) Insertar variantes. Las de stock=0 quedan como active=false para
+  // que el catálogo no las muestre pero sigan ocupando la fila visible.
+  const rows = Array.from(dedup.values()).map((v) => ({
+    ...v,
+    product_id: productId,
+    active: v.stock > 0,
+  }))
   const { error: insError } = await supabase.from("product_variants").insert(rows as never)
   if (insError) {
     throw new Error(describeSupabaseError(insError, "No se pudieron insertar las variantes"))
@@ -244,10 +255,6 @@ export async function createProductAction(
     authenticatedClient = supabase
     const data = await parseProduct(supabase, formData)
     const variants = parseVariants(formData)
-    // Sólo pisamos `products.stock` con la suma de variantes si el form
-    // efectivamente incluyó inputs de matriz y esas variantes son válidas.
-    // Si la matriz quedó vacía (el admin borró todas las celdas), respetamos
-    // el stock numérico del input principal.
     const validVariants = variants.filter(
       (v) => ((v.size || "").trim() !== "" || (v.color || "").trim() !== "") && v.stock >= 0,
     )
@@ -273,15 +280,17 @@ export async function createProductAction(
     createdProductId = productId
     await replaceVariants(supabase, productId, variants, formData)
     revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
-    redirect(`/admin/productos/${productId}`)
+    // En lugar de redirect() (que puede no propagarse correctamente en
+    // Server Actions dentro de startTransition con async en Next.js 16),
+    // devolvemos el id y dejamos que el cliente navegue. El cliente hace
+    // window.location.assign() a /admin/productos/<id>.
+    return { ok: true, id: productId }
   } catch (err) {
-    // El `redirect()` de Next.js lanza una excepción especial con digest
-    // "NEXT_REDIRECT" — es flujo exitoso, no error. Re-lanzar tal cual.
-    if (isNextRedirect(err)) throw err
-    // Rollback si creamos un producto antes del fallo. Limpiamos primero
-    // las variantes (si quedaron insertadas parcialmente) y luego el
-    // producto. Si el delete de variantes falla por RLS, intentamos igual
-    // borrar el producto para que la fila no quede huérfana en cascada.
+    if (isNextRedirect(err)) {
+      // Por si Next todavía inserta este redirect, lo dejamos pasar.
+      throw err
+    }
+    // Rollback si creamos un producto antes del fallo.
     if (createdProductId && authenticatedClient) {
       try {
         await authenticatedClient
@@ -314,8 +323,6 @@ export async function createProductAction(
     console.error("[createProductAction] failed:", message)
     return { ok: false, error: message }
   }
-  // Inalcanzable (redirect lanza), pero TS lo exige.
-  return { ok: false, error: "unexpected" }
 }
 
 export async function updateProductAction(
@@ -367,7 +374,7 @@ export async function deleteProductAction(id: string): Promise<{ ok: true } | { 
       throw new Error(msg)
     }
     revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
-    redirect("/admin/productos")
+    // Devolvemos ok y el cliente hace window.location.assign().
     return { ok: true }
   } catch (err) {
     if (isNextRedirect(err)) throw err
