@@ -139,9 +139,9 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
   function pickSize(next: string) {
     setSize(next)
     const matches = variants.filter((v) => v.size === next && (!hasColors || v.color === color))
-    const hasStock = matches.some((v) => v.stock > 0)
+    const hasStock = matches.some((v) => variantHasStock(v))
     if (!hasStock) {
-      const first = variants.find((v) => v.size === next && v.stock > 0)
+      const first = variants.find((v) => v.size === next && variantHasStock(v))
       if (first && hasColors) setColor(first.color)
     }
   }
@@ -149,25 +149,37 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
   function pickColor(next: string) {
     setColor(next)
     const matches = variants.filter((v) => v.color === next && (!hasSizes || v.size === size))
-    const hasStock = matches.some((v) => v.stock > 0)
+    const hasStock = matches.some((v) => variantHasStock(v))
     if (!hasStock) {
-      const first = variants.find((v) => v.color === next && v.stock > 0)
+      const first = variants.find((v) => v.color === next && variantHasStock(v))
       if (first && hasSizes) setSize(first.size)
     }
   }
 
   const effectivePrice = selected?.priceOverride ?? basePrice
-  const stock = selected?.stock ?? 0
+  // Sanitizar stock del variant seleccionado: parseInt con fallback seguro
+  // para evitar que NaN/string-null contaminen la comparación y muestren
+  // "Sin stock" cuando en realidad hay stock.
+  const rawSelectedStock = selected?.stock
+  const safeSelectedStock =
+    rawSelectedStock == null
+      ? 0
+      : Math.max(0, Number.parseInt(String(rawSelectedStock), 10) || 0)
+  const stock = safeSelectedStock
 
   // Bug 2.3: si no hay match exacto (size+color), sugerimos una variante
   // alternativa disponible para suavizar el "Sin stock" confuso.
+  const variantHasStock = (v: { stock: number }) => {
+    const n = Math.max(0, Number.parseInt(String(v.stock), 10) || 0)
+    return n > 0
+  }
   const fallbackHint = useMemo(() => {
     if (selected) return null
     if (variants.length === 0) return null
     const candidate =
-      variants.find((v) => v.color === color && v.stock > 0) ??
-      variants.find((v) => v.size === size && v.stock > 0) ??
-      variants.find((v) => v.stock > 0)
+      variants.find((v) => v.color === color && variantHasStock(v)) ??
+      variants.find((v) => v.size === size && variantHasStock(v)) ??
+      variants.find((v) => variantHasStock(v))
     if (!candidate) return null
     const parts = [
       candidate.size && hasSizes ? `talle ${candidate.size}` : null,
@@ -188,7 +200,7 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
           </legend>
           <div className="flex flex-wrap gap-2">
             {colors.map((c) => {
-              const anyInStock = variants.some((v) => v.color === c && v.stock > 0)
+              const anyInStock = variants.some((v) => v.color === c && variantHasStock(v))
               const hex = colorToHex(c)
               return (
                 <button
@@ -232,7 +244,7 @@ export function VariantPicker({ variants, basePrice, onChange }: VariantPickerPr
           </legend>
           <div className="flex flex-wrap gap-2">
             {sizes.map((s) => {
-              const anyInStock = variants.some((v) => v.size === s && v.stock > 0)
+              const anyInStock = variants.some((v) => v.size === s && variantHasStock(v))
               return (
                 <button
                   key={s}

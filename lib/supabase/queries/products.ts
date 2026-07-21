@@ -101,9 +101,25 @@ export async function getProductBySlug(slug: string): Promise<ProductWithVariant
       console.warn("[getProductBySlug] variants fetch failed:", variantErr)
     }
 
+    // Sanitizar stock del producto top-level (puede venir como string desde
+    // PostgREST si la columna es numeric). parseInt con fallback seguro.
+    const safeProductStock = Math.max(
+      0,
+      Number.parseInt(String((row as { stock?: unknown }).stock ?? "0"), 10) || 0,
+    )
+
+    // Filtrar variantes inactivas o con stock inválido antes de exponer al
+    // picker. Si la query de variantes devolvió filas con `active = false`
+    // o sin stock, las descartamos.
+    const safeVariants = variants.filter((v) => {
+      const stock = Math.max(0, Number.parseInt(String(v.stock ?? "0"), 10) || 0)
+      return v.active === true && stock >= 0
+    })
+
     return {
       ...(row as unknown as ProductWithVariants),
-      variants,
+      stock: safeProductStock,
+      variants: safeVariants,
     }
   } catch (err) {
     console.warn("[getProductBySlug] exception:", err)

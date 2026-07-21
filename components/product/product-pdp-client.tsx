@@ -44,7 +44,10 @@ export function ProductPDPClient({ product, variants }: PDPClientProps) {
 
   const hasVariants = variants.length > 0
   const effectivePrice = selected?.priceOverride ?? product.price
-  const stock = selected?.stock ?? product.stock ?? 0
+  // Sanitizar stock del producto top-level: parseInt con fallback seguro
+  // para evitar que NaN/string-null rompan la comparación.
+  const safeProductStock = Math.max(0, Number.parseInt(String(product.stock ?? 0), 10) || 0)
+  const stock = hasVariants ? (selected?.stock ?? 0) : safeProductStock
   const canAdd = hasVariants
     ? selected != null && selected.stock > 0
     : stock > 0
@@ -58,6 +61,10 @@ export function ProductPDPClient({ product, variants }: PDPClientProps) {
       toast.error("Seleccioná una variante con stock disponible.")
       return
     }
+    if (!hasVariants && safeProductStock <= 0) {
+      toast.error("Este producto no tiene stock por el momento.")
+      return
+    }
     addProduct({
       id: product.id,
       slug: product.slug,
@@ -68,7 +75,7 @@ export function ProductPDPClient({ product, variants }: PDPClientProps) {
       variantId: selected?.id ?? null,
       size: selected?.size || undefined,
       color: selected?.color || undefined,
-      stockCap: hasVariants ? selected?.stock : stock,
+      stockCap: hasVariants ? selected?.stock : safeProductStock,
     })
     setLastAdded({ qty: 1, ts: Date.now() })
     toast.success("Producto agregado al carrito")

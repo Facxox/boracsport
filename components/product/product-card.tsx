@@ -37,9 +37,14 @@ export function ProductCard({
 }) {
   const addProduct = useCartStore((s) => s.addProduct)
   const image = safeImageUrl(product.images?.[0])
-  const stock = typeof product.stock === "number" ? product.stock : null
-  const outOfStock = stock != null && stock <= 0
-  const lowStock = stock != null && stock > 0 && stock <= LOW_STOCK_THRESHOLD
+  // Sanitizar stock: parseInt con fallback para evitar NaN si la DB devuelve
+  // string o null. Para productos con variantes, el stock top-level es un
+  // derivado (suma); si viene en 0 pero hay variantes, el cliente debe ir
+  // a la PDP para ver la disponibilidad real.
+  const rawStock = typeof product.stock === "number" ? product.stock : Number.parseInt(String(product.stock ?? ""), 10)
+  const safeStock = Number.isFinite(rawStock) && rawStock >= 0 ? rawStock : null
+  const outOfStock = !hasVariants && safeStock != null && safeStock <= 0
+  const lowStock = !hasVariants && safeStock != null && safeStock > 0 && safeStock <= LOW_STOCK_THRESHOLD
   const onSale = Boolean(product.on_sale)
 
   const actionLabel = hasVariants ? "Elegir opciones" : "Agregar"
@@ -82,12 +87,12 @@ export function ProductCard({
           >
             Sin stock
           </span>
-        ) : lowStock ? (
+        ) : lowStock && safeStock != null ? (
           <span
-            aria-label={`Últimas ${stock} unidades`}
+            aria-label={`Últimas ${safeStock} unidades`}
             className="bg-amber-500/15 text-amber-300 absolute right-2 bottom-2 rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase"
           >
-            ¡Últimas {stock}!
+            ¡Últimas {safeStock}!
           </span>
         ) : null}
       </Link>
@@ -134,7 +139,7 @@ export function ProductCard({
                   price: product.price,
                   image: image ?? undefined,
                   qty: 1,
-                  stockCap: stock ?? undefined,
+                  stockCap: safeStock ?? undefined,
                 })
               }}
               className={cn(

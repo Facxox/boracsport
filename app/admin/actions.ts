@@ -127,16 +127,32 @@ async function replaceVariants(
   formData: FormData,
 ) {
   // Si el form NO trae inputs `variants[N][size]`, el producto no está
-  // usando la matriz (categoría sin variantes como pelota/otro). No tocamos
-  // las variantes existentes — borrarlas accidentalmente destruye stock.
+  // usando la matriz (categoría sin variantes como pelota/otro). Si
+  // antes tenía variantes, las borramos para no dejar stock huérfano.
   const hasMatrixInputs = Array.from(formData.keys()).some((k) =>
     /^variants\[\d+\]\[size\]$/.test(k),
   )
-  if (!hasMatrixInputs) return
+  if (!hasMatrixInputs) {
+    // Borrado defensivo: si la categoría cambió de ropa a otro sin limpiar
+    // variantes, las borramos para que el stock top-level sea la única verdad.
+    const { error: orphanDeleteError } = await supabase
+      .from("product_variants")
+      .delete()
+      .eq("product_id", productId)
+    if (orphanDeleteError) {
+      console.warn("[replaceVariants] no se pudieron limpiar variantes huérfanas:", orphanDeleteError.message)
+    }
+    return
+  }
 
-  // Calcular el total de stock ANTES de tocar la DB. Si después del
-  // delete+insert falla algo, queremos volver a este valor coherente.
-  const variantStock = variants.reduce((acc, v) => acc + (Number.isInteger(v.stock) && v.stock >= 0 ? v.stock : 0), 0)
+  // Filtrar filas vacías (sin size, color ni stock > 0) ANTES de borrar.
+  // Si la matriz está totalmente vacía, NO borramos ni tocamos nada: el
+  // producto sigue siendo de "stock simple" y su `products.stock` top-level
+  // sigue siendo válido.
+  const validRows = variants.filter(
+    (v) => ((v.size || "").trim() !== "" || (v.color || "").trim() !== "") && v.stock >= 0,
+  )
+  if (validRows.length === 0) return
 
   // 1) Borrar TODAS las variantes previas de este producto (delete + insert
   //    es más simple que diff y suficiente porque el admin edita raramente).
@@ -148,9 +164,13 @@ async function replaceVariants(
     throw new Error(describeSupabaseError(delError, "No se pudieron limpiar las variantes anteriores"))
   }
 
-  // Reconciliar products.stock con la suma de variantes. Sin esto, el stock
-  // top-level queda inconsistente con la realidad (los pedidos decrementan
-  // variants.stock; el catálogo lee products.stock).
+  // Reconciliar products.stock con la suma de variantes válidas. Sin esto,
+  // el stock top-level queda inconsistente con la realidad (los pedidos
+  // decrementan variants.stock; el catálogo lee products.stock).
+  const variantStock = validRows.reduce(
+    (acc, v) => acc + (Number.isInteger(v.stock) && v.stock >= 0 ? v.stock : 0),
+    0,
+  )
   const { error: stockSyncError } = await supabase
     .from("products")
     .update({ stock: variantStock } as never)
@@ -161,16 +181,7 @@ async function replaceVariants(
     console.error("[replaceVariants] no se pudo sincronizar products.stock:", stockSyncError.message)
   }
 
-  if (variants.length === 0) return
-
-  // 2) Filtrar filas vacías (sin size, color ni stock > 0) que romperían
-  //    el UNIQUE constraint con rows default que ya existían.
-  const validRows = variants.filter(
-    (v) => ((v.size || "").trim() !== "" || (v.color || "").trim() !== "") && v.stock >= 0,
-  )
-  if (validRows.length === 0) return
-
-  // 3) Deduplicar por (size, color) — si la matriz tiene duplicados,
+  // 2) Deduplicar por (size, color) — si la matriz tiene duplicados,
   //    sumamos el stock.
   const dedup = new Map<string, ParsedVariant>()
   for (const v of validRows) {
@@ -233,8 +244,16 @@ export async function createProductAction(
     authenticatedClient = supabase
     const data = await parseProduct(supabase, formData)
     const variants = parseVariants(formData)
-    const variantStock = variants.reduce((acc, v) => acc + v.stock, 0)
-    const totalStock = variants.length > 0 ? variantStock : data.stock
+    // Sólo pisamos `products.stock` con la suma de variantes si el form
+    // efectivamente incluyó inputs de matriz y esas variantes son válidas.
+    // Si la matriz quedó vacía (el admin borró todas las celdas), respetamos
+    // el stock numérico del input principal.
+    const validVariants = variants.filter(
+      (v) => ((v.size || "").trim() !== "" || (v.color || "").trim() !== "") && v.stock >= 0,
+    )
+    const totalStock = validVariants.length > 0
+      ? validVariants.reduce((acc, v) => acc + (Number.isInteger(v.stock) && v.stock >= 0 ? v.stock : 0), 0)
+      : data.stock
     const { data: row, error } = await supabase
       .from("products")
       .insert([{ ...data, stock: totalStock }] as never)
@@ -308,8 +327,15 @@ export async function updateProductAction(
     const supabase = await requireAdmin()
     const data = await parseProduct(supabase, formData)
     const variants = parseVariants(formData)
-    const variantStock = variants.reduce((acc, v) => acc + v.stock, 0)
-    const totalStock = variants.length > 0 ? variantStock : data.stock
+    // Sólo pisamos `products.stock` con la suma de variantes si el form
+    // efectivamente incluyó inputs de matriz y esas variantes son válidas.
+    // Si la matriz quedó vacía, respetamos el stock del input principal.
+    const validVariants = variants.filter(
+      (v) => ((v.size || "").trim() !== "" || (v.color || "").trim() !== "") && v.stock >= 0,
+    )
+    const totalStock = validVariants.length > 0
+      ? validVariants.reduce((acc, v) => acc + (Number.isInteger(v.stock) && v.stock >= 0 ? v.stock : 0), 0)
+      : data.stock
     const { error } = await supabase
       .from("products")
       .update({ ...data, stock: totalStock } as never)
