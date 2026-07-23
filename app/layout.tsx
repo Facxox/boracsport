@@ -4,7 +4,6 @@ import { ThemeProvider } from "next-themes"
 import { Toaster } from "@/components/ui/sonner"
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
-import { TrustRibbon } from "@/components/layout/trust-ribbon"
 import { CartDrawer } from "@/components/layout/cart-drawer"
 import { DesignerBridgeMount } from "@/components/layout/designer-bridge-mount"
 import { SignOutCleanup } from "@/components/checkout/sign-out-cleanup"
@@ -31,5 +30,5 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="es" suppressHydrationWarning className={`${inter.variable} antialiased`}><body className="bg-background text-foreground flex min-h-screen flex-col font-sans"><ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="borac-theme"><TrustRibbon /><SiteHeader /><main className="flex-1">{children}</main><SiteFooter /><CartDrawer /><Toaster richColors position="top-right" /><DesignerBridgeMount /><SignOutCleanup /><StoreWipeOnIdle /></ThemeProvider></body></html>
+  return <html lang="es" suppressHydrationWarning className={`${inter.variable} antialiased`}><body className="bg-background text-foreground flex min-h-screen flex-col font-sans"><ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="borac-theme"><SiteHeader /><main className="flex-1">{children}</main><SiteFooter /><CartDrawer /><Toaster richColors position="top-right" /><DesignerBridgeMount /><SignOutCleanup /><StoreWipeOnIdle /></ThemeProvider></body></html>
 }

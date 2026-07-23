@@ -3,10 +3,12 @@ import { MessageCircle } from "lucide-react"
 import { siteConfig } from "@/lib/config/site"
 import { TAX_HOLDER } from "@/lib/config/banking"
 import { FacebookIcon, InstagramIcon, TikTokIcon } from "@/components/shared/social-icons"
+import { TrustRibbon } from "@/components/layout/trust-ribbon"
 
 export function SiteFooter() {
   return (
     <footer className="bg-bg-titanium border-t border-white/5">
+      <TrustRibbon />
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-4 md:py-14">
         <div>
           <h3 className="font-display text-lg font-extrabold">

@@ -4,7 +4,6 @@ import { CategoryFilter } from "@/components/home/category-filter"
 import { ProductGrid } from "@/components/product/product-grid"
 import { OnSaleRail } from "@/components/home/on-sale-rail"
 import { RecommendedForYou } from "@/components/home/recommended-for-you"
-import { TrustRibbon } from "@/components/layout/trust-ribbon"
 import {
   getProducts,
   getProductIdsWithVariants,
@@ -42,7 +41,6 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
 
   return (
     <>
-      <div className="hidden"><TrustRibbon /></div>
       <HeroSection />
       <Suspense><OnSaleRail /></Suspense>
       <section className="mx-auto max-w-7xl px-4 py-10 md:py-14">
