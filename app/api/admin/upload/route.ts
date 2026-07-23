@@ -25,7 +25,7 @@ const RULES: Record<Bucket, { kinds: Kind[]; mimes: Record<Kind, string[]>; maxB
       model: ["model/gltf-binary", "model/gltf+json"],
       media: [],
     },
-    maxBytes: 30 * 1024 * 1024,
+    maxBytes: 300 * 1024 * 1024,
   },
   boracsport_hero: {
     kinds: ["image", "media"],
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
   // Cap TOTAL del body para evitar OOM con muchos archivos. Usamos el mayor
   // maxBytes conocido + 5MB de holgura para multipart overhead.
-  const MAX_TOTAL_BYTES = 100 * 1024 * 1024 // 100 MB
+  const MAX_TOTAL_BYTES = 320 * 1024 * 1024 // 320 MB
   const contentLength = Number(request.headers.get("content-length") ?? 0)
   if (contentLength > MAX_TOTAL_BYTES) {
     return NextResponse.json(
