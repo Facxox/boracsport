@@ -1,5 +1,6 @@
 // Admin upload route. Validates role server-side, whitelists MIME/extension per
-// bucket, and stores files under <prefix>/<uuid>.<ext>.
+// bucket, and returns a signed upload URL so the browser can stream the bytes
+// DIRECTLY to Supabase Storage, bypassing the Vercel 4.5MB serverless body cap.
 
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
@@ -82,6 +83,12 @@ async function assertAdmin() {
   return { supabase }
 }
 
+type SignRequest = {
+  bucket: string
+  prefix: string
+  files: Array<{ filename: string; contentType: string; size: number }>
+}
+
 export async function POST(request: Request) {
   const auth = await assertAdmin()
   if ("error" in auth) {
@@ -89,61 +96,57 @@ export async function POST(request: Request) {
   }
   const supabase = auth.supabase
 
-  // Cap TOTAL del body para evitar OOM con muchos archivos. Usamos el mayor
-  // maxBytes conocido + 5MB de holgura para multipart overhead.
-  const MAX_TOTAL_BYTES = 320 * 1024 * 1024 // 320 MB
-  const contentLength = Number(request.headers.get("content-length") ?? 0)
-  if (contentLength > MAX_TOTAL_BYTES) {
-    return NextResponse.json(
-      { error: `Petición demasiado grande (${(contentLength / 1024 / 1024).toFixed(1)}MB > ${MAX_TOTAL_BYTES / 1024 / 1024}MB)` },
-      { status: 413 },
-    )
+  let body: SignRequest
+  try {
+    body = (await request.json()) as SignRequest
+  } catch {
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 })
   }
 
-  const form = await request.formData()
-  const bucket = String(form.get("bucket") ?? "")
-  if (!(ALLOWED_BUCKETS as readonly string[]).includes(bucket)) {
+  if (!(ALLOWED_BUCKETS as readonly string[]).includes(body.bucket)) {
     return NextResponse.json({ error: "Bucket inválido" }, { status: 400 })
   }
-  const typedBucket = bucket as Bucket
+  const typedBucket = body.bucket as Bucket
   const rules = RULES[typedBucket]
 
-  const prefixRaw = String(form.get("prefix") ?? "")
-  const prefix = safePrefix(prefixRaw)
+  const prefix = safePrefix(String(body.prefix ?? ""))
   if (!prefix) {
     return NextResponse.json({ error: "Prefix requerido" }, { status: 400 })
   }
 
-  const files = form.getAll("files").filter((f): f is File => f instanceof File)
-  if (files.length === 0) {
+  if (!Array.isArray(body.files) || body.files.length === 0) {
     return NextResponse.json({ error: "Sin archivos" }, { status: 400 })
   }
 
-  const urls: string[] = []
-  const paths: string[] = []
-  for (const file of files) {
-    if (file.size > rules.maxBytes) {
+  const signed: Array<{ path: string; token: string; signedUrl: string; publicUrl: string }> = []
+
+  for (const meta of body.files) {
+    if (typeof meta.size !== "number" || meta.size <= 0) {
+      return NextResponse.json({ error: `Tamaño inválido para ${meta.filename}` }, { status: 400 })
+    }
+    if (meta.size > rules.maxBytes) {
       return NextResponse.json(
-        { error: `Archivo demasiado grande (${(file.size / 1024 / 1024).toFixed(1)}MB > ${rules.maxBytes / 1024 / 1024}MB)` },
+        { error: `Archivo demasiado grande (${(meta.size / 1024 / 1024).toFixed(1)}MB > ${rules.maxBytes / 1024 / 1024}MB)` },
         { status: 413 },
       )
     }
 
+    const contentType = String(meta.contentType ?? "")
     let kind: Kind | null = null
-    if (rules.mimes.image.includes(file.type)) kind = "image"
-    else if (rules.mimes.model.includes(file.type)) kind = "model"
-    else if (rules.mimes.media.includes(file.type)) kind = "media"
+    if (rules.mimes.image.includes(contentType)) kind = "image"
+    else if (rules.mimes.model.includes(contentType)) kind = "model"
+    else if (rules.mimes.media.includes(contentType)) kind = "media"
 
     if (!kind) {
       return NextResponse.json(
-        { error: `Tipo no permitido: ${file.type || "desconocido"}` },
+        { error: `Tipo no permitido: ${contentType || "desconocido"}` },
         { status: 415 },
       )
     }
 
-    let ext = EXT_BY_MIME[file.type]
+    let ext = EXT_BY_MIME[contentType]
     if (!ext) {
-      const fromName = extFromName(file.name)
+      const fromName = extFromName(meta.filename ?? "")
       if (!fromName) return NextResponse.json({ error: "Extensión no reconocida" }, { status: 415 })
       ext = fromName
     }
@@ -151,18 +154,26 @@ export async function POST(request: Request) {
     const id = crypto.randomUUID()
     const path = `${prefix}/${id}.${ext}`
 
-    const { error } = await supabase.storage
+    const { data: signedData, error: signError } = await supabase.storage
       .from(typedBucket)
-      .upload(path, file, { contentType: file.type, upsert: false })
+      .createSignedUploadUrl(path)
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (signError || !signedData) {
+      return NextResponse.json(
+        { error: signError?.message ?? "No se pudo firmar la URL de subida" },
+        { status: 500 },
+      )
     }
 
     const { data: pub } = supabase.storage.from(typedBucket).getPublicUrl(path)
-    urls.push(pub.publicUrl)
-    paths.push(path)
+
+    signed.push({
+      path: signedData.path,
+      token: signedData.token,
+      signedUrl: signedData.signedUrl,
+      publicUrl: pub.publicUrl,
+    })
   }
 
-  return NextResponse.json({ urls, paths })
+  return NextResponse.json({ files: signed })
 }

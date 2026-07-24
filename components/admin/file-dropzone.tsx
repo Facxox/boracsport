@@ -5,6 +5,7 @@ import Image from "next/image"
 import { ArrowDown, ArrowUp, Loader2, Trash2, UploadCloud } from "lucide-react"
 import { toast } from "sonner"
 import { safeImageUrl } from "@/lib/safe-image"
+import { createClient } from "@/lib/supabase/client"
 
 export type DropzoneKind = "image" | "model" | "media"
 
@@ -80,25 +81,58 @@ export function FileDropzone({
       setBusy(true)
       setProgress(slice.map((f) => ({ name: f.name, pct: 0 })))
       try {
-        const fd = new FormData()
-        fd.append("bucket", bucket)
-        fd.append("prefix", prefix)
-        for (const f of slice) fd.append("files", f)
-        // naive per-file progress via fetch streaming (no real bytes tracking);
-        // show indeterminate progress while in flight.
+        // 1) Pedir al backend una signed upload URL por archivo (metadata JSON,
+        //    el body nunca toca el body-cap de Vercel porque son pocos bytes).
+        const metadata = {
+          mode: "sign",
+          bucket,
+          prefix,
+          files: slice.map((f) => ({
+            filename: f.name,
+            contentType: f.type || "application/octet-stream",
+            size: f.size,
+          })),
+        }
         const tick = setInterval(() => {
           setProgress((prev) => prev.map((p) => (p.pct < 90 ? { ...p, pct: p.pct + 10 } : p)))
         }, 150)
-        const res = await fetch("/api/admin/upload", { method: "POST", body: fd })
-        clearInterval(tick)
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(metadata),
+        })
         if (!res.ok) {
+          clearInterval(tick)
           const { error } = (await res.json().catch(() => ({ error: "Error" }))) as { error?: string }
           throw new Error(error ?? `Error ${res.status}`)
         }
-        const data = (await res.json()) as { urls: string[] }
-        setProgress((prev) => prev.map((p) => ({ ...p, pct: 100 })))
-        onChange([...value, ...data.urls])
-        toast.success(`${data.urls.length} archivo${data.urls.length === 1 ? "" : "s"} subido${data.urls.length === 1 ? "" : "s"}`)
+        const data = (await res.json()) as {
+          files: Array<{ path: string; token: string; signedUrl: string; publicUrl: string }>
+        }
+
+        // 2) Subir cada archivo DIRECTO a Supabase Storage con la signed URL
+        //    (TUS resumible, soporta archivos >300MB sin pasar por Vercel).
+        const supabase = createClient()
+        const uploadedUrls: string[] = []
+        for (let i = 0; i < slice.length; i++) {
+          const file = slice[i]
+          const slot = data.files[i]
+          if (!slot) throw new Error("Falta slot firmado para un archivo")
+          const { error: upErr } = await supabase.storage
+            .from(bucket)
+            .uploadToSignedUrl(slot.path, slot.token, file, { upsert: false })
+          if (upErr) {
+            clearInterval(tick)
+            throw new Error(upErr.message)
+          }
+          uploadedUrls.push(slot.publicUrl)
+          setProgress((prev) =>
+            prev.map((p, idx) => (idx === i ? { ...p, pct: 100 } : p)),
+          )
+        }
+        clearInterval(tick)
+        onChange([...value, ...uploadedUrls])
+        toast.success(`${uploadedUrls.length} archivo${uploadedUrls.length === 1 ? "" : "s"} subido${uploadedUrls.length === 1 ? "" : "s"}`)
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Error al subir")
       } finally {

@@ -27,15 +27,15 @@ function createStubBrowserClient() {
     signInWithPassword: async () => ok({ user: null, session: null }),
     signOut: async () => ok({}),
     updateUser: async () => ok({ user: null }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
   }
   const emptyQuery = {
     select: () => emptyQuery,
     insert: () => emptyQuery,
     update: () => emptyQuery,
     eq: () => emptyQuery,
-    neq: () => emptyQuery,
-    ilike: () => emptyQuery,
-    in: () => emptyQuery,
+    not: () => emptyQuery,
+    is: () => emptyQuery,
     order: () => emptyQuery,
     range: () => emptyQuery,
     limit: () => emptyQuery,
