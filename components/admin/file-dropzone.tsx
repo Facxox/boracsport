@@ -89,7 +89,13 @@ export function FileDropzone({
           prefix,
           files: slice.map((f) => ({
             filename: f.name,
-            contentType: f.type || "application/octet-stream",
+            contentType:
+              f.type ||
+              (kind === "model"
+                ? /\.gltf$/i.test(f.name)
+                  ? "model/gltf+json"
+                  : "model/gltf-binary"
+                : "application/octet-stream"),
             size: f.size,
           })),
         }
