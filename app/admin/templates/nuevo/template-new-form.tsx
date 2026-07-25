@@ -54,28 +54,59 @@ const DEFAULT_CONFIG = JSON.stringify(
   2,
 )
 
+// Fix 3: descriptor de los 8 mockups (2 requeridos + 6 opcionales).
+// El `name` se usa como clave del FormData.
+const MOCKUP_FIELDS: Array<{ name: string; label: string; required: boolean }> = [
+  { name: "mockup_url_front", label: "Mockup frente", required: true },
+  { name: "mockup_url_back", label: "Mockup espalda", required: true },
+  { name: "mockup_url_neck", label: "Mockup cuello (vista interior)", required: false },
+  { name: "mockup_url_collar", label: "Mockup solapa / cuello exterior", required: false },
+  { name: "mockup_url_sleeves", label: "Mockup mangas", required: false },
+  { name: "mockup_url_cuffs", label: "Mockup puños", required: false },
+  { name: "mockup_url_short", label: "Mockup short", required: false },
+  { name: "mockup_url_socks", label: "Mockup medias", required: false },
+]
+
+// Fix 3: descriptor de los 3 modelos 3D por variante.
+const MODEL_FIELDS: Array<{ name: string; label: string; variant: "shirt" | "short" | "socks" }> = [
+  { name: "model_url_shirt", label: "Camiseta", variant: "shirt" },
+  { name: "model_url_short", label: "Short", variant: "short" },
+  { name: "model_url_socks", label: "Medias", variant: "socks" },
+]
+
 export function TemplateNewForm() {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [front, setFront] = useState<string[]>([])
-  const [back, setBack] = useState<string[]>([])
-  const [model, setModel] = useState<string[]>([])
+  const [mockups, setMockups] = useState<Record<string, string[]>>(() => {
+    const out: Record<string, string[]> = {}
+    for (const f of MOCKUP_FIELDS) out[f.name] = []
+    return out
+  })
+  const [models, setModels] = useState<Record<string, string[]>>(() => {
+    const out: Record<string, string[]> = {}
+    for (const f of MODEL_FIELDS) out[f.name] = []
+    return out
+  })
+  const [primaryModel, setPrimaryModel] = useState<"shirt" | "short" | "socks">("shirt")
   const [sceneConfig, setSceneConfig] = useState(DEFAULT_SCENE_CONFIG)
   const [editableZones, setEditableZones] = useState(DEFAULT_EDITABLE_ZONES)
   const [defaultConfig, setDefaultConfig] = useState(DEFAULT_CONFIG)
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (front.length === 0) {
+    // Requeridos: frente + espalda.
+    if (mockups.mockup_url_front.length === 0) {
       toast.error("Subí el mockup frente")
       return
     }
-    if (back.length === 0) {
+    if (mockups.mockup_url_back.length === 0) {
       toast.error("Subí el mockup espalda")
       return
     }
     const form = event.currentTarget
     const formData = new FormData(form)
+    // Inyectamos el primary_model (radio controlado).
+    formData.set("primary_model", primaryModel)
     startTransition(async () => {
       try {
         const result = await createTemplateAction(formData)
@@ -106,59 +137,75 @@ export function TemplateNewForm() {
         </div>
       </div>
 
-      <section className="grid gap-2">
-        <p className={LABEL_CLASS}>Mockup frente</p>
-        <FileDropzone
-          bucket="boracsport_templates"
-          prefix="mockups"
-          kind="image"
-          value={front}
-          onChange={setFront}
-          maxFiles={1}
-          label="Imagen del frente"
-        />
-        {front.map((url) => <HiddenUrlField key={url} name="mockup_url_front" value={url} />)}
+      <section className="grid gap-4 rounded-xl border border-white/10 bg-[#101012] p-4">
+        <div className="flex items-baseline justify-between">
+          <h2 className="font-sans text-sm font-bold uppercase tracking-wider text-white/80">Mockups</h2>
+          <span className="text-xs text-white/45">
+            {Object.values(mockups).filter((arr) => arr.length > 0).length}/{MOCKUP_FIELDS.length}
+          </span>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {MOCKUP_FIELDS.map((f) => (
+            <div key={f.name} className="grid gap-2">
+              <p className={LABEL_CLASS}>
+                {f.label}
+                {f.required ? <span className="ml-1 text-[#dc2626]">*</span> : null}
+              </p>
+              <FileDropzone
+                bucket="boracsport_templates"
+                prefix={f.required ? "new/mockups" : `new/mockups/${f.name.replace("mockup_url_", "")}`}
+                kind="image"
+                value={mockups[f.name]}
+                onChange={(urls) => setMockups((prev) => ({ ...prev, [f.name]: urls }))}
+                maxFiles={1}
+                label="Imagen JPG / PNG / WebP"
+              />
+              {mockups[f.name].map((url) => <HiddenUrlField key={url} name={f.name} value={url} />)}
+            </div>
+          ))}
+        </div>
       </section>
 
-      <section className="grid gap-2">
-        <p className={LABEL_CLASS}>Mockup espalda</p>
-        <FileDropzone
-          bucket="boracsport_templates"
-          prefix="mockups"
-          kind="image"
-          value={back}
-          onChange={setBack}
-          maxFiles={1}
-          label="Imagen de la espalda"
-        />
-        {back.map((url) => <HiddenUrlField key={url} name="mockup_url_back" value={url} />)}
-      </section>
-
-      <section className="grid gap-2">
-        <p className={LABEL_CLASS}>Modelo 3D (opcional)</p>
-        <FileDropzone
-          bucket="boracsport_templates"
-          prefix="models"
-          kind="model"
-          value={model}
-          onChange={setModel}
-          maxFiles={1}
-          label=".glb / .gltf"
-        />
-        {model.map((url) => <HiddenUrlField key={url} name="model_url" value={url} />)}
+      <section className="grid gap-4 rounded-xl border border-white/10 bg-[#101012] p-4">
+        <div className="flex items-baseline justify-between">
+          <h2 className="font-sans text-sm font-bold uppercase tracking-wider text-white/80">Modelos 3D</h2>
+          <span className="text-xs text-white/45">
+            {Object.values(models).filter((arr) => arr.length > 0).length}/{MODEL_FIELDS.length} variantes
+          </span>
+        </div>
         <p className="text-xs text-white/45">
-          Si lo dejás vacío, el diseñador muestra el placeholder procedural.
+          Subí un GLB por variante. El que elijas como principal se expone en
+          <span className="text-white/70"> /personalizar</span>; los demás quedan
+          disponibles para futuro selector de kit.
         </p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {MODEL_FIELDS.map((f) => (
+            <div key={f.name} className="grid gap-2">
+              <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/70">
+                <input
+                  type="radio"
+                  name="primary_model"
+                  value={f.variant}
+                  checked={primaryModel === f.variant}
+                  onChange={() => setPrimaryModel(f.variant)}
+                  className="h-3.5 w-3.5 accent-[#dc2626]"
+                />
+                {f.label}
+              </label>
+              <FileDropzone
+                bucket="boracsport_templates"
+                prefix={`new/models/${f.variant}`}
+                kind="model"
+                value={models[f.name]}
+                onChange={(urls) => setModels((prev) => ({ ...prev, [f.name]: urls }))}
+                maxFiles={1}
+                label=".glb / .gltf"
+              />
+              {models[f.name].map((url) => <HiddenUrlField key={url} name={f.name} value={url} />)}
+            </div>
+          ))}
+        </div>
       </section>
-
-      <div className="grid gap-2">
-        <label className={LABEL_CLASS} htmlFor="model_format">Formato del modelo 3D</label>
-        <select id="model_format" name="model_format" defaultValue="" className={FIELD_CLASS}>
-          <option value="">— Sin modelo —</option>
-          <option value="glb">glb</option>
-          <option value="gltf">gltf</option>
-        </select>
-      </div>
 
       <details className="rounded-xl border border-white/10 bg-[#101012] p-4">
         <summary className="cursor-pointer text-sm font-semibold text-white/80">JSONB (avanzado)</summary>

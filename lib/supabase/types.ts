@@ -104,8 +104,22 @@ export interface TemplateRow {
   name: string
   mockup_url_front: string
   mockup_url_back: string
+  // Fix 3: mockups por zona visual (opcionales, nullable).
+  mockup_url_neck: string | null
+  mockup_url_collar: string | null
+  mockup_url_sleeves: string | null
+  mockup_url_cuffs: string | null
+  mockup_url_short: string | null
+  mockup_url_socks: string | null
   model_url: string | null
   model_format: "glb" | "gltf" | null
+  // Fix 3: modelos 3D por variante (opcionales, nullable).
+  model_url_shirt: string | null
+  model_format_shirt: "glb" | "gltf" | null
+  model_url_short: string | null
+  model_format_short: "glb" | "gltf" | null
+  model_url_socks: string | null
+  model_format_socks: "glb" | "gltf" | null
   scene_config: Json
   editable_zones: Json
   default_config: Json

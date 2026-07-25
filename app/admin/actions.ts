@@ -657,12 +657,30 @@ export async function reorderSlidesAction(orderedIds: string[]) {
 
 // ---------- Templates (diseñador 3D) ----------
 
+type ModelVariant = "shirt" | "short" | "socks"
+
 interface ParsedTemplate {
   name: string
   mockup_url_front: string
   mockup_url_back: string
+  // Fix 3: mockups adicionales (opcionales).
+  mockup_url_neck: string | null
+  mockup_url_collar: string | null
+  mockup_url_sleeves: string | null
+  mockup_url_cuffs: string | null
+  mockup_url_short: string | null
+  mockup_url_socks: string | null
+  // Fix 3: modelos 3D por variante (opcionales). El par "principal"
+  // elegido en el form se proyecta a `model_url`/`model_format` legacy
+  // que es lo que consume el diseñador (`getActiveTemplate`).
   model_url: string | null
   model_format: "glb" | "gltf" | null
+  model_url_shirt: string | null
+  model_format_shirt: "glb" | "gltf" | null
+  model_url_short: string | null
+  model_format_short: "glb" | "gltf" | null
+  model_url_socks: string | null
+  model_format_socks: "glb" | "gltf" | null
   scene_config: Record<string, unknown>
   editable_zones: Record<string, unknown>
   default_config: Record<string, unknown>
@@ -687,11 +705,65 @@ function parseTemplate(formData: FormData): ParsedTemplate {
   const name = text(formData.get("name"), 120)
   const mockup_url_front = text(formData.get("mockup_url_front"), 1000)
   const mockup_url_back = text(formData.get("mockup_url_back"), 1000)
-  const modelUrlRaw = text(formData.get("model_url"), 1000)
-  const modelFormatRaw = text(formData.get("model_format"), 8).toLowerCase()
-  const model_format: "glb" | "gltf" | null =
-    modelFormatRaw === "glb" || modelFormatRaw === "gltf" ? modelFormatRaw : null
-  const model_url = modelUrlRaw ? modelUrlRaw : null
+  // Fix 3: mockups adicionales por zona visual (todos opcionales).
+  const mockup_url_neck = text(formData.get("mockup_url_neck"), 1000) || null
+  const mockup_url_collar = text(formData.get("mockup_url_collar"), 1000) || null
+  const mockup_url_sleeves = text(formData.get("mockup_url_sleeves"), 1000) || null
+  const mockup_url_cuffs = text(formData.get("mockup_url_cuffs"), 1000) || null
+  const mockup_url_short = text(formData.get("mockup_url_short"), 1000) || null
+  const mockup_url_socks = text(formData.get("mockup_url_socks"), 1000) || null
+
+  // Fix 3: modelos 3D por variante. El formato se infiere server-side
+  // desde la extensión del URL (no confiamos en el cliente).
+  const inferFormat = (url: string | null): "glb" | "gltf" | null => {
+    if (!url) return null
+    if (/\.glb(\?|#|$)/i.test(url)) return "glb"
+    if (/\.gltf(\?|#|$)/i.test(url)) return "gltf"
+    return null
+  }
+  const model_url_shirt = text(formData.get("model_url_shirt"), 1000) || null
+  const model_format_shirt = inferFormat(model_url_shirt)
+  const model_url_short = text(formData.get("model_url_short"), 1000) || null
+  const model_format_short = inferFormat(model_url_short)
+  const model_url_socks = text(formData.get("model_url_socks"), 1000) || null
+  const model_format_socks = inferFormat(model_url_socks)
+
+  // Modelo principal elegido en el form (radio shirt | short | socks).
+  // Si el par elegido está vacío, caemos al primer par no-nulo en orden
+  // shirt → short → socks. Si ninguno está cargado, conservamos el
+  // `model_url` legacy del form (sólo presente en edit si el usuario no
+  // tocó los nuevos modelos) para no borrar assets preexistentes.
+  const primaryRaw = text(formData.get("primary_model"), 8).toLowerCase()
+  const primary: ModelVariant =
+    primaryRaw === "shirt" || primaryRaw === "short" || primaryRaw === "socks"
+      ? (primaryRaw as ModelVariant)
+      : "shirt"
+  const variants: Array<{ key: ModelVariant; url: string | null; format: "glb" | "gltf" | null }> = [
+    { key: "shirt", url: model_url_shirt, format: model_format_shirt },
+    { key: "short", url: model_url_short, format: model_format_short },
+    { key: "socks", url: model_url_socks, format: model_format_socks },
+  ]
+  let model_url: string | null
+  let model_format: "glb" | "gltf" | null
+  const primaryPair = variants.find((v) => v.key === primary)
+  if (primaryPair?.url) {
+    model_url = primaryPair.url
+    model_format = primaryPair.format
+  } else {
+    const fallback = variants.find((v) => v.url)
+    if (fallback) {
+      model_url = fallback.url
+      model_format = fallback.format
+    } else {
+      // Sin variantes nuevas: preservamos el legacy si el form lo trae.
+      const legacyUrl = text(formData.get("model_url"), 1000) || null
+      const legacyFormatRaw = text(formData.get("model_format"), 8).toLowerCase()
+      model_url = legacyUrl
+      model_format =
+        legacyFormatRaw === "glb" || legacyFormatRaw === "gltf" ? legacyFormatRaw : inferFormat(legacyUrl)
+    }
+  }
+
   const version = Number(formData.get("version") ?? 1)
   const price = Number(formData.get("price") ?? 0)
   const scene_config = safeJsonObject(formData.get("scene_config"), {})
@@ -707,8 +779,20 @@ function parseTemplate(formData: FormData): ParsedTemplate {
     name,
     mockup_url_front,
     mockup_url_back,
+    mockup_url_neck,
+    mockup_url_collar,
+    mockup_url_sleeves,
+    mockup_url_cuffs,
+    mockup_url_short,
+    mockup_url_socks,
     model_url,
     model_format,
+    model_url_shirt,
+    model_format_shirt,
+    model_url_short,
+    model_format_short,
+    model_url_socks,
+    model_format_socks,
     scene_config,
     editable_zones,
     default_config,
