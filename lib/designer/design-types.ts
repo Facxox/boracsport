@@ -21,7 +21,12 @@ export type TemplateZone = {
 export type ThreeDTemplateConfig = {
   modelUrl: string
   modelFormat: "glb" | "gltf"
-  scene?: { cameraPosition?: [number, number, number]; background?: string }
+  scene?: {
+    cameraPosition?: [number, number, number]
+    cameraTarget?: [number, number, number]
+    cameraDistance?: number
+    background?: string
+  }
   zones: TemplateZone[]
 }
 

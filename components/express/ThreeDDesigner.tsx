@@ -2,17 +2,24 @@
 
 import { useMemo, useState } from "react"
 import { motion } from "framer-motion"
-import { Check, ImagePlus, Loader2, ShoppingBag } from "lucide-react"
+import { Check, ImagePlus, Loader2, ShoppingBag, X } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { ThreeDViewport } from "@/components/express/ThreeDViewport"
 import { useCartStore } from "@/stores/cart-store"
-import type { ThreeDDesignPayload, ThreeDTemplateConfig, TemplateZone } from "@/lib/designer/design-types"
+import type { ThreeDLayerValue, ThreeDDesignPayload, ThreeDTemplateConfig, TemplateZone } from "@/lib/designer/design-types"
 import type { TemplateRow } from "@/lib/supabase/types"
 
 const MAX_TEXT = 80
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+const IMAGE_EXT = /\.(png|jpe?g|webp|svg)$/i
 
-function initialLayers(config: ThreeDTemplateConfig) {
-  return config.zones.map((zone) => ({ zoneId: zone.id, value: zone.defaultValue ?? "", color: zone.allowedColors?.[0] }))
+function initialLayers(config: ThreeDTemplateConfig): ThreeDLayerValue[] {
+  return config.zones.map((zone) => ({
+    zoneId: zone.id,
+    value: zone.defaultValue ?? "",
+    color: zone.allowedColors?.[0],
+  }))
 }
 
 export function ThreeDDesigner({ template, config }: { template: TemplateRow; config: ThreeDTemplateConfig }) {
@@ -30,13 +37,35 @@ export function ThreeDDesigner({ template, config }: { template: TemplateRow; co
   }
 
   async function uploadAsset(zone: TemplateZone, file: File) {
-    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) return
+    const isImageByMime = file.type.startsWith("image/")
+    const isImageByExt = IMAGE_EXT.test(file.name)
+    if (!isImageByMime && !isImageByExt) {
+      toast.error("Formato no soportado. Usá PNG, JPG, WebP o SVG.")
+      return
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("La imagen supera 5 MB.")
+      return
+    }
     setUploadingZone(zone.id)
     try {
       const reader = new FileReader()
-      const dataUrl = await new Promise<string>((resolve, reject) => { reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file) })
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(String(reader.result))
+        reader.onerror = () => reject(new Error("No se pudo leer el archivo"))
+        reader.readAsDataURL(file)
+      })
       updateLayer(zone, file.name, { assetUrl: dataUrl })
-    } finally { setUploadingZone(null) }
+      toast.success("Imagen cargada")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo leer el archivo")
+    } finally {
+      setUploadingZone(null)
+    }
+  }
+
+  function removeAsset(zone: TemplateZone) {
+    updateLayer(zone, "", { assetUrl: undefined })
   }
 
   function addToCart() {
@@ -46,5 +75,119 @@ export function ThreeDDesigner({ template, config }: { template: TemplateRow; co
     setSaving(false)
   }
 
-  return <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]"><section><ThreeDViewport config={config} baseColor={baseColor} /><div className="mt-3 flex items-center justify-between rounded-2xl border border-white/10 bg-card px-4 py-3 text-xs text-muted-foreground"><span>Las zonas están fijadas por Borac Sport para mantener el calce y la producción.</span><span className="hidden sm:inline">Rotá · Zoom · Previsualizá</span></div></section><aside className="space-y-5 rounded-3xl border border-white/10 bg-card p-5"><div><p className="text-muted-foreground text-xs uppercase tracking-[0.2em]">Configurador 3D</p><h1 className="mt-2 font-display text-2xl font-extrabold">{template.name}</h1><p className="text-muted-foreground mt-2 text-sm">Editá el contenido de cada zona sin mover su posición.</p></div><label className="flex items-center justify-between rounded-xl border border-white/10 p-3 text-sm font-semibold">Color base<input type="color" value={baseColor} onChange={(event) => setBaseColor(event.target.value)} className="h-8 w-12 cursor-pointer rounded bg-transparent" /></label><div className="space-y-3">{editableZones.map((zone) => { const layer = layers.find((item) => item.zoneId === zone.id); return <div key={zone.id} className="rounded-2xl border border-white/10 p-3"><div className="flex items-center justify-between"><label htmlFor={`zone-${zone.id}`} className="text-sm font-semibold">{zone.label}</label><span className="text-[10px] uppercase tracking-wider text-brand-red">{zone.kind === "number" ? "Dorsal" : zone.kind}</span></div>{zone.kind === "logo" || zone.kind === "sponsor" ? <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-white/20 p-3 text-xs hover:border-brand-red">{uploadingZone === zone.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}Subir imagen<input type="file" accept="image/png,image/jpeg,image/svg+xml" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadAsset(zone, file) }} /></label> : <input id={`zone-${zone.id}`} value={layer?.value ?? ""} maxLength={zone.maxChars} onChange={(event) => updateLayer(zone, event.target.value)} placeholder={zone.kind === "number" ? "10" : "Escribí aquí"} className="mt-3 w-full rounded-xl border border-white/10 bg-background px-3 py-2 text-sm" />}{zone.allowedColors && <div className="mt-3 flex flex-wrap gap-2">{zone.allowedColors.map((color) => <button key={color} type="button" aria-label={`Elegir color ${color}`} onClick={() => updateLayer(zone, layer?.value ?? "", { color })} className={`h-6 w-6 rounded-full border-2 ${layer?.color === color ? "border-brand-red" : "border-white/20"}`} style={{ backgroundColor: color }} />)}</div>}<p className="mt-2 flex items-center gap-1 text-[11px] text-white/45"><Check className="h-3 w-3 text-brand-green" />Posición bloqueada</p></div> })}</div><motion.div whileTap={{ scale: 0.98 }}><Button type="button" onClick={addToCart} disabled={saving} className="w-full bg-brand-red text-black hover:bg-[#ef4444]"><ShoppingBag className="mr-2 h-4 w-4" />{saving ? "Guardando…" : "Agregar al carrito"}</Button></motion.div><p className="text-muted-foreground text-xs">Precio a coordinar después de revisar tu diseño.</p></aside></div>
+  return (
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section>
+        <ThreeDViewport config={config} baseColor={baseColor} layers={layers} />
+        <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/10 bg-card px-4 py-3 text-xs text-muted-foreground">
+          <span>Las zonas están fijadas por Borac Sport para mantener el calce y la producción.</span>
+          <span className="hidden sm:inline">Rotá · Zoom · Previsualizá</span>
+        </div>
+      </section>
+      <aside className="space-y-5 rounded-3xl border border-white/10 bg-card p-5">
+        <div>
+          <p className="text-muted-foreground text-xs uppercase tracking-[0.2em]">Configurador 3D</p>
+          <h1 className="mt-2 font-display text-2xl font-extrabold">{template.name}</h1>
+          <p className="text-muted-foreground mt-2 text-sm">Editá el contenido de cada zona sin mover su posición.</p>
+        </div>
+        <label className="flex items-center justify-between rounded-xl border border-white/10 p-3 text-sm font-semibold">
+          Color base
+          <input
+            type="color"
+            value={baseColor}
+            onChange={(event) => setBaseColor(event.target.value)}
+            className="h-8 w-12 cursor-pointer rounded bg-transparent"
+          />
+        </label>
+        <div className="space-y-3">
+          {editableZones.map((zone) => {
+            const layer = layers.find((item) => item.zoneId === zone.id)
+            const isImageZone = zone.kind === "logo" || zone.kind === "sponsor"
+            return (
+              <div key={zone.id} className="rounded-2xl border border-white/10 p-3">
+                <div className="flex items-center justify-between">
+                  <label htmlFor={`zone-${zone.id}`} className="text-sm font-semibold">{zone.label}</label>
+                  <span className="text-[10px] uppercase tracking-wider text-brand-red">
+                    {zone.kind === "number" ? "Dorsal" : zone.kind}
+                  </span>
+                </div>
+                {isImageZone ? (
+                  <div className="mt-3 space-y-2">
+                    <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-white/20 p-3 text-xs hover:border-brand-red">
+                      {uploadingZone === zone.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                      {layer?.assetUrl ? "Reemplazar imagen" : "Subir imagen"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                        className="sr-only"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0]
+                          if (file) void uploadAsset(zone, file)
+                          event.target.value = ""
+                        }}
+                      />
+                    </label>
+                    {layer?.assetUrl ? (
+                      <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 p-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={layer.assetUrl} alt={layer.value || zone.label} className="h-12 w-12 rounded object-contain" />
+                        <span className="flex-1 truncate text-xs text-white/70">{layer.value}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAsset(zone)}
+                          className="rounded p-1 text-red-400 hover:bg-red-500/20"
+                          aria-label="Quitar imagen"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <input
+                    id={`zone-${zone.id}`}
+                    value={layer?.value ?? ""}
+                    maxLength={zone.maxChars}
+                    onChange={(event) => updateLayer(zone, event.target.value)}
+                    placeholder={zone.kind === "number" ? "10" : "Escribí aquí"}
+                    className="mt-3 w-full rounded-xl border border-white/10 bg-background px-3 py-2 text-sm"
+                  />
+                )}
+                {zone.allowedColors && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {zone.allowedColors.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        aria-label={`Elegir color ${color}`}
+                        onClick={() => updateLayer(zone, layer?.value ?? "", { color })}
+                        className={`h-6 w-6 rounded-full border-2 ${layer?.color === color ? "border-brand-red" : "border-white/20"}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                )}
+                <p className="mt-2 flex items-center gap-1 text-[11px] text-white/45">
+                  <Check className="h-3 w-3 text-brand-green" />
+                  Posición bloqueada
+                </p>
+              </div>
+            )
+          })}
+        </div>
+        <motion.div whileTap={{ scale: 0.98 }}>
+          <Button
+            type="button"
+            onClick={addToCart}
+            disabled={saving}
+            className="w-full bg-brand-red text-black hover:bg-[#ef4444]"
+          >
+            <ShoppingBag className="mr-2 h-4 w-4" />
+            {saving ? "Guardando…" : "Agregar al carrito"}
+          </Button>
+        </motion.div>
+        <p className="text-muted-foreground text-xs">Precio a coordinar después de revisar tu diseño.</p>
+      </aside>
+    </div>
+  )
 }

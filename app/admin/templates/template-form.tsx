@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useMemo, useState, useTransition } from "react"
 import { toast } from "sonner"
 import { FileDropzone } from "@/components/admin/file-dropzone"
 import {
@@ -22,6 +22,34 @@ interface TemplateFormProps {
     scene_config: string
     default_config: string
     active: boolean
+  }
+}
+
+type SceneConfig = {
+  cameraPosition?: [number, number, number]
+  cameraTarget?: [number, number, number]
+  cameraDistance?: number
+  background?: string
+}
+
+function parseSceneConfig(raw: string | undefined): SceneConfig {
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as SceneConfig
+    }
+  } catch {
+    // ignore
+  }
+  return {}
+}
+
+function sceneConfigToString(scene: SceneConfig): string {
+  try {
+    return JSON.stringify(scene, null, 2)
+  } catch {
+    return "{}"
   }
 }
 
@@ -64,10 +92,15 @@ export function TemplateForm({ id, initial = defaultInitial }: TemplateFormProps
   const [mockupBack, setMockupBack] = useState<string[]>(initial.mockup_url_back ? [initial.mockup_url_back] : [])
   const [modelUrl, setModelUrl] = useState<string[]>(initial.model_url ? [initial.model_url] : [])
 
+  const initialScene = useMemo(() => parseSceneConfig(initial.scene_config), [initial.scene_config])
+  const [scene, setScene] = useState<SceneConfig>(initialScene)
+  const sceneJson = useMemo(() => sceneConfigToString(scene), [scene])
+
   function handleSubmit(formData: FormData) {
     formData.set("mockup_url_front", mockupFront[0] ?? "")
     formData.set("mockup_url_back", mockupBack[0] ?? "")
     formData.set("model_url", modelUrl[0] ?? "")
+    formData.set("scene_config", sceneJson)
     startTransition(async () => {
       try {
         if (isEdit && id) {
@@ -181,17 +214,27 @@ export function TemplateForm({ id, initial = defaultInitial }: TemplateFormProps
         />
       </label>
 
+      <details className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm" open>
+        <summary className="cursor-pointer select-none text-white/70">
+          Cámara de la escena 3D
+        </summary>
+        <CameraSceneEditor scene={scene} onChange={setScene} />
+      </details>
+
       <details className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm">
         <summary className="cursor-pointer select-none text-white/70">
           Configuración avanzada (scene_config / default_config)
         </summary>
         <div className="mt-3 grid gap-3">
+          <p className="text-[11px] text-white/45">
+            Los campos de arriba ya escriben scene_config. Editá esto solo si necesitás agregar claves personalizadas.
+          </p>
           <label className="grid gap-2 text-xs">
-            scene_config
+            scene_config (JSON resultante)
             <textarea
-              name="scene_config"
-              defaultValue={initial.scene_config}
-              className="min-h-24 rounded-lg border border-white/10 bg-black/30 p-2 font-mono"
+              readOnly
+              value={sceneJson}
+              className="min-h-24 rounded-lg border border-white/10 bg-black/30 p-2 font-mono text-white/70"
             />
           </label>
           <label className="grid gap-2 text-xs">
@@ -236,5 +279,94 @@ export function TemplateForm({ id, initial = defaultInitial }: TemplateFormProps
         </button>
       </div>
     </form>
+  )
+}
+
+function CameraSceneEditor({ scene, onChange }: { scene: SceneConfig; onChange: (next: SceneConfig) => void }) {
+  const target = scene.cameraTarget ?? [0, 0, 0]
+  const position = scene.cameraPosition ?? [0, 0, 4.5]
+  const distance = scene.cameraDistance ?? 4.5
+
+  function setTarget(index: number, value: number) {
+    const next: [number, number, number] = [target[0], target[1], target[2]]
+    next[index as 0 | 1 | 2] = value
+    onChange({ ...scene, cameraTarget: next })
+  }
+
+  function setPosition(index: number, value: number) {
+    const next: [number, number, number] = [position[0], position[1], position[2]]
+    next[index as 0 | 1 | 2] = value
+    onChange({ ...scene, cameraPosition: next })
+  }
+
+  function setDistance(value: number) {
+    onChange({ ...scene, cameraDistance: value })
+  }
+
+  function reset() {
+    onChange({})
+  }
+
+  return (
+    <div className="mt-3 grid gap-3">
+      <p className="text-[11px] text-white/55">
+        Ajustá dónde mira la cámara y a qué distancia. Si dejás los valores por defecto, el visor centra el modelo automáticamente.
+      </p>
+      <fieldset className="grid gap-2 rounded-lg border border-white/10 bg-black/30 p-3">
+        <legend className="px-1 text-[10px] uppercase tracking-wider text-white/50">Target (qué mira la cámara)</legend>
+        <div className="grid grid-cols-3 gap-2">
+          {(["x", "y", "z"] as const).map((axis, idx) => (
+            <label key={axis} className="grid gap-1 text-[11px] text-white/70">
+              {axis.toUpperCase()}
+              <input
+                type="number"
+                step="0.1"
+                value={target[idx]}
+                onChange={(event) => setTarget(idx, Number(event.target.value))}
+                className="h-9 rounded-md border border-white/10 bg-black/40 px-2 text-xs"
+              />
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset className="grid gap-2 rounded-lg border border-white/10 bg-black/30 p-3">
+        <legend className="px-1 text-[10px] uppercase tracking-wider text-white/50">Posición de cámara (opcional, legacy)</legend>
+        <div className="grid grid-cols-3 gap-2">
+          {(["x", "y", "z"] as const).map((axis, idx) => (
+            <label key={axis} className="grid gap-1 text-[11px] text-white/70">
+              {axis.toUpperCase()}
+              <input
+                type="number"
+                step="0.1"
+                value={position[idx]}
+                onChange={(event) => setPosition(idx, Number(event.target.value))}
+                className="h-9 rounded-md border border-white/10 bg-black/40 px-2 text-xs"
+              />
+            </label>
+          ))}
+        </div>
+        <p className="text-[10px] text-white/40">
+          Si la completás, anula el target/distancia y se usa esta posición fija.
+        </p>
+      </fieldset>
+      <label className="grid gap-1 text-xs text-white/70">
+        Distancia
+        <input
+          type="number"
+          step="0.1"
+          min="0.5"
+          value={distance}
+          onChange={(event) => setDistance(Number(event.target.value))}
+          className="h-9 rounded-md border border-white/10 bg-black/40 px-2 text-xs"
+        />
+      </label>
+      <button
+        type="button"
+        onClick={reset}
+        className="h-8 self-start rounded-md border border-white/15 px-3 text-[11px] text-white/70 hover:border-white/30"
+      >
+        Restablecer cámara
+      </button>
+    </div>
   )
 }
