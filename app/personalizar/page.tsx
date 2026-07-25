@@ -9,7 +9,19 @@ export const metadata = { title: "Diseñá tu equipo 3D | Borac Sport", descript
 
 async function getTemplate(): Promise<TemplateRow | null> {
   const supabase = await createClient()
-  const { data } = await supabase.from("templates").select("*").eq("active", true).not("model_url", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle()
+  const { data, error } = await supabase
+    .from("templates")
+    .select("*")
+    .eq("active", true)
+    .not("model_url", "is", null)
+    .not("model_format", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) {
+    console.error("[personalizar] no se pudo cargar la plantilla:", error.message)
+    return null
+  }
   return data as TemplateRow | null
 }
 
@@ -17,7 +29,19 @@ function templateConfig(template: TemplateRow): ThreeDTemplateConfig | null {
   if (!template.model_url || !template.model_format) return null
   const scene = template.scene_config && typeof template.scene_config === "object" && !Array.isArray(template.scene_config) ? template.scene_config as Record<string, unknown> : {}
   const zones = Array.isArray(template.editable_zones) ? template.editable_zones : []
-  return { modelUrl: template.model_url, modelFormat: template.model_format, scene: scene as ThreeDTemplateConfig["scene"], zones: zones as ThreeDTemplateConfig["zones"] }
+  const defaults = template.default_config && typeof template.default_config === "object" && !Array.isArray(template.default_config) ? template.default_config as Record<string, unknown> : {}
+  const patterns = Array.isArray(defaults.patterns) ? defaults.patterns : undefined
+  const fonts = Array.isArray(defaults.fonts) ? defaults.fonts : undefined
+  const kits = Array.isArray(defaults.kits) ? defaults.kits : undefined
+  return {
+    modelUrl: template.model_url,
+    modelFormat: template.model_format,
+    scene: scene as ThreeDTemplateConfig["scene"],
+    zones: zones as ThreeDTemplateConfig["zones"],
+    patterns: patterns as ThreeDTemplateConfig["patterns"],
+    fonts: fonts as ThreeDTemplateConfig["fonts"],
+    kits: kits as ThreeDTemplateConfig["kits"],
+  }
 }
 
 export default async function PersonalizarPage() {
