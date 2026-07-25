@@ -7,12 +7,10 @@ import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
 import { FpsMonitor } from "@/components/designer/viewer/FpsMonitor"
 import type { DesignState } from "@/lib/designer/types"
-import type { ZoneImageMap } from "@/components/designer/TextureCompositor"
 
 interface Viewer3DProps {
   state: DesignState
   modelUrl: string | null | undefined
-  logos: ZoneImageMap
   onLowFps?: (fps: number) => void
 }
 
