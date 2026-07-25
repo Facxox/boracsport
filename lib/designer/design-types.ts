@@ -3,6 +3,17 @@ export type EditableZoneKind = "text" | "logo" | "number" | "sponsor" | "color" 
 export type DesignerPanel = "base" | "design" | "logos" | "dorsal"
 export type KitView = "shirt" | "shirtShort" | "full"
 
+export type ModelTransform = {
+  position?: [number, number, number]
+  rotation?: [number, number, number]
+  scale?: [number, number, number]
+}
+
+export type GarmentModelConfig = ModelTransform & {
+  url: string
+  format: "glb" | "gltf"
+}
+
 export type TemplateAssetOption = {
   id: string
   label: string
@@ -51,7 +62,8 @@ export type ThreeDTemplateConfig = {
   zones: TemplateZone[]
   patterns?: TemplateAssetOption[]
   fonts?: TemplateFontOption[]
-  kits?: Array<{ id: KitView; label: string; modelUrl?: string; modelFormat?: "glb" | "gltf" }>
+  models?: Partial<Record<KitView, GarmentModelConfig>>
+  kits?: Array<{ id: KitView; label: string }>
 }
 
 export type LogoTransform = {
@@ -73,6 +85,8 @@ export type ThreeDLayerValue = {
   secondaryColor?: string
   fontId?: string
   enabled?: boolean
+  strokeColor?: string
+  strokeEnabled?: boolean
 }
 
 export type ThreeDDesignPayload = {

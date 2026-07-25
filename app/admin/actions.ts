@@ -443,10 +443,66 @@ function parseTemplate(formData: FormData) {
   }
 }
 
+function sanitizeDefaultConfig(raw: Json | null | undefined): Json {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {}
+  const record = raw as Record<string, unknown>
+  const allowedKeys = new Set(["patterns", "fonts", "kits", "models", "zones"])
+  const out: Record<string, unknown> = {}
+  for (const key of Object.keys(record)) {
+    if (!allowedKeys.has(key)) continue
+    out[key] = record[key]
+  }
+  return out as Json
+}
+
+function isFiniteTuple3(value: unknown): value is [number, number, number] {
+  return Array.isArray(value) && value.length === 3 && value.every((entry) => typeof entry === "number" && Number.isFinite(entry))
+}
+
+function sanitizeGarmentConfig(raw: unknown): { url: string; format: "glb" | "gltf"; position?: [number, number, number]; rotation?: [number, number, number]; scale?: [number, number, number] } | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null
+  const record = raw as Record<string, unknown>
+  const url = typeof record.url === "string" ? record.url.trim() : ""
+  const format = record.format
+  if (!url || (format !== "glb" && format !== "gltf")) return null
+  const out: { url: string; format: "glb" | "gltf"; position?: [number, number, number]; rotation?: [number, number, number]; scale?: [number, number, number] } = { url, format }
+  if (isFiniteTuple3(record.position)) out.position = record.position
+  if (isFiniteTuple3(record.rotation)) out.rotation = record.rotation
+  if (isFiniteTuple3(record.scale)) out.scale = record.scale
+  return out
+}
+
+function sanitizeModelsShape(raw: unknown): Record<string, unknown> | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null
+  const record = raw as Record<string, unknown>
+  const keys = ["shirt", "shirtShort", "full"] as const
+  const out: Record<string, unknown> = {}
+  let anyValid = false
+  for (const key of keys) {
+    const candidate = record[key]
+    const sanitized = sanitizeGarmentConfig(candidate)
+    if (sanitized) {
+      out[key] = sanitized
+      anyValid = true
+    } else {
+      out[key] = null
+    }
+  }
+  return anyValid ? out : null
+}
+
 export async function createTemplateAction(formData: FormData) {
   const supabase = await requireAdmin()
   const data = parseTemplate(formData)
-  const { data: row, error } = await supabase.from("templates").insert([data] as never).select("id").single()
+  // default_config puede traer claves no soportadas. Sanitizamos para
+  // conservar patrones/fonts/kits/models/zones y descartar el resto.
+  const sanitizedDefault = sanitizeDefaultConfig(data.default_config)
+  if (sanitizedDefault && typeof sanitizedDefault === "object" && !Array.isArray(sanitizedDefault)) {
+    const record = sanitizedDefault as Record<string, unknown>
+    const sanitizedModels = sanitizeModelsShape(record.models)
+    if (sanitizedModels) record.models = sanitizedModels
+  }
+  const { data: row, error } = await supabase.from("templates").insert([{ ...data, default_config: sanitizedDefault }] as never).select("id").single()
   if (error) throw new Error(error.message)
   revalidatePath("/admin/templates"); revalidatePath("/personalizar")
   redirect(`/admin/templates/${(row as { id: string }).id}`)
@@ -456,7 +512,24 @@ export async function updateTemplateAction(id: string, formData: FormData) {
   if (!isUuid(id)) throw new Error("ID inválido")
   const supabase = await requireAdmin()
   const data = parseTemplate(formData)
-  const { error } = await supabase.from("templates").update(data as never).eq("id", id)
+  const sanitizedDefault = sanitizeDefaultConfig(data.default_config)
+  if (sanitizedDefault && typeof sanitizedDefault === "object" && !Array.isArray(sanitizedDefault)) {
+    const record = sanitizedDefault as Record<string, unknown>
+    const sanitizedModels = sanitizeModelsShape(record.models)
+    if (sanitizedModels) record.models = sanitizedModels
+  }
+  // Bump de version para invalidar caches/autosaves de payloads viejos.
+  const { data: current, error: currentError } = await supabase
+    .from("templates")
+    .select("version")
+    .eq("id", id)
+    .maybeSingle()
+  if (currentError) throw new Error(currentError.message)
+  const nextVersion = Number((current as { version?: number } | null)?.version ?? 0) + 1
+  const { error } = await supabase
+    .from("templates")
+    .update({ ...data, default_config: sanitizedDefault, version: nextVersion } as never)
+    .eq("id", id)
   if (error) throw new Error(error.message)
   revalidatePath("/admin/templates"); revalidatePath(`/admin/templates/${id}`); revalidatePath("/personalizar")
 }
