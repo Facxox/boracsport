@@ -1,5 +1,22 @@
 export type DesignerView = "front" | "back"
-export type EditableZoneKind = "text" | "logo" | "number" | "sponsor" | "color"
+export type EditableZoneKind = "text" | "logo" | "number" | "sponsor" | "color" | "pattern"
+export type DesignerPanel = "base" | "design" | "logos" | "dorsal"
+export type KitView = "shirt" | "shirtShort" | "full"
+
+export type TemplateAssetOption = {
+  id: string
+  label: string
+  url: string
+  thumbnailUrl?: string
+  kind?: "pattern" | "mold" | "logo"
+  secondaryColor?: boolean
+}
+
+export type TemplateFontOption = {
+  id: string
+  label: string
+  fontUrl?: string
+}
 
 export type TemplateZone = {
   id: string
@@ -16,6 +33,10 @@ export type TemplateZone = {
   allowedColors?: string[]
   required?: boolean
   defaultValue?: string
+  materialNames?: string[]
+  assetRole?: "shield" | "sponsor" | "backSponsor" | "pattern"
+  minWidth?: number
+  minHeight?: number
 }
 
 export type ThreeDTemplateConfig = {
@@ -28,6 +49,9 @@ export type ThreeDTemplateConfig = {
     background?: string
   }
   zones: TemplateZone[]
+  patterns?: TemplateAssetOption[]
+  fonts?: TemplateFontOption[]
+  kits?: Array<{ id: KitView; label: string; modelUrl?: string; modelFormat?: "glb" | "gltf" }>
 }
 
 export type LogoTransform = {
@@ -46,6 +70,9 @@ export type ThreeDLayerValue = {
   value: string
   color?: string
   assetUrl?: string
+  secondaryColor?: string
+  fontId?: string
+  enabled?: boolean
 }
 
 export type ThreeDDesignPayload = {
@@ -58,6 +85,9 @@ export type ThreeDDesignPayload = {
   previewUrl: string
   layers: ThreeDLayerValue[]
   logos: LogoTransform[]
+  quote?: ConfiguratorQuote
+  selectedPatternId?: string
+  selectedKit?: KitView
 }
 
 export type ExpressDesignPayload = ThreeDDesignPayload
