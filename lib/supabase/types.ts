@@ -149,7 +149,12 @@ export interface Database {
       products: { Row: ProductRow; Insert: Partial<ProductRow>; Update: Partial<ProductRow> }
       product_variants: { Row: ProductVariantRow; Insert: Partial<ProductVariantRow> & { product_id: string }; Update: Partial<ProductVariantRow> }
       templates: { Row: TemplateRow; Insert: Partial<TemplateRow>; Update: Partial<TemplateRow> }
-      designs: { Row: DesignRow; Insert: Partial<DesignRow> & { user_id: string }; Update: Partial<DesignRow> }
+      designs: {
+        Row: DesignRow
+        Insert: { user_id: string; payload: Json }
+        Update: Partial<DesignRow>
+        Relationships: []
+      }
       orders: { Row: OrderRow; Insert: Partial<OrderRow>; Update: Partial<OrderRow> }
     }
     Functions: { get_my_role: { Args: Record<string, never>; Returns: UserRole | null } }

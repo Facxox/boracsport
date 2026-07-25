@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { ThemeProvider } from "next-themes"
 import { Toaster } from "@/components/ui/sonner"
 import { SiteHeader } from "@/components/layout/site-header"
@@ -29,5 +31,5 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="es" suppressHydrationWarning className={`${inter.variable} antialiased`}><body className="bg-background text-foreground flex min-h-screen flex-col font-sans"><ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="borac-theme"><SiteHeader /><main className="flex-1">{children}</main><SiteFooter /><CartDrawer /><Toaster richColors position="top-right" /><SignOutCleanup /><StoreWipeOnIdle /></ThemeProvider></body></html>
+  return <html lang="es" suppressHydrationWarning className={`${inter.variable} antialiased`}><body className="bg-background text-foreground flex min-h-screen flex-col font-sans"><ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="borac-theme"><SiteHeader /><main className="flex-1">{children}</main><SiteFooter /><CartDrawer /><Toaster richColors position="top-right" /><SignOutCleanup /><StoreWipeOnIdle /><Analytics /><SpeedInsights /></ThemeProvider></body></html>
 }

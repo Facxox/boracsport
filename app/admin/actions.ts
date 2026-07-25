@@ -654,3 +654,159 @@ export async function reorderSlidesAction(orderedIds: string[]) {
   revalidatePath("/admin/hero")
   revalidatePath("/")
 }
+
+// ---------- Templates (diseñador 3D) ----------
+
+interface ParsedTemplate {
+  name: string
+  mockup_url_front: string
+  mockup_url_back: string
+  model_url: string | null
+  model_format: "glb" | "gltf" | null
+  scene_config: Record<string, unknown>
+  editable_zones: Record<string, unknown>
+  default_config: Record<string, unknown>
+  version: number
+  price: number
+  active: boolean
+}
+
+function safeJsonObject(raw: FormDataEntryValue | null, fallback: Record<string, unknown>): Record<string, unknown> {
+  if (typeof raw !== "string" || raw.trim() === "") return fallback
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed as Record<string, unknown>
+    throw new Error("el JSON debe ser un objeto")
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "JSON inválido"
+    throw new Error(`JSON inválido: ${message}`)
+  }
+}
+
+function parseTemplate(formData: FormData): ParsedTemplate {
+  const name = text(formData.get("name"), 120)
+  const mockup_url_front = text(formData.get("mockup_url_front"), 1000)
+  const mockup_url_back = text(formData.get("mockup_url_back"), 1000)
+  const modelUrlRaw = text(formData.get("model_url"), 1000)
+  const modelFormatRaw = text(formData.get("model_format"), 8).toLowerCase()
+  const model_format: "glb" | "gltf" | null =
+    modelFormatRaw === "glb" || modelFormatRaw === "gltf" ? modelFormatRaw : null
+  const model_url = modelUrlRaw ? modelUrlRaw : null
+  const version = Number(formData.get("version") ?? 1)
+  const price = Number(formData.get("price") ?? 0)
+  const scene_config = safeJsonObject(formData.get("scene_config"), {})
+  const editable_zones = safeJsonObject(formData.get("editable_zones"), {})
+  const default_config = safeJsonObject(formData.get("default_config"), {})
+  if (!name) throw new Error("Nombre requerido")
+  if (!mockup_url_front) throw new Error("Mockup frente requerido")
+  if (!mockup_url_back) throw new Error("Mockup espalda requerido")
+  if (model_url && !model_format) throw new Error("Si subís un modelo 3D indicá el formato (glb o gltf)")
+  if (!Number.isInteger(version) || version < 1) throw new Error("Versión inválida")
+  if (!Number.isFinite(price) || price < 0) throw new Error("Precio inválido")
+  return {
+    name,
+    mockup_url_front,
+    mockup_url_back,
+    model_url,
+    model_format,
+    scene_config,
+    editable_zones,
+    default_config,
+    version,
+    price,
+    active: formData.get("active") === "on",
+  }
+}
+
+export async function createTemplateAction(
+  formData: FormData,
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  try {
+    const supabase = await requireAdmin()
+    const data = parseTemplate(formData)
+    const { data: row, error } = await supabase
+      .from("templates")
+      .insert([data] as never)
+      .select("id")
+      .single()
+    if (error || !row) {
+      const msg = describeSupabaseError(error, "No se pudo crear la plantilla")
+      console.error("[createTemplateAction] error:", msg)
+      throw new Error(msg)
+    }
+    const id = (row as { id: string }).id
+    revalidatePath("/admin/templates")
+    revalidatePath("/admin")
+    revalidatePath("/personalizar")
+    return { ok: true, id }
+  } catch (err) {
+    if (isNextRedirect(err)) throw err
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[createTemplateAction] failed:", message)
+    return { ok: false, error: message }
+  }
+}
+
+export async function updateTemplateAction(
+  id: string,
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isUuid(id)) return { ok: false, error: "ID inválido" }
+  try {
+    const supabase = await requireAdmin()
+    const data = parseTemplate(formData)
+    // Bumpeamos la versión para invalidar cualquier link serializado previo.
+    const { error } = await supabase
+      .from("templates")
+      .update({ ...data, version: data.version + 1 } as never)
+      .eq("id", id)
+    if (error) {
+      const msg = describeSupabaseError(error, "No se pudo actualizar la plantilla")
+      console.error("[updateTemplateAction] error:", msg)
+      throw new Error(msg)
+    }
+    revalidatePath("/admin/templates")
+    revalidatePath(`/admin/templates/${id}`)
+    revalidatePath("/personalizar")
+    return { ok: true }
+  } catch (err) {
+    if (isNextRedirect(err)) throw err
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[updateTemplateAction] failed:", message)
+    return { ok: false, error: message }
+  }
+}
+
+export async function deleteTemplateAction(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isUuid(id)) return { ok: false, error: "ID inválido" }
+  try {
+    const supabase = await requireAdmin()
+    const { error } = await supabase.from("templates").delete().eq("id", id)
+    if (error) {
+      const msg = describeSupabaseError(error, "No se pudo eliminar la plantilla")
+      console.error("[deleteTemplateAction] error:", msg)
+      throw new Error(msg)
+    }
+    revalidatePath("/admin/templates")
+    revalidatePath("/admin")
+    revalidatePath("/personalizar")
+    return { ok: true }
+  } catch (err) {
+    if (isNextRedirect(err)) throw err
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[deleteTemplateAction] failed:", message)
+    return { ok: false, error: message }
+  }
+}
+
+export async function toggleTemplateActiveAction(id: string, active: boolean) {
+  if (!isUuid(id)) throw new Error("ID inválido")
+  const supabase = await requireAdmin()
+  const { error } = await supabase.from("templates").update({ active } as never).eq("id", id)
+  if (error) throw new Error(describeSupabaseError(error, "No se pudo actualizar el estado"))
+  revalidatePath("/admin/templates")
+  revalidatePath("/admin")
+  revalidatePath("/personalizar")
+}
