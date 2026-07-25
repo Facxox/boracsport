@@ -1,8 +1,111 @@
 # Documentación del diseñador 3D (queries a Supabase)
 
-> Estado: el módulo `/personalizar` y todo lo asociado (ThreeDDesigner, ThreeDViewport, normalize-config, /api/disenos, /admin/templates) están siendo removidos. Este archivo es **referencia** para reconstruirlo desde cero sin perder de vista cómo hablaba con la base.
+> Estado (2026-07-25): **módulo retirado**. El personalizador 3D no funcional fue eliminado del frontend y del admin. Se conservaron las tablas `boracsport.templates` y `boracsport.designs` y los buckets de Storage para permitir una reconstrucción futura sin pérdida de datos. `/personalizar` ahora es una página placeholder "Próximamente".
+
+## Por qué se eliminó
+
+El motor 3D tenía problemas que no justificaban reparación incremental:
+
+- La UI dependía por completo de `editable_zones` y `default_config` de la plantilla; si faltaban zonas, los controles (escudo, sponsors, dorsal) no aparecían.
+- Los patrones se aplicaban a **todos** los materiales del modelo, no solo a los configurados, pisando el color base.
+- Las zonas `color` se ignoraban: el viewport solo respondía al `baseColor` global.
+- El selector de kit (camiseta / camiseta+short / kit completo) cambiaba estado pero no cargaba shorts ni medias.
+- No había materiales para short ni medias en ninguna plantilla.
+- Las plantillas legacy solo tenían la zona dorsal por defecto, así que las otras zonas quedaban inertes.
+
+Esa capa de deuda + el hecho de que el módulo nunca llegó a producción útil hicieron que la opción más limpia fuera retirarlo entero y rehacerlo desde cero con más criterio, en lugar de remendarlo.
+
+## Qué se removió
+
+Componentes frontend:
+- `components/express/ThreeDDesigner.tsx`
+- `components/express/ThreeDDesignerClient.tsx`
+- `components/express/ThreeDViewport.tsx`
+- `components/express/CanvasEditor.tsx` (editor 2D legacy, solo lo usaba el configurador)
+- `components/designer/designer-iframe.tsx`
+- `components/layout/designer-bridge-mount.tsx`
+- `components/ui/design-badge.tsx`
+
+Librerías:
+- `lib/designer/bridge.ts`
+- `lib/designer/design-types.ts`
+- `lib/designer/normalize-config.ts`
+- `lib/supabase/queries/designs.ts` (`saveDesignForUser`, `listDesignsForUser`)
+
+Rutas:
+- `app/api/disenos/route.ts` (POST de snapshots)
+- `app/admin/templates/page.tsx` (listado)
+- `app/admin/templates/[id]/page.tsx` (edición)
+- `app/admin/templates/nuevo/page.tsx` (alta)
+- `app/admin/templates/template-form.tsx`
+- `app/admin/templates/template-row.tsx`
+- `app/cuenta/disenos/page.tsx` (snapshots guardados del usuario)
+
+Server actions removidas de `app/admin/actions.ts`:
+- `parseTemplate`, `sanitizeDefaultConfig`, `sanitizeModelsShape`, `sanitizeGarmentConfig`, `isFiniteTuple3`
+- `createTemplateAction`, `updateTemplateAction`, `deleteTemplateAction`, `toggleTemplateActiveAction`
+
+Tipos y store:
+- `DesignLine`, `ExpressDesignPayload`, `addDesignSnapshot` removidos de `types/cart.ts` y `stores/cart-store.ts`
+- `CartItem = ProductLine` (sin el union con `design`)
+- `previewLabel`, `designId`, `hasDesign` ya no existen en el código
+
+Constantes removidas de `lib/constants.ts`:
+- `DESIGN_AUTOSAVE_VERSION`
+- `MAX_DESIGN_BYTES`
+
+Assets estáticos:
+- `public/disenador/**` (CSS, fuentes, JS, imágenes, video del iframe legacy, assets de "starbade")
+
+UI cleanup:
+- Card "Siluetas" del `/admin`
+- Sección "Diseños guardados" del `/cuenta`
+- Link "Diseñá en 3D" en empty-state del carrito
+- Link "Ir al personalizador 3D" en empty-state del filtro de productos
+- Resumen del checkout ya no menciona "Diseños a coordinar"
+- WhatsApp builder ya no incluye el link de diseño
+
+## Qué se conservó (intencional)
+
+Para no perder datos y poder reconstruir el módulo más adelante:
+
+- `boracsport.templates` (tabla completa con todos sus JSONB)
+- `boracsport.designs` (snapshots por usuario)
+- Bucket `boracsport_templates` (público, tiene mockups y modelos existentes)
+- Bucket `boracsport_customizations` (privado, sigue aunque ya no se usa)
+
+## Estado actual de `/personalizar`
+
+Placeholder minimal en `app/personalizar/page.tsx`:
+
+- Title: "El configurador 3D está en reconstrucción"
+- Descripción: explica que se está rehaciendo desde cero y ofrece enlaces al `/productos` y al home.
+- Botón "Ver catálogo" → `/productos`
+- Link "Volver al inicio" → `/`
+
+No carga plantilla, no toca Supabase, no monta canvas. Renderiza como página estática (`○` en el build output).
+
+## Verificación post-eliminación
+
+- `npx tsc --noEmit` → 0 errores
+- `npm run lint` → 0 errores
+- `npm run build` → 26 rutas, sin errores
+- Commit: `4b8403b chore: remove broken 3D designer (frontend + admin); keep DB schema`
+- Push: `feat/configurador-3d-starbade` (no se tocó `main`)
+
+---
+
+## Conteúdo de referencia (legacy)
+
+El resto del documento describe cómo hablaba el módulo viejo con la base. Se mantiene como referencia para una posible reconstrucción futura. Las queries siguientes ya no están en el código.
+
+---
+
+
 
 ## Tablas involucradas
+
+> Las queries de esta sección referencian tablas que **se conservan** intactas. Se documentan para entender qué estructura tiene la base si se reconstruye el módulo.
 
 ### `boracsport.templates` (esquema público actual)
 
@@ -210,37 +313,42 @@ supabase.from("designs").select("id, payload, created_at")
 
 ---
 
-## Archivos del módulo (a remover)
+## Archivos del módulo (referencia histórica)
 
-- `app/personalizar/page.tsx` — server component que carga la plantilla.
-- `app/personalizar/_topbar.tsx` — nav superior de la página.
-- `app/api/disenos/route.ts` — POST snapshot → `designs`.
-- `app/admin/templates/page.tsx` — listado admin.
-- `app/admin/templates/[id]/page.tsx` — edición admin.
-- `app/admin/templates/template-form.tsx` — form con tres dropzones de modelo.
-- `app/admin/templates/template-row.tsx` — fila del listado.
-- `app/admin/templates/nuevo/page.tsx` — alta de plantilla (si existe).
-- `components/express/ThreeDDesigner.tsx`
-- `components/express/ThreeDDesignerClient.tsx`
-- `components/express/ThreeDViewport.tsx`
-- `components/express/CanvasEditor.tsx` (editor 2D legacy compartido)
-- `components/designer/designer-iframe.tsx` (iframe a `/disenador/index.html`)
-- `lib/designer/normalize-config.ts`
-- `lib/designer/design-types.ts`
-- `lib/designer/bridge.ts`
-- `lib/supabase/queries/designs.ts` (solo si no se reusa para otra cosa)
-- `public/disenador/**` (assets del iframe legacy)
-- Entradas en `app/admin/actions.ts` (`parseTemplate`, `createTemplateAction`, `updateTemplateAction`, `deleteTemplateAction`, `toggleTemplateActiveAction`, `sanitizeDefaultConfig`, `sanitizeModelsShape`, `sanitizeGarmentConfig`, `isFiniteTuple3`).
-- Líneas en `app/admin/page.tsx` y `stores/cart-store.ts` que referencian plantillas.
-- `lib/constants.ts`: `DESIGN_AUTOSAVE_VERSION`, `MAX_DESIGN_BYTES` (verificar uso antes de borrar).
-- `supabase/boracsport.sql` y `supabase/migrations/*.sql`: las tablas `templates` y `designs` y los buckets `boracsport_templates`, `boracsport_customizations` (el primero se usa, dejar; el segundo solo lo usaba `CanvasEditor`).
+Esta lista refleja los archivos que el módulolegacy usaba. Todos fueron removidos en el commit `4b8403b` y ya no existen en el repo. Se conservan aquí como mapa para entender qué territorio cubría el módulo.
 
-## Próximo paso (reconstrucción)
+- `app/personalizar/page.tsx` — server component que cargaba la plantilla. **Hoy**: placeholder estático "Próximamente".
+- `app/personalizar/_topbar.tsx` — nav superior de la página. Removido.
+- `app/api/disenos/route.ts` — POST snapshot → `designs`. Removido.
+- `app/admin/templates/page.tsx` — listado admin. Removido.
+- `app/admin/templates/[id]/page.tsx` — edición admin. Removido.
+- `app/admin/templates/template-form.tsx` — form con tres dropzones de modelo. Removido.
+- `app/admin/templates/template-row.tsx` — fila del listado. Removido.
+- `app/admin/templates/nuevo/page.tsx` — alta de plantilla. Removido.
+- `components/express/ThreeDDesigner.tsx` — Removido.
+- `components/express/ThreeDDesignerClient.tsx` — Removido.
+- `components/express/ThreeDViewport.tsx` — Removido.
+- `components/express/CanvasEditor.tsx` (editor 2D legacy compartido) — Removido.
+- `components/designer/designer-iframe.tsx` (iframe a `/disenador/index.html`) — Removido.
+- `components/layout/designer-bridge-mount.tsx` — Removido.
+- `components/ui/design-badge.tsx` — Removido.
+- `lib/designer/normalize-config.ts` — Removido.
+- `lib/designer/design-types.ts` — Removido.
+- `lib/designer/bridge.ts` — Removido.
+- `lib/supabase/queries/designs.ts` — Removido.
+- `public/disenador/**` (assets del iframe legacy) — Removido.
+- `app/admin/actions.ts`: `parseTemplate`, `createTemplateAction`, `updateTemplateAction`, `deleteTemplateAction`, `toggleTemplateActiveAction`, `sanitizeDefaultConfig`, `sanitizeModelsShape`, `sanitizeGarmentConfig`, `isFiniteTuple3` — Removidos.
+- `lib/constants.ts`: `DESIGN_AUTOSAVE_VERSION`, `MAX_DESIGN_BYTES` — Removidos.
+- `types/cart.ts`: `DesignLine`, `ExpressDesignPayload`, `previewLabel`, `designId` — Removidos.
+- `stores/cart-store.ts`: `addDesignSnapshot`, discriminador `kind: "design"` — Removidos.
+- `components/checkout/cart-sections.tsx`, `components/layout/cart-drawer.tsx`, `app/carrito/page.tsx`, `app/cuenta/page.tsx`, `app/admin/page.tsx`, `app/checkout/page.tsx`, `components/checkout/mercadopago-modal.tsx`, `lib/cart/hash.ts`, `lib/cart/whatsapp-message.ts` — referencias cruzadas limpiadas.
+- `supabase/boracsport.sql` y `supabase/migrations/*.sql`: las tablas `templates` y `designs` y los buckets `boracsport_templates`, `boracsport_customizations` — **Conservados** (el primero se usa para futuras plantillas; el segundo queda por si se reusa).
 
-Para volver a levantar el módulo:
+## Si en el futuro se quiere reconstruir
 
-1. Definir el shape nuevo de `payload` (versión + zonas + autosave).
-2. Centralizar las queries en `lib/supabase/queries/templates.ts` y `lib/supabase/queries/designs.ts`.
-3. Reutilizar `boracsport_templates` (público) para subir el modelo 3D y los mockups.
-4. Validar versión de payload en server (`DESIGN_AUTOSAVE_VERSION`) y en cliente (bridge).
+1. Definir el shape nuevo de `payload` (versión + zonas + autosave), resolviendo la inconsistencia legacy (`DESIGN_AUTOSAVE_VERSION = 1` vs `version === 2` en el bridge).
+2. Centralizar las queries en `lib/supabase/queries/templates.ts` y `lib/supabase/queries/designs.ts` (este último archivo ya no existe; rehacerlo desde cero).
+3. Reutilizar `boracsport_templates` (público) para subir el modelo 3D y los mockups. `boracsport_customizations` está disponible para logos por usuario.
+4. Validar versión de payload en server **y** en cliente, sin la divergencia que tenía el módulo viejo.
 5. Decidir si el diseño sigue siendo (a) 2D Fabric.js, (b) 3D Three.js, (c) iframe `/disenador` legacy, o un reemplazo fresh — el shape `payload` debería ser agnóstico para no atarse a la UI.
+6. Resolver los problemas de raíz que llevaron al retiro: zonas calibradas sobre el modelo, materiales clonados (no mutados del cache de `useGLTF`), patrones aplicados solo a superficies configuradas, kits (camiseta/short/medias) realmente separados, decals con `depthTest` + `polygonOffset` para evitar z-fighting.
