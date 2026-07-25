@@ -95,6 +95,22 @@ export default async function CuentaPage() {
           Ir a mis pedidos
         </ButtonLink>
       </section>
+
+      <section className="bg-card mt-6 rounded-2xl border border-white/5 p-6">
+        <div className="flex items-end justify-between">
+          <h2 className="font-display text-lg font-extrabold">Mis diseños</h2>
+          <Link href="/cuenta/disenos" className="text-brand-red text-sm font-semibold">
+            Ver todos
+          </Link>
+        </div>
+        <p className="text-muted-foreground mt-3 text-sm">
+          Uniformes que guardaste con tu cuenta. Abrí cualquiera para seguir editándolo en el
+          diseñador 3D.
+        </p>
+        <ButtonLink href="/cuenta/disenos" variant="outline" className="mt-4">
+          Ir a mis diseños
+        </ButtonLink>
+      </section>
     </div>
   )
 }

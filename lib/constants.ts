@@ -2,6 +2,23 @@
 
 export const WHATSAPP_NUMBER = "59891615615"
 
+export const BORAC_DESIGN_STORAGE_KEY = "borac-design-v1"
+export const BORAC_FPS_WARNING_KEY = "borac-fps-warning-dismissed-v1"
+
+// Plantilla para mensajes de cotización del diseñador 3D.
+// Usa {placeholders} que se sustituyen en runtime (ver QuoteModal).
+export const WHATSAPP_QUOTE_TEMPLATE = `Hola Borac Sport! Vengo del diseñador 3D y quiero cotizar este uniforme.
+
+Equipo: {team}
+Nombre: {name}
+Molde: {mold}
+Kit: {kit}
+Patrón: {pattern}
+Zonas: {zones}
+
+Link del diseño: {link}
+`
+
 export const FLAT_SHIPPING_UYU = 250 // TODO: configurable
 
 export const SITE_NAME = "Borac Sport"
