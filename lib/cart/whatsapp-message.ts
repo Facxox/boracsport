@@ -4,7 +4,6 @@ import type { CartItem } from "@/types/cart"
 import { formatUYU } from "@/lib/format"
 import { calcTotals } from "./totals"
 import { siteConfig } from "@/lib/config/site"
-import { getBaseUrl } from "@/lib/env"
 
 export function buildWhatsAppMessage(
   items: CartItem[],
@@ -17,7 +16,6 @@ export function buildWhatsAppMessage(
   if (customer.phone) lines.push(`— Teléfono: ${customer.phone}`)
 
   const products = items.filter((i): i is Extract<CartItem, { kind: "product" }> => i.kind === "product")
-  const designs = items.filter((i): i is Extract<CartItem, { kind: "design" }> => i.kind === "design")
 
   if (products.length > 0) {
     lines.push("— Productos:")
@@ -25,15 +23,6 @@ export function buildWhatsAppMessage(
       lines.push(
         `  · ${p.qty}× ${p.name} (${formatUYU(p.price)} c/u) = ${formatUYU(p.price * p.qty)}`,
       )
-    }
-  }
-
-  if (designs.length > 0) {
-    lines.push("— Diseños 3D:")
-    for (const d of designs) {
-      const team = d.payload.templateName || "Diseño personalizado"
-      const link = `${getBaseUrl()}/personalizar?design=${encodeURIComponent(d.designId)}`
-      lines.push(`  · ${team} (${link})`)
     }
   }
 

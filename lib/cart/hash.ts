@@ -11,12 +11,7 @@ import type { CartItem } from "@/types/cart"
 
 export function computeCartHash(items: CartItem[]): string {
   const normalized = items
-    .map((it) => {
-      if (it.kind === "product") {
-        return `p:${it.id}|v:${it.variantId ?? ""}|q:${it.qty}`
-      }
-      return `d:${it.designId}`
-    })
+    .map((it) => `p:${it.id}|v:${it.variantId ?? ""}|q:${it.qty}`)
     .sort()
   return `${items.length}:${normalized.join(";")}`
 }

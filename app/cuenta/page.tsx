@@ -1,11 +1,9 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/supabase/queries/auth"
-import { listDesignsForUser } from "@/lib/supabase/queries/designs"
 import { getActiveCategories } from "@/lib/supabase/queries/categories"
 import { createClient } from "@/lib/supabase/server"
 import { signOutAction } from "./actions"
-import { formatDateUY } from "@/lib/format"
 import { Button, ButtonLink } from "@/components/ui/button"
 
 export const dynamic = "force-dynamic"
@@ -18,7 +16,6 @@ export default async function CuentaPage() {
   const intereses: string[] = Array.isArray(raw)
     ? raw.filter((s): s is string => typeof s === "string")
     : []
-  const designs = await listDesignsForUser(user.id)
   const categories = await getActiveCategories()
   const supabase = await createClient()
   const { data: profile } = await supabase
@@ -97,40 +94,6 @@ export default async function CuentaPage() {
         <ButtonLink href="/cuenta/pedidos" variant="outline" className="mt-4">
           Ir a mis pedidos
         </ButtonLink>
-      </section>
-
-      <section className="bg-card mt-6 rounded-2xl border border-white/5 p-6">
-        <div className="flex items-end justify-between">
-          <h2 className="font-display text-lg font-extrabold">Diseños guardados</h2>
-          <Link href="/cuenta/disenos" className="text-brand-red text-sm font-semibold">
-            Ver todos
-          </Link>
-        </div>
-        {designs.length === 0 ? (
-          <p className="text-muted-foreground mt-3 text-sm">
-            Todavía no guardaste ningún diseño desde el configurador 3D.
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-2">
-            {designs.slice(0, 5).map((d) => (
-              <li
-                key={d.id}
-                className="bg-muted/30 flex items-center justify-between rounded-lg border border-white/5 p-3"
-              >
-                <div>
-                  <p className="font-mono text-xs">#{String(d.id).slice(0, 8)}</p>
-                  <p className="text-muted-foreground text-xs">{formatDateUY(d.created_at)}</p>
-                </div>
-                <Link
-                  href={`/personalizar?design=${d.id}`}
-                  className="text-brand-red text-sm font-semibold"
-                >
-                  Volver al editor
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
     </div>
   )

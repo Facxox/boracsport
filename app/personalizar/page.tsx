@@ -1,50 +1,37 @@
-import { Suspense } from "react"
-import { PersonalizarTopBar } from "./_topbar"
-import { ThreeDDesignerClient } from "@/components/express/ThreeDDesignerClient"
-import { createClient } from "@/lib/supabase/server"
-import type { TemplateRow } from "@/lib/supabase/types"
-import { normalizeTemplateConfig } from "@/lib/designer/normalize-config"
+import Link from "next/link"
+import { Sparkles } from "lucide-react"
+import { ButtonLink } from "@/components/ui/button"
 
-export const metadata = { title: "Diseñá tu equipo 3D | Borac Sport", description: "Configurador 3D interactivo de indumentaria personalizada." }
-
-async function getTemplate(): Promise<TemplateRow | null> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from("templates")
-    .select("*")
-    .eq("active", true)
-    .not("model_url", "is", null)
-    .not("model_format", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  if (error) {
-    console.error("[personalizar] no se pudo cargar la plantilla:", error.message)
-    return null
-  }
-  return data as TemplateRow | null
+export const metadata = {
+  title: "Personalizar",
 }
 
-export default async function PersonalizarPage() {
-  const template = await getTemplate()
-  const config = template ? normalizeTemplateConfig(template) : null
+export default function PersonalizarPage() {
   return (
-    <div className="min-h-screen bg-background px-4 pb-8 pt-20 md:px-8">
-      <Suspense fallback={null}>
-        <PersonalizarTopBar />
-      </Suspense>
-      <main className="mx-auto max-w-7xl">
-        {template && config ? (
-          <ThreeDDesignerClient template={template} config={config} />
-        ) : (
-          <div className="rounded-3xl border border-white/10 bg-card p-12 text-center">
-            <h1 className="font-display text-3xl font-extrabold">Configurador 3D próximamente</h1>
-            <p className="text-muted-foreground mt-3">
-              El equipo está preparando modelos 3D para que diseñes tu indumentaria.
-            </p>
-          </div>
-        )}
-      </main>
+    <div className="mx-auto flex max-w-2xl flex-col items-center px-4 py-20 text-center md:py-28">
+      <span className="border-brand-red/30 bg-brand-red/10 text-brand-red inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold tracking-wider uppercase">
+        <Sparkles className="h-3 w-3" />
+        Próximamente
+      </span>
+      <h1 className="font-display mt-5 text-4xl font-extrabold md:text-5xl">
+        El configurador 3D está en reconstrucción
+      </h1>
+      <p className="text-muted-foreground mt-4 max-w-xl text-balance text-sm md:text-base">
+        Estamos rehaciendo el personalizador 3D desde cero para que sea más
+        rápido, configurable y consistente con el resto de la tienda. Mientras
+        tanto, podés explorar el catálogo y coordinar tu diseño por WhatsApp.
+      </p>
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <ButtonLink href="/productos" size="lg">
+          Ver catálogo
+        </ButtonLink>
+        <Link
+          href="/"
+          className="text-muted-foreground hover:text-foreground inline-flex items-center text-sm font-medium underline-offset-2 hover:underline"
+        >
+          Volver al inicio
+        </Link>
+      </div>
     </div>
   )
 }

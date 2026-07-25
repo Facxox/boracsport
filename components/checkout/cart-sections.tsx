@@ -2,20 +2,17 @@
 
 // Componentes que agrupan líneas del carrito en secciones:
 // - ProductSection: productos físicos (precio, qty, variantes).
-// - DesignSection: diseños personalizados (precio a coordinar).
 //
 // Se usan tanto en /carrito como en el drawer para mantener una única
 // presentación visual.
 
-import Link from "next/link"
 import Image from "next/image"
-import { Minus, Plus, ShoppingBag, Sparkles, Trash2 } from "lucide-react"
+import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DesignBadge } from "@/components/ui/design-badge"
 import { formatUYU } from "@/lib/format"
 import { FLAT_SHIPPING_UYU } from "@/lib/constants"
 import { safeImageUrl } from "@/lib/safe-image"
-import type { CartItem, ProductLine, DesignLine } from "@/types/cart"
+import type { CartItem, ProductLine } from "@/types/cart"
 
 interface CartItemBaseProps {
   onRemove: (key: string) => void
@@ -58,43 +55,12 @@ export function ProductSection({
   )
 }
 
-export function DesignSection({
-  items,
-  onRemove,
-}: {
-  items: DesignLine[]
-  onRemove: CartItemBaseProps["onRemove"]
-}) {
-  if (items.length === 0) return null
-  return (
-    <section aria-labelledby="cart-designs-heading" className="space-y-3">
-      <header className="flex items-baseline justify-between gap-2">
-        <h3
-          id="cart-designs-heading"
-          className="text-foreground/90 flex items-center gap-1.5 text-xs font-semibold tracking-wider uppercase"
-        >
-          <Sparkles className="h-3 w-3" />
-          Diseños personalizados
-        </h3>
-        <span className="text-muted-foreground text-xs">A coordinar</span>
-      </header>
-      <ul className="space-y-3">
-        {items.map((it) => (
-          <DesignCard key={it.key} item={it} onRemove={onRemove} />
-        ))}
-      </ul>
-    </section>
-  )
-}
-
 export function splitCartItems(items: CartItem[]) {
   const products: ProductLine[] = []
-  const designs: DesignLine[] = []
   for (const it of items) {
     if (it.kind === "product") products.push(it)
-    else designs.push(it)
   }
-  return { products, designs }
+  return { products }
 }
 
 function ProductCard({
@@ -173,51 +139,12 @@ function ProductCard({
   )
 }
 
-function DesignCard({
-  item,
-  onRemove,
-}: {
-  item: DesignLine
-  onRemove: CartItemBaseProps["onRemove"]
-}) {
-  return (
-    <li className="bg-card flex items-start gap-4 rounded-xl border border-amber-500/20 p-4">
-      <DesignBadge size="md" className="shrink-0" />
-      <div className="flex-1">
-        <p className="font-semibold">{item.previewLabel}</p>
-        <p className="text-muted-foreground text-sm">
-          Diseño personalizado — precio a coordinar
-        </p>
-        <Link
-          href={item.editorUrl}
-          className="text-brand-red mt-2 inline-block text-sm underline-offset-2 hover:underline"
-        >
-          Volver al editor
-        </Link>
-      </div>
-      <div className="flex flex-col items-end gap-2">
-        <span className="text-amber-300 text-xs font-semibold tracking-wider uppercase">
-          A coordinar
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onRemove(item.key)}
-          aria-label={`Eliminar ${item.previewLabel}`}
-          className="hover:text-red-400"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    </li>
-  )
-}
-
 export function summarizeCart(items: CartItem[]) {
-  const { products, designs } = splitCartItems(items)
+  const { products } = splitCartItems(items)
   const subtotal = products.reduce((acc, it) => acc + it.price * it.qty, 0)
   const hasPhysical = products.length > 0
   const shipping = hasPhysical ? FLAT_SHIPPING_UYU : 0
   const total = subtotal + shipping
-  return { products, designs, subtotal, shipping, total, hasPhysical }
+  return { products, subtotal, shipping, total, hasPhysical }
 }
+

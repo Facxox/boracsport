@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowUpRight, Box, ClipboardList, ImageIcon, Layers3, Tag, Users } from "lucide-react"
+import { ArrowUpRight, Box, ClipboardList, ImageIcon, Tag, Users } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { formatStatus, getAnalytics, type AnalyticsPeriod, type RankingRow } from "@/lib/supabase/queries/analytics"
 import type { OrderStatus } from "@/lib/supabase/types"
@@ -18,16 +18,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const analytics = await getAnalytics(params.period)
   const period = analytics.period as AnalyticsPeriod
   const supabase = await createClient()
-  const [{ count: products }, { count: orders }, { count: templates }, { count: profiles }] = await Promise.all([
+  const [{ count: products }, { count: orders }, { count: profiles }] = await Promise.all([
     supabase.from("products").select("id", { count: "exact", head: true }),
     supabase.from("orders").select("id", { count: "exact", head: true }),
-    supabase.from("templates").select("id", { count: "exact", head: true }),
     supabase.from("profiles").select("id", { count: "exact", head: true }),
   ])
   const cards = [
     { label: "Productos", value: products ?? 0, href: "/admin/productos", icon: Box },
     { label: "Pedidos", value: orders ?? 0, href: "/admin/pedidos", icon: ClipboardList },
-    { label: "Siluetas", value: templates ?? 0, href: "/admin/templates", icon: Layers3 },
     { label: "Usuarios", value: profiles ?? 0, href: "/admin/usuarios", icon: Users },
   ]
   const periodOptions = [{ value: "7", label: "7 días" }, { value: "30", label: "30 días" }, { value: "90", label: "90 días" }, { value: "all", label: "Todo" }]

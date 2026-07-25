@@ -11,7 +11,7 @@ import { useCustomerStore } from "@/stores/customer-store"
 import { formatUYU } from "@/lib/format"
 import { FLAT_SHIPPING_UYU } from "@/lib/constants"
 import { WhatsAppCTA } from "@/components/checkout/whatsapp-cta"
-import { ProductSection, DesignSection, summarizeCart } from "@/components/checkout/cart-sections"
+import { ProductSection, summarizeCart } from "@/components/checkout/cart-sections"
 
 export default function CarritoPage() {
   const items = useCartStore((s) => s.items)
@@ -26,7 +26,6 @@ export default function CarritoPage() {
 
   const empty = hasHydrated && items.length === 0
   const summary = summarizeCart(items)
-  const hasDesign = summary.designs.length > 0
   const hasPhysical = summary.hasPhysical
 
   function commitName(value: string) {
@@ -63,7 +62,6 @@ export default function CarritoPage() {
               onRemove={removeItem}
               onUpdateQty={updateQty}
             />
-            <DesignSection items={summary.designs} onRemove={removeItem} />
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               {confirmClear ? (
@@ -108,12 +106,6 @@ export default function CarritoPage() {
                     {hasPhysical ? formatUYU(FLAT_SHIPPING_UYU) : "Gratis"}
                   </dd>
                 </div>
-                {hasDesign ? (
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Diseños a coordinar</dt>
-                    <dd className="text-amber-300 font-semibold">Por WhatsApp</dd>
-                  </div>
-                ) : null}
                 <div className="mt-3 flex justify-between border-t border-white/5 pt-3 text-base">
                   <dt className="font-semibold">Total estimado</dt>
                   <dd className="text-brand-red font-extrabold">
@@ -164,14 +156,11 @@ function EmptyCart() {
       <div className="space-y-1">
         <p className="text-lg font-semibold">Tu carrito está vacío</p>
         <p className="text-muted-foreground max-w-md text-sm">
-          Diseñá tu camiseta en 3D o elegí un producto del catálogo para empezar.
+          Elegí un producto del catálogo para empezar.
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-3">
         <ButtonLink href="/productos">Ver catálogo</ButtonLink>
-        <ButtonLink href="/personalizar" variant="outline">
-          Diseñá en 3D
-        </ButtonLink>
       </div>
     </div>
   )
@@ -195,3 +184,4 @@ function TrustHints() {
     </div>
   )
 }
+

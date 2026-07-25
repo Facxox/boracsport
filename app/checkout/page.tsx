@@ -86,7 +86,6 @@ export default function CheckoutPage() {
 
   const customer = { name, email, phone, address }
   const hasPhysicalProduct = items.some((it) => it.kind === "product")
-  const hasDesign = items.some((it) => it.kind === "design")
 
   const validation = useMemo(
     () => ({
@@ -255,9 +254,7 @@ export default function CheckoutPage() {
                     <CreditCard className="text-muted-foreground mx-auto h-8 w-8" />
                     <p className="mt-3 text-sm font-semibold">Pago con tarjeta vía Mercado Pago (UYU)</p>
                     <p className="text-muted-foreground mt-1 text-sm">
-                      {hasDesign
-                        ? "Los pedidos con diseños personalizados requieren coordinación previa."
-                        : `Total a pagar ahora: ${formatUYU(totals.total)}.`}
+                      {`Total a pagar ahora: ${formatUYU(totals.total)}.`}
                     </p>
                     <Button onClick={() => setMpOpen(true)} disabled={!contactInfoValid}
                       className="bg-brand-red text-foreground hover:bg-[#ef4444] mt-4 inline-flex items-center">
@@ -303,10 +300,10 @@ export default function CheckoutPage() {
               {items.map((it) => (
                 <li key={it.key} className="flex items-start justify-between gap-2">
                   <span className="text-muted-foreground truncate">
-                    {it.kind === "product" ? `${it.qty}× ${it.name}` : `1× ${it.previewLabel}`}
+                    {`${it.qty}× ${it.name}`}
                   </span>
                   <span className="shrink-0 font-medium">
-                    {it.kind === "product" ? formatUYU(it.price * it.qty) : "A coordinar"}
+                    {formatUYU(it.price * it.qty)}
                   </span>
                 </li>
               ))}
@@ -325,12 +322,6 @@ export default function CheckoutPage() {
                   {hasPhysicalProduct ? formatUYU(FLAT_SHIPPING_UYU) : "Gratis"}
                 </dd>
               </div>
-              {hasDesign ? (
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Diseños a coordinar</dt>
-                  <dd className="text-amber-300 font-semibold">Por WhatsApp</dd>
-                </div>
-              ) : null}
               <div className="flex justify-between border-t border-white/5 pt-2 text-base">
                 <dt className="font-semibold">Total estimado</dt>
                 <dd className="text-brand-red font-extrabold">{formatUYU(totals.total)}</dd>
@@ -342,12 +333,6 @@ export default function CheckoutPage() {
                 ? `Incluye envío estándar a todo Uruguay: ${formatUYU(FLAT_SHIPPING_UYU)}.`
                 : "El envío se coordina según el tipo de pedido."}
             </p>
-
-            {hasDesign ? (
-              <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-100/90">
-                Los diseños personalizados se cotizan por WhatsApp de forma independiente al total mostrado ({formatUYU(totals.total)}).
-              </p>
-            ) : null}
 
             <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] text-white/70 select-none">
               <input
@@ -432,14 +417,11 @@ function EmptyCheckout() {
       <div className="space-y-1">
         <p className="text-lg font-semibold">Tu carrito está vacío.</p>
         <p className="text-muted-foreground max-w-md text-sm">
-          Diseñá en 3D o elegí un producto antes de avanzar al checkout.
+          Elegí un producto antes de avanzar al checkout.
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-3">
         <ButtonLink href="/productos">Ver productos</ButtonLink>
-        <Link href="/personalizar" className="text-muted-foreground hover:text-foreground inline-flex items-center text-sm underline-offset-2 hover:underline">
-          Ir al personalizador 3D
-        </Link>
       </div>
     </div>
   )

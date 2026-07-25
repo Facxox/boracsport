@@ -1,14 +1,13 @@
 // Cart store con Zustand + persist.
 // - hasHydrated flag para evitar SSR mismatch en el CartBadge.
 // - partialize: NO persiste el flag _hasHydrated, solo los items.
-// - Soporta items 'product' y 'design' (snapshot del iframe 3D).
+// - Solo ítems 'product' (los diseños 3D se eliminaron del producto).
 
 "use client"
 
 import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
-import type { CartItem, ProductLine, DesignLine } from "@/types/cart"
-import type { ExpressDesignPayload } from "@/lib/designer/design-types"
+import type { CartItem, ProductLine } from "@/types/cart"
 import { FLAT_SHIPPING_UYU } from "@/lib/constants"
 
 type AddProductInput = Omit<ProductLine, "kind" | "key"> & { qty?: number }
@@ -23,11 +22,6 @@ type CartState = {
   toggle: () => void
 
   addProduct: (input: AddProductInput) => void
-  addDesignSnapshot: (
-    payload: ExpressDesignPayload,
-    designId: string,
-    editorUrl?: string,
-  ) => void
   updateQty: (key: string, qty: number) => void
   removeItem: (key: string) => void
   clear: () => void
@@ -37,10 +31,6 @@ type CartState = {
 
 function makeKey(): string {
   return `k_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-}
-
-function previewLabelFromDesign(payload: ExpressDesignPayload): string {
-  return payload.templateName || "Diseño personalizado"
 }
 
 export const useCartStore = create<CartState>()(
@@ -105,29 +95,6 @@ export const useCartStore = create<CartState>()(
           return { items: [...state.items, line], isOpen: true }
         }),
 
-      addDesignSnapshot: (payload, designId, editorUrl = "/personalizar") =>
-        set((state) => {
-          // Evitar duplicados por designId.
-          if (
-            state.items.some(
-              (it) => it.kind === "design" && it.designId === designId,
-            )
-          ) {
-            return { isOpen: true }
-          }
-          const line: DesignLine = {
-            kind: "design",
-            key: makeKey(),
-            designId,
-            payload,
-            customPrice: 0,
-            qty: 1,
-            editorUrl,
-            previewLabel: previewLabelFromDesign(payload),
-          }
-          return { items: [...state.items, line], isOpen: true }
-        }),
-
       updateQty: (key, qty) =>
         set((state) => ({
           items: state.items
@@ -176,10 +143,7 @@ export function useCartHasHydrated(): boolean {
 
 // Selectores derivados (puros, no memoizan — usar `useShallow` si hace falta).
 export function selectSubtotal(items: CartItem[]): number {
-  return items.reduce((acc, it) => {
-    if (it.kind === "product") return acc + it.price * it.qty
-    return acc
-  }, 0)
+  return items.reduce((acc, it) => acc + it.price * it.qty, 0)
 }
 
 export function selectCount(items: CartItem[]): number {
@@ -192,8 +156,6 @@ export function selectTotal(items: CartItem[]): {
   total: number
 } {
   const subtotal = selectSubtotal(items)
-  // Solo cobramos envío si hay productos físicos (los designs se coordinan aparte).
-  const hasPhysical = items.some((it) => it.kind === "product")
-  const shipping = hasPhysical ? FLAT_SHIPPING_UYU : 0
+  const shipping = items.length > 0 ? FLAT_SHIPPING_UYU : 0
   return { subtotal, shipping, total: subtotal + shipping }
 }

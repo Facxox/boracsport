@@ -26,7 +26,6 @@ export function MercadoPagoModal({
 }) {
   const items = useCartStore((state) => state.items)
   const totals = selectTotal(items)
-  const hasDesign = items.some((it) => it.kind === "design")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -75,11 +74,6 @@ export function MercadoPagoModal({
               {formatUYU(totals.total)}
             </span>
           </div>
-          {hasDesign ? (
-            <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-200">
-              Este pedido tiene diseños personalizados. Necesitamos coordinar el precio antes de cobrar el total final.
-            </p>
-          ) : null}
           <p className="text-muted-foreground text-xs">
             Al confirmar te redirigimos a Mercado Pago. Cuando vuelvas vas a ver el resultado del pago en pantalla y te enviamos un email con el comprobante.
           </p>

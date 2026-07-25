@@ -1,9 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import Image from "next/image"
-import { Minus, Plus, ShoppingBag, Sparkles, Trash2, X } from "lucide-react"
+import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -11,7 +10,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { Button, ButtonLink } from "@/components/ui/button"
-import { DesignBadge } from "@/components/ui/design-badge"
 import { Separator } from "@/components/ui/separator"
 import {
   useCartHasHydrated,
@@ -21,7 +19,7 @@ import { formatUYU } from "@/lib/format"
 import { FLAT_SHIPPING_UYU } from "@/lib/constants"
 import { safeImageUrl } from "@/lib/safe-image"
 import { WhatsAppCTA } from "@/components/checkout/whatsapp-cta"
-import { ProductSection, DesignSection, summarizeCart } from "@/components/checkout/cart-sections"
+import { ProductSection, summarizeCart } from "@/components/checkout/cart-sections"
 
 function DrawerProductRow({
   item,
@@ -91,47 +89,6 @@ function DrawerProductRow({
   )
 }
 
-function DrawerDesignRow({
-  item,
-  onRemove,
-  onClose,
-}: {
-  item: import("@/types/cart").DesignLine
-  onRemove: (key: string) => void
-  onClose: () => void
-}) {
-  return (
-    <li className="bg-bg-titanium flex items-start gap-3 rounded-lg border border-amber-500/20 p-3">
-      <DesignBadge size="sm" className="shrink-0" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{item.previewLabel}</p>
-        <p className="text-muted-foreground text-xs">Diseño a coordinar</p>
-        <Link
-          href={item.editorUrl}
-          onClick={onClose}
-          className="text-brand-red mt-1 inline-block text-xs underline-offset-2 hover:underline"
-        >
-          Volver al editor
-        </Link>
-      </div>
-      <div className="flex flex-col items-end gap-2">
-        <span className="text-amber-300 text-[10px] font-semibold tracking-wider uppercase">
-          A coordinar
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground h-8 w-8 hover:text-red-400"
-          onClick={() => onRemove(item.key)}
-          aria-label={`Eliminar ${item.previewLabel}`}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-    </li>
-  )
-}
-
 export function CartDrawer() {
   const isOpen = useCartStore((s) => s.isOpen)
   const close = useCartStore((s) => s.close)
@@ -174,51 +131,28 @@ export function CartDrawer() {
               <ShoppingBag className="text-muted-foreground mb-3 h-10 w-10" />
               <p className="font-medium">Tu carrito está vacío</p>
               <p className="text-muted-foreground mt-1 max-w-xs text-sm">
-                Diseñá tu camiseta en 3D o elegí un producto de la tienda.
+                Elegí un producto de la tienda para empezar.
               </p>
               <ButtonLink href="/productos" onClick={close} className="mt-5">
                 Ver productos
               </ButtonLink>
             </div>
           ) : (
-            <>
-              {summary.products.length > 0 ? (
-                <section>
-                  <h3 className="text-foreground/90 mb-2 text-[11px] font-semibold tracking-wider uppercase">
-                    Productos
-                  </h3>
-                  <ul className="space-y-2">
-                    {summary.products.map((it) => (
-                      <DrawerProductRow
-                        key={it.key}
-                        item={it}
-                        onUpdate={updateQty}
-                        onRemove={removeItem}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
-
-              {summary.designs.length > 0 ? (
-                <section>
-                  <h3 className="text-foreground/90 mb-2 flex items-center gap-1.5 text-[11px] font-semibold tracking-wider uppercase">
-                    <Sparkles className="h-3 w-3" />
-                    Diseños personalizados
-                  </h3>
-                  <ul className="space-y-2">
-                    {summary.designs.map((it) => (
-                      <DrawerDesignRow
-                        key={it.key}
-                        item={it}
-                        onRemove={removeItem}
-                        onClose={close}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              ) : null}
-            </>
+            <section>
+              <h3 className="text-foreground/90 mb-2 text-[11px] font-semibold tracking-wider uppercase">
+                Productos
+              </h3>
+              <ul className="space-y-2">
+                {summary.products.map((it) => (
+                  <DrawerProductRow
+                    key={it.key}
+                    item={it}
+                    onUpdate={updateQty}
+                    onRemove={removeItem}
+                  />
+                ))}
+              </ul>
+            </section>
           )}
         </div>
 
@@ -235,12 +169,6 @@ export function CartDrawer() {
                   {summary.hasPhysical ? formatUYU(FLAT_SHIPPING_UYU) : "Gratis"}
                 </dd>
               </div>
-              {summary.designs.length > 0 ? (
-                <div className="flex items-center justify-between">
-                  <dt className="text-muted-foreground">Diseños a coordinar</dt>
-                  <dd className="text-amber-300 font-semibold">Por WhatsApp</dd>
-                </div>
-              ) : null}
             </dl>
             <Separator className="mb-3" />
             <div className="mb-3 flex items-baseline justify-between text-base">
@@ -306,6 +234,6 @@ export function CartDrawer() {
 }
 
 // Re-exports para no romper tree-shaking de los componentes anteriores
-// (ProductSection / DesignSection / summarizeCart). Aunque el drawer no
-// los usa, otros consumidores sí.
-export { ProductSection, DesignSection, summarizeCart }
+// (ProductSection / summarizeCart). Aunque el drawer no los usa, otros
+// consumidores sí.
+export { ProductSection, summarizeCart }

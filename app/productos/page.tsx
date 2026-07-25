@@ -128,12 +128,6 @@ function EmptyCatalogState() {
         >
           Limpiar filtros
         </Link>
-        <Link
-          href="/personalizar"
-          className="hover:text-foreground inline-flex items-center text-sm font-medium underline-offset-2 hover:underline"
-        >
-          Ir al personalizador 3D
-        </Link>
       </div>
     </div>
   )
