@@ -7,10 +7,32 @@ export default async function AdminTemplatesPage() {
   const supabase = await createClient()
   const { data } = await supabase
     .from("templates")
-    .select("id, name, mockup_url_front, mockup_url_back, model_url, price, version, active, updated_at")
+    .select(
+      "id, name, mockup_url_front, mockup_url_back, mockup_url_neck, mockup_url_collar, mockup_url_sleeves, mockup_url_cuffs, mockup_url_short, mockup_url_socks, model_url, model_url_shirt, model_url_short, model_url_socks, price, version, active, updated_at",
+    )
     .order("updated_at", { ascending: false })
   const templates = (data ?? []) as Array<
-    Pick<TemplateRow, "id" | "name" | "mockup_url_front" | "mockup_url_back" | "model_url" | "price" | "version" | "active" | "updated_at">
+    Pick<
+      TemplateRow,
+      | "id"
+      | "name"
+      | "mockup_url_front"
+      | "mockup_url_back"
+      | "mockup_url_neck"
+      | "mockup_url_collar"
+      | "mockup_url_sleeves"
+      | "mockup_url_cuffs"
+      | "mockup_url_short"
+      | "mockup_url_socks"
+      | "model_url"
+      | "model_url_shirt"
+      | "model_url_short"
+      | "model_url_socks"
+      | "price"
+      | "version"
+      | "active"
+      | "updated_at"
+    >
   >
 
   return (

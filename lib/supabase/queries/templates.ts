@@ -4,7 +4,7 @@ import type { TemplateRow } from "../types"
 
 // Selector explícito alineado con TemplateRow.
 const TEMPLATE_COLUMNS =
-  "id, name, mockup_url_front, mockup_url_back, model_url, model_format, scene_config, editable_zones, default_config, version, price, active, created_at, updated_at" as const
+  "id, name, mockup_url_front, mockup_url_back, mockup_url_neck, mockup_url_collar, mockup_url_sleeves, mockup_url_cuffs, mockup_url_short, mockup_url_socks, model_url, model_format, model_url_shirt, model_format_shirt, model_url_short, model_format_short, model_url_socks, model_format_socks, scene_config, editable_zones, default_config, version, price, active, created_at, updated_at" as const
 
 // Devuelve la plantilla activa más reciente (RLS `templates_public_active`
 // ya filtra para `anon`). Si no hay ninguna, devolvemos null y el page.tsx

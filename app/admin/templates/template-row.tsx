@@ -13,11 +13,45 @@ import {
 
 type Row = Pick<
   TemplateRow,
-  "id" | "name" | "mockup_url_front" | "mockup_url_back" | "model_url" | "price" | "version" | "active" | "updated_at"
+  | "id"
+  | "name"
+  | "mockup_url_front"
+  | "mockup_url_back"
+  | "mockup_url_neck"
+  | "mockup_url_collar"
+  | "mockup_url_sleeves"
+  | "mockup_url_cuffs"
+  | "mockup_url_short"
+  | "mockup_url_socks"
+  | "model_url"
+  | "model_url_shirt"
+  | "model_url_short"
+  | "model_url_socks"
+  | "price"
+  | "version"
+  | "active"
+  | "updated_at"
 >
 
 function formatUYU(value: number) {
   return `$U ${Math.round(value).toLocaleString("es-UY")}`
+}
+
+const MOCKUP_KEYS = [
+  "mockup_url_front",
+  "mockup_url_back",
+  "mockup_url_neck",
+  "mockup_url_collar",
+  "mockup_url_sleeves",
+  "mockup_url_cuffs",
+  "mockup_url_short",
+  "mockup_url_socks",
+] as const
+
+function countMockups(t: Row): number {
+  let n = 0
+  for (const k of MOCKUP_KEYS) if (t[k]) n += 1
+  return n
 }
 
 export function TemplateRowActions({ template }: { template: Row }) {
@@ -48,6 +82,15 @@ export function TemplateRowActions({ template }: { template: Row }) {
   }
 
   const preview = safeImageUrl(template.mockup_url_front)
+  const mockupsCount = countMockups(template)
+  const variants = [
+    { key: "shirt" as const, url: template.model_url_shirt },
+    { key: "short" as const, url: template.model_url_short },
+    { key: "socks" as const, url: template.model_url_socks },
+  ]
+  // Para mantener el badge "3D" consistente con el modelo que efectivamente
+  // se expone en /personalizar (que es `model_url`), seguimos usando ese.
+  const has3D = Boolean(template.model_url)
 
   return (
     <li className="flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-[#101012]">
@@ -70,7 +113,7 @@ export function TemplateRowActions({ template }: { template: Row }) {
         >
           {template.active ? "Activa" : "Oculta"}
         </span>
-        {template.model_url ? (
+        {has3D ? (
           <span className="absolute left-2 top-2 rounded-full bg-[#dc2626] px-2 py-0.5 text-[10px] font-bold text-black">
             3D
           </span>
@@ -81,6 +124,25 @@ export function TemplateRowActions({ template }: { template: Row }) {
         <p className="mt-0.5 text-xs text-white/50">
           v{template.version} · {formatUYU(template.price)}
         </p>
+        <div className="mt-2 flex items-center gap-3 text-[10px] text-white/55">
+          <span aria-label={`${mockupsCount} de 8 mockups cargados`}>
+            {mockupsCount}/8 mockups
+          </span>
+          <span className="flex items-center gap-1.5" aria-label="Variantes 3D cargadas">
+            {variants.map((v) => (
+              <span
+                key={v.key}
+                aria-label={v.url ? `Modelo ${v.key} cargado` : `Modelo ${v.key} sin cargar`}
+                title={`${v.key}${v.url ? " ✓" : ""}`}
+                className={
+                  "inline-block h-2 w-2 rounded-full " +
+                  (v.url ? "bg-emerald-400" : "bg-white/20")
+                }
+              />
+            ))}
+            <span className="ml-1 uppercase tracking-wider">3D</span>
+          </span>
+        </div>
         <div className="mt-auto flex items-center justify-between gap-2 pt-3">
           <Link
             href={`/admin/templates/${template.id}`}

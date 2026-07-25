@@ -39,11 +39,16 @@ function paintBase(ctx: CanvasRenderingContext2D, state: DesignState) {
   for (const id of Object.keys(state.zones) as ZoneId[]) {
     const z = state.zones[id]
     if (!z) continue
-    if (z.type === "color" || z.type === "pattern") {
-      // Patrón necesita base color antes; usamos color1 como semilla.
-      const seed = z.type === "pattern" ? z.color1 : z.color
+    if (z.type === "color") {
       const r = getRegion(id)
-      ctx.fillStyle = seed
+      ctx.fillStyle = z.color
+      ctx.fillRect(r.x, r.y, r.w, r.h)
+    } else if (z.type === "pattern") {
+      // Sembramos la región con color1. El patrón se compone encima con
+      // `source-over` y debe respetar el alfa (los drawers usan
+      // "transparent" explícito cuando corresponde).
+      const r = getRegion(id)
+      ctx.fillStyle = z.color1
       ctx.fillRect(r.x, r.y, r.w, r.h)
     }
   }
@@ -60,8 +65,9 @@ function paintPatterns(ctx: CanvasRenderingContext2D, state: DesignState) {
     ctx.beginPath()
     ctx.rect(r.x, r.y, r.w, r.h)
     ctx.clip()
-    // Dibuja el patrón. Si usa un solo color, igual necesitamos el segundo
-    // como semilla para que "salt_pepper" o "argyle" aparezcan.
+    // El color1 ya está pintado debajo (paintBase). Acá sólo agregamos
+    // el trazo de color2. Si el patrón no necesita dos colores, usamos
+    // color1 como segundo para que lunares / rombos / cuadros aparezcan.
     const c1 = z.color1
     const c2 = pattern.needsTwoColors ? z.color2 : c1
     pattern.draw({ ctx, region: r, color1: c1, color2: c2, scale: z.scale })

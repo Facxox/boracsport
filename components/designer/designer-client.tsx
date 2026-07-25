@@ -166,7 +166,6 @@ export function DesignerClient({ template }: DesignerClientProps) {
         <Viewer3D
           state={state}
           modelUrl={template.model_url}
-          logos={new Map()}
         />
         <div className="flex justify-end gap-2">
           <QuoteModal state={state} />
