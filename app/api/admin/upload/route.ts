@@ -18,15 +18,13 @@ const RULES: Record<Bucket, { kinds: Kind[]; mimes: Record<Kind, string[]>; maxB
     maxBytes: 8 * 1024 * 1024,
   },
   boracsport_templates: {
-    kinds: ["image", "model"],
+    kinds: ["image"],
     mimes: {
       image: ["image/jpeg", "image/png", "image/webp"],
-      // application/octet-stream removido: permite subir cualquier binario
-      // (exe, php, etc.) haciéndose pasar por .glb. Exigimos MIME explícito.
-      model: ["model/gltf-binary", "model/gltf+json"],
+      model: [],
       media: [],
     },
-    maxBytes: 300 * 1024 * 1024,
+    maxBytes: 8 * 1024 * 1024,
   },
   boracsport_hero: {
     kinds: ["image", "media"],

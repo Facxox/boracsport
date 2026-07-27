@@ -38,17 +38,6 @@ const MOCKUP_FIELDS: Array<{ name: keyof TemplateRow; label: string; required: b
   { name: "mockup_url_socks", label: "Mockup medias", required: false },
 ]
 
-// Fix 3: descriptor de los 3 modelos 3D por variante.
-const MODEL_FIELDS: Array<{
-  name: keyof TemplateRow
-  label: string
-  variant: "shirt" | "short" | "socks"
-}> = [
-  { name: "model_url_shirt", label: "Camiseta", variant: "shirt" },
-  { name: "model_url_short", label: "Short", variant: "short" },
-  { name: "model_url_socks", label: "Medias", variant: "socks" },
-]
-
 function urlToOne(url: string | null | undefined): string[] {
   return url ? [url] : []
 }
@@ -63,28 +52,6 @@ export function TemplateForm({ template }: { template: TemplateRow }) {
     }
     return out
   })
-  const [models, setModels] = useState<Record<string, string[]>>(() => {
-    const out: Record<string, string[]> = {}
-    for (const f of MODEL_FIELDS) {
-      out[f.name] = urlToOne(template[f.name] as string | null)
-    }
-    return out
-  })
-  // Inicializamos el radio mirando cuál de los 3 variantes coincide con
-  // `template.model_url` legacy. Si ninguno matchea (p.ej. plantilla
-  // preexistente sin variantes), caemos al primer par no-nulo o a "shirt".
-  const initialPrimary: "shirt" | "short" | "socks" = (() => {
-    if (template.model_url) {
-      if (template.model_url === template.model_url_shirt) return "shirt"
-      if (template.model_url === template.model_url_short) return "short"
-      if (template.model_url === template.model_url_socks) return "socks"
-    }
-    if (template.model_url_shirt) return "shirt"
-    if (template.model_url_short) return "short"
-    if (template.model_url_socks) return "socks"
-    return "shirt"
-  })()
-  const [primaryModel, setPrimaryModel] = useState<"shirt" | "short" | "socks">(initialPrimary)
   const [sceneConfig, setSceneConfig] = useState(jsonStringify(template.scene_config))
   const [editableZones, setEditableZones] = useState(jsonStringify(template.editable_zones))
   const [defaultConfig, setDefaultConfig] = useState(jsonStringify(template.default_config))
@@ -94,14 +61,6 @@ export function TemplateForm({ template }: { template: TemplateRow }) {
     event.preventDefault()
     const form = event.currentTarget
     const formData = new FormData(form)
-    formData.set("primary_model", primaryModel)
-    // Pasamos el `model_url` legacy oculto para que `parseTemplate` lo
-    // preserve si el usuario no cargó ninguno de los 3 variantes nuevas
-    // (compatibilidad hacia atrás de plantillas preexistentes).
-    if (template.model_url) {
-      formData.set("model_url", template.model_url)
-      if (template.model_format) formData.set("model_format", template.model_format)
-    }
     startTransition(async () => {
       try {
         const result = await updateTemplateAction(template.id, formData)
@@ -210,47 +169,6 @@ export function TemplateForm({ template }: { template: TemplateRow }) {
         </div>
       </section>
 
-      <section className="grid gap-4 rounded-xl border border-white/10 bg-[#101012] p-4">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-sans text-sm font-bold uppercase tracking-wider text-white/80">Modelos 3D</h2>
-          <span className="text-xs text-white/45">
-            {Object.values(models).filter((arr) => arr.length > 0).length}/{MODEL_FIELDS.length} variantes
-          </span>
-        </div>
-        <p className="text-xs text-white/45">
-          El que elijas como principal se expone en
-          <span className="text-white/70"> /personalizar</span>; los demás quedan
-          disponibles para futuro selector de kit.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {MODEL_FIELDS.map((f) => (
-            <div key={f.name} className="grid gap-2">
-              <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/70">
-                <input
-                  type="radio"
-                  name="primary_model"
-                  value={f.variant}
-                  checked={primaryModel === f.variant}
-                  onChange={() => setPrimaryModel(f.variant)}
-                  className="h-3.5 w-3.5 accent-[#dc2626]"
-                />
-                {f.label}
-              </label>
-              <FileDropzone
-                bucket="boracsport_templates"
-                prefix={`${template.id}/models/${f.variant}`}
-                kind="model"
-                value={models[f.name]}
-                onChange={(urls) => setModels((prev) => ({ ...prev, [f.name]: urls }))}
-                maxFiles={1}
-                label=".glb / .gltf"
-              />
-              {models[f.name].map((url) => <HiddenUrlField key={url} name={f.name} value={url} />)}
-            </div>
-          ))}
-        </div>
-      </section>
-
       <details className="rounded-xl border border-white/10 bg-[#101012] p-4">
         <summary className="cursor-pointer text-sm font-semibold text-white/80">JSONB (avanzado)</summary>
         <div className="mt-4 grid gap-4">
@@ -290,7 +208,7 @@ export function TemplateForm({ template }: { template: TemplateRow }) {
           <p className="text-xs text-white/45">
             Estos campos quedan guardados pero el diseñador actual usa su propio set de zonas
             (no depende de <code>editable_zones</code> legacy). Se mantienen para futuras
-            plantillas GLB reales.
+            mejoras del editor 2D (mockup de fondo + overlays por zona).
           </p>
         </div>
       </details>

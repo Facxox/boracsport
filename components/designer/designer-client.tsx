@@ -11,7 +11,7 @@ import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { Sparkles, ArrowLeft, SlidersHorizontal } from "lucide-react"
 import { ButtonLink } from "@/components/ui/button"
-import { Viewer3D } from "@/components/designer/viewer"
+import { Viewer2D, type Viewer2DHandle } from "@/components/designer/viewer-2d"
 import { RecoverDesignModal } from "@/components/designer/modals/RecoverDesignModal"
 import { SaveDesignModal } from "@/components/designer/modals/SaveDesignModal"
 import { QuoteModal } from "@/components/designer/modals/QuoteModal"
@@ -32,7 +32,6 @@ import {
 import { TabColores } from "@/components/designer/panel/TabColores"
 import { TabDiseno } from "@/components/designer/panel/TabDiseno"
 import { TabEscudos } from "@/components/designer/panel/TabEscudos"
-import { FpsWarningBanner } from "@/components/designer/panel/FpsWarningBanner"
 import { useDesignStore, useDesignHasHydrated } from "@/stores/design-store"
 import { deserialize } from "@/lib/utils/url-serializer"
 import type { DesignState } from "@/lib/designer/types"
@@ -45,32 +44,27 @@ interface DesignerClientProps {
 
 function DesignerPanel() {
   return (
-    <>
-      <div className="mb-3">
-        <FpsWarningBanner />
-      </div>
-      <Tabs defaultValue="colores" className="w-full">
-        <TabsList variant="line" className="mb-3 w-full">
-          <TabsTrigger value="colores">Colores</TabsTrigger>
-          <TabsTrigger value="diseno">Diseño</TabsTrigger>
-          <TabsTrigger value="escudos">Escudos</TabsTrigger>
-        </TabsList>
-        <TabsContent value="colores">
-          <TabColores />
-        </TabsContent>
-        <TabsContent value="diseno">
-          <TabDiseno />
-        </TabsContent>
-        <TabsContent value="escudos">
-          <TabEscudos />
-        </TabsContent>
-      </Tabs>
-    </>
+    <Tabs defaultValue="colores" className="w-full">
+      <TabsList variant="line" className="mb-3 w-full">
+        <TabsTrigger value="colores">Colores</TabsTrigger>
+        <TabsTrigger value="diseno">Diseño</TabsTrigger>
+        <TabsTrigger value="escudos">Escudos</TabsTrigger>
+      </TabsList>
+      <TabsContent value="colores">
+        <TabColores />
+      </TabsContent>
+      <TabsContent value="diseno">
+        <TabDiseno />
+      </TabsContent>
+      <TabsContent value="escudos">
+        <TabEscudos />
+      </TabsContent>
+    </Tabs>
   )
 }
 
 export function DesignerClient({ template }: DesignerClientProps) {
-  const viewerRef = useRef<HTMLDivElement>(null)
+  const viewerRef = useRef<Viewer2DHandle>(null)
   const hydrated = useDesignHasHydrated()
   const state = useDesignStore((s) => s.state)
   const load = useDesignStore((s) => s.load)
@@ -162,16 +156,13 @@ export function DesignerClient({ template }: DesignerClientProps) {
 
   return (
     <div className="mx-auto grid max-w-screen-2xl items-start gap-6 px-4 py-6 lg:grid-cols-[1fr_360px]">
-      <div ref={viewerRef} className="space-y-3">
-        <Viewer3D
-          state={state}
-          modelUrl={template.model_url}
-        />
+      <div className="space-y-3">
+        <Viewer2D ref={viewerRef} state={state} />
         <div className="flex justify-end gap-2">
           <QuoteModal state={state} />
           <SaveDesignModal
             state={state}
-            getCanvas={() => viewerRef.current?.querySelector("canvas") ?? null}
+            getCanvas={() => viewerRef.current?.getAtlasCanvas() ?? null}
           />
         </div>
       </div>

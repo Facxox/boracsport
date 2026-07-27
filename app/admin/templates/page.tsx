@@ -8,7 +8,7 @@ export default async function AdminTemplatesPage() {
   const { data } = await supabase
     .from("templates")
     .select(
-      "id, name, mockup_url_front, mockup_url_back, mockup_url_neck, mockup_url_collar, mockup_url_sleeves, mockup_url_cuffs, mockup_url_short, mockup_url_socks, model_url, model_url_shirt, model_url_short, model_url_socks, price, version, active, updated_at",
+      "id, name, mockup_url_front, mockup_url_back, mockup_url_neck, mockup_url_collar, mockup_url_sleeves, mockup_url_cuffs, mockup_url_short, mockup_url_socks, price, version, active, updated_at",
     )
     .order("updated_at", { ascending: false })
   const templates = (data ?? []) as Array<
@@ -24,10 +24,6 @@ export default async function AdminTemplatesPage() {
       | "mockup_url_cuffs"
       | "mockup_url_short"
       | "mockup_url_socks"
-      | "model_url"
-      | "model_url_shirt"
-      | "model_url_short"
-      | "model_url_socks"
       | "price"
       | "version"
       | "active"
@@ -40,7 +36,7 @@ export default async function AdminTemplatesPage() {
       <Link href="/admin" className="text-sm text-white/60">← Panel</Link>
       <div className="mt-4 flex items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-[#dc2626]">Diseñador 3D</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-[#dc2626]">Diseñador 2D</p>
           <h1 className="mt-2 font-sans text-4xl font-extrabold tracking-tight">Siluetas</h1>
           <p className="mt-1 max-w-2xl text-sm text-white/60">
             Plantillas del configurador. Activá al menos una para que el diseñador funcione en
