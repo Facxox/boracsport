@@ -10,12 +10,17 @@
 // El atlas completo (mismo `HTMLCanvasElement` que devuelve `compose`) se
 // expone al cliente vía `getAtlasCanvas()` para que `SaveDesignModal`
 // pueda descargar el PNG completo.
+//
+// Si la plantilla activa tiene mockups de fondo (`mockup_url_*`), se
+// pintan como fondo del recorte correspondiente antes de superponer el
+// atlas. Donde el atlas es transparente se ve el mockup; donde hay
+// color/patrón/logo del usuario, se ve el estampado encima.
 
 import { forwardRef, useImperativeHandle, useMemo } from "react"
 import { TextureCompositor } from "@/components/designer/TextureCompositor"
-import { CANVAS_SIZE, ZONE_REGIONS, computeActiveZones } from "@/lib/designer/zones"
-import type { ZoneRegion } from "@/lib/designer/zones"
-import type { DesignState } from "@/lib/designer/types"
+import { CANVAS_SIZE, ZONE_REGIONS, computeActiveZones, type ZoneRegion } from "@/lib/designer/zones"
+import type { DesignState, ZoneId } from "@/lib/designer/types"
+import type { TemplateRow } from "@/lib/supabase/types"
 import { useLoadedLogos } from "@/lib/designer/use-loaded-logos"
 import { SinglePreview } from "@/components/designer/viewer-2d/SinglePreview"
 import { TwoUpPreview } from "@/components/designer/viewer-2d/TwoUpPreview"
@@ -27,10 +32,11 @@ export interface Viewer2DHandle {
 
 interface Viewer2DProps {
   state: DesignState
+  template?: TemplateRow | null
 }
 
 export const Viewer2D = forwardRef<Viewer2DHandle, Viewer2DProps>(function Viewer2D(
-  { state },
+  { state, template },
   ref,
 ) {
   // Logos precargados (mismo cache que antes vivía en ShirtModel).
@@ -47,6 +53,18 @@ export const Viewer2D = forwardRef<Viewer2DHandle, Viewer2DProps>(function Viewe
   }))
 
   const activeZones = computeActiveZones(state.kit)
+
+  // Mapa de fondos por zona. Sólo short/medias (frente/atrás) usan
+  // mockup de fondo hoy; el resto queda undefined.
+  const backgrounds: Partial<Record<ZoneId, string | null>> = useMemo(() => {
+    if (!template) return {}
+    return {
+      short: template.mockup_url_short ?? null,
+      short_back: template.mockup_url_short_back ?? null,
+      socks: template.mockup_url_socks ?? null,
+      socks_back: template.mockup_url_socks_back ?? null,
+    }
+  }, [template])
 
   // Tipo local para que TS no se queje al pasar regiones a `SinglePreview`.
   const frontRegion: ZoneRegion = ZONE_REGIONS.front
@@ -111,7 +129,7 @@ export const Viewer2D = forwardRef<Viewer2DHandle, Viewer2DProps>(function Viewe
 
             {/* Short y medias (frente + atrás) cuando el kit los incluye. */}
             {hasShort || hasSocks ? (
-              <TwoUpPreview atlas={atlas} activeZones={activeZones} />
+              <TwoUpPreview atlas={atlas} activeZones={activeZones} backgrounds={backgrounds} />
             ) : null}
           </div>
         </details>

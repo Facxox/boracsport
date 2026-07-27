@@ -668,6 +668,8 @@ interface ParsedTemplate {
   mockup_url_cuffs: string | null
   mockup_url_short: string | null
   mockup_url_socks: string | null
+  mockup_url_short_back: string | null
+  mockup_url_socks_back: string | null
   scene_config: Record<string, unknown>
   editable_zones: Record<string, unknown>
   default_config: Record<string, unknown>
@@ -698,6 +700,8 @@ function parseTemplate(formData: FormData): ParsedTemplate {
   const mockup_url_cuffs = text(formData.get("mockup_url_cuffs"), 1000) || null
   const mockup_url_short = text(formData.get("mockup_url_short"), 1000) || null
   const mockup_url_socks = text(formData.get("mockup_url_socks"), 1000) || null
+  const mockup_url_short_back = text(formData.get("mockup_url_short_back"), 1000) || null
+  const mockup_url_socks_back = text(formData.get("mockup_url_socks_back"), 1000) || null
 
   const version = Number(formData.get("version") ?? 1)
   const price = Number(formData.get("price") ?? 0)
@@ -719,6 +723,8 @@ function parseTemplate(formData: FormData): ParsedTemplate {
     mockup_url_cuffs,
     mockup_url_short,
     mockup_url_socks,
+    mockup_url_short_back,
+    mockup_url_socks_back,
     scene_config,
     editable_zones,
     default_config,

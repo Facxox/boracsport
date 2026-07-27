@@ -113,6 +113,8 @@ export interface TemplateRow {
   mockup_url_cuffs: string | null
   mockup_url_short: string | null
   mockup_url_socks: string | null
+  mockup_url_short_back: string | null
+  mockup_url_socks_back: string | null
   scene_config: Json
   editable_zones: Json
   default_config: Json

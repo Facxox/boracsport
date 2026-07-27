@@ -22,7 +22,9 @@ type Row = Pick<
   | "mockup_url_sleeves"
   | "mockup_url_cuffs"
   | "mockup_url_short"
+  | "mockup_url_short_back"
   | "mockup_url_socks"
+  | "mockup_url_socks_back"
   | "price"
   | "version"
   | "active"
@@ -41,7 +43,9 @@ const MOCKUP_KEYS = [
   "mockup_url_sleeves",
   "mockup_url_cuffs",
   "mockup_url_short",
+  "mockup_url_short_back",
   "mockup_url_socks",
+  "mockup_url_socks_back",
 ] as const
 
 function countMockups(t: Row): number {
@@ -108,8 +112,8 @@ export function TemplateRowActions({ template }: { template: Row }) {
           v{template.version} · {formatUYU(template.price)}
         </p>
         <div className="mt-2 flex items-center gap-3 text-[10px] text-white/55">
-          <span aria-label={`${mockupsCount} de 8 mockups cargados`}>
-            {mockupsCount}/8 mockups
+          <span aria-label={`${mockupsCount} de 10 mockups cargados`}>
+            {mockupsCount}/10 mockups
           </span>
         </div>
         <div className="mt-auto flex items-center justify-between gap-2 pt-3">

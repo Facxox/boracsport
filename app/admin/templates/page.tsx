@@ -8,7 +8,7 @@ export default async function AdminTemplatesPage() {
   const { data } = await supabase
     .from("templates")
     .select(
-      "id, name, mockup_url_front, mockup_url_back, mockup_url_neck, mockup_url_collar, mockup_url_sleeves, mockup_url_cuffs, mockup_url_short, mockup_url_socks, price, version, active, updated_at",
+      "id, name, mockup_url_front, mockup_url_back, mockup_url_neck, mockup_url_collar, mockup_url_sleeves, mockup_url_cuffs, mockup_url_short, mockup_url_short_back, mockup_url_socks, mockup_url_socks_back, price, version, active, updated_at",
     )
     .order("updated_at", { ascending: false })
   const templates = (data ?? []) as Array<
@@ -23,7 +23,9 @@ export default async function AdminTemplatesPage() {
       | "mockup_url_sleeves"
       | "mockup_url_cuffs"
       | "mockup_url_short"
+      | "mockup_url_short_back"
       | "mockup_url_socks"
+      | "mockup_url_socks_back"
       | "price"
       | "version"
       | "active"

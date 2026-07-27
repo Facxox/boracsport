@@ -157,7 +157,7 @@ export function DesignerClient({ template }: DesignerClientProps) {
   return (
     <div className="mx-auto grid max-w-screen-2xl items-start gap-6 px-4 py-6 lg:grid-cols-[1fr_360px]">
       <div className="space-y-3">
-        <Viewer2D ref={viewerRef} state={state} />
+        <Viewer2D ref={viewerRef} state={state} template={template} />
         <div className="flex justify-end gap-2">
           <QuoteModal state={state} />
           <SaveDesignModal

@@ -54,7 +54,7 @@ const DEFAULT_CONFIG = JSON.stringify(
   2,
 )
 
-// Fix 3: descriptor de los 8 mockups (2 requeridos + 6 opcionales).
+// Fix 3: descriptor de los 10 mockups (2 requeridos + 8 opcionales).
 // El `name` se usa como clave del FormData.
 const MOCKUP_FIELDS: Array<{ name: string; label: string; required: boolean }> = [
   { name: "mockup_url_front", label: "Mockup frente", required: true },
@@ -64,7 +64,9 @@ const MOCKUP_FIELDS: Array<{ name: string; label: string; required: boolean }> =
   { name: "mockup_url_sleeves", label: "Mockup mangas", required: false },
   { name: "mockup_url_cuffs", label: "Mockup puños", required: false },
   { name: "mockup_url_short", label: "Mockup short", required: false },
+  { name: "mockup_url_short_back", label: "Mockup short (atrás)", required: false },
   { name: "mockup_url_socks", label: "Mockup medias", required: false },
+  { name: "mockup_url_socks_back", label: "Mockup medias (atrás)", required: false },
 ]
 
 export function TemplateNewForm() {
@@ -126,7 +128,7 @@ export function TemplateNewForm() {
         <div className="flex items-baseline justify-between">
           <h2 className="font-sans text-sm font-bold uppercase tracking-wider text-white/80">Mockups</h2>
           <span className="text-xs text-white/45">
-            {Object.values(mockups).filter((arr) => arr.length > 0).length}/{MOCKUP_FIELDS.length}
+            {Object.values(mockups).filter((arr) => arr.length > 0).length}/{MOCKUP_FIELDS.length} cargados
           </span>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

@@ -26,7 +26,7 @@ function jsonStringify(value: unknown): string {
   }
 }
 
-// Fix 3: descriptor de los 8 mockups (2 requeridos + 6 opcionales).
+// Fix 3: descriptor de los 10 mockups (2 requeridos + 8 opcionales).
 const MOCKUP_FIELDS: Array<{ name: keyof TemplateRow; label: string; required: boolean }> = [
   { name: "mockup_url_front", label: "Mockup frente", required: true },
   { name: "mockup_url_back", label: "Mockup espalda", required: true },
@@ -35,7 +35,9 @@ const MOCKUP_FIELDS: Array<{ name: keyof TemplateRow; label: string; required: b
   { name: "mockup_url_sleeves", label: "Mockup mangas", required: false },
   { name: "mockup_url_cuffs", label: "Mockup puños", required: false },
   { name: "mockup_url_short", label: "Mockup short", required: false },
+  { name: "mockup_url_short_back", label: "Mockup short (atrás)", required: false },
   { name: "mockup_url_socks", label: "Mockup medias", required: false },
+  { name: "mockup_url_socks_back", label: "Mockup medias (atrás)", required: false },
 ]
 
 function urlToOne(url: string | null | undefined): string[] {
@@ -144,7 +146,7 @@ export function TemplateForm({ template }: { template: TemplateRow }) {
         <div className="flex items-baseline justify-between">
           <h2 className="font-sans text-sm font-bold uppercase tracking-wider text-white/80">Mockups</h2>
           <span className="text-xs text-white/45">
-            {Object.values(mockups).filter((arr) => arr.length > 0).length}/{MOCKUP_FIELDS.length}
+            {Object.values(mockups).filter((arr) => arr.length > 0).length}/{MOCKUP_FIELDS.length} cargados
           </span>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
