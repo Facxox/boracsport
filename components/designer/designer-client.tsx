@@ -1,6 +1,6 @@
 "use client"
 
-// Orquestador del diseñador 3D.
+// Orquestador del diseñador.
 // - Lee `?d=<lz>` (link serializado) y `?design=<id>` (cuenta) en mount.
 // - Bloquea render hasta `useDesignHasHydrated()` para evitar hydration mismatch.
 // - Sembra el templateId en el store tras hidratar.

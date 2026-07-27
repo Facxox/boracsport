@@ -105,7 +105,7 @@ export default async function CuentaPage() {
         </div>
         <p className="text-muted-foreground mt-3 text-sm">
           Uniformes que guardaste con tu cuenta. Abrí cualquiera para seguir editándolo en el
-          diseñador 3D.
+          diseñador.
         </p>
         <ButtonLink href="/cuenta/disenos" variant="outline" className="mt-4">
           Ir a mis diseños

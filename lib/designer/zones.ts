@@ -1,6 +1,6 @@
 // Regiones UV dentro del atlas 2048×2048 usado por el `TextureCompositor`.
-// Cada zona del kit mapea a un rectángulo del atlas; el modelo 3D
-// (ShirtModel o PlaceholderModel) muestrea esa región en su `material.map`.
+// Cada zona del kit mapea a un rectángulo del atlas; el editor 2D compone
+// y muestra cada región en su propio canvas.
 //
 // Layout del atlas:
 //   - Mitad izquierda (0..1024) = frente

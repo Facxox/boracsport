@@ -24,7 +24,7 @@ export function SiteFooter() {
           </h4>
           <ul className="space-y-2 text-sm">
             <li><Link href="/productos" className="hover:text-brand-red">Productos</Link></li>
-            <li><Link href="/personalizar" className="hover:text-brand-red">Personalizar en 3D</Link></li>
+            <li><Link href="/personalizar" className="hover:text-brand-red">Personalizar</Link></li>
             <li><Link href="/cuenta" className="hover:text-brand-red">Mi cuenta</Link></li>
           </ul>
         </div>

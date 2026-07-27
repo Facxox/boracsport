@@ -1,4 +1,4 @@
-// Tipos del módulo diseñador 3D.
+// Tipos del módulo diseñador.
 // No confundir con DesignRow (Supabase row del bucket designs):
 // - `DesignState` es el estado en memoria/localStorage/URL.
 // - La columna `payload` en `designs` guarda un JSONB con este mismo shape

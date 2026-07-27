@@ -1,4 +1,4 @@
-// Store Zustand del diseñador 3D.
+// Store Zustand del diseñador.
 // - Persiste en localStorage (clave "borac-design-v1").
 // - El flag `_hasHydrated` vive en memoria (no se persiste).
 // - El store IGNORA los JSONB legacy de las plantillas (`editable_zones`,
