@@ -52,6 +52,13 @@ export const Viewer2D = forwardRef<Viewer2DHandle, Viewer2DProps>(function Viewe
   const frontRegion: ZoneRegion = ZONE_REGIONS.front
   const backRegion: ZoneRegion = ZONE_REGIONS.back
 
+  const hasSleeves =
+    activeZones.includes("sleeve_l") || activeZones.includes("sleeve_r")
+  const hasShort = activeZones.includes("short") || activeZones.includes("short_back")
+  const hasSocks = activeZones.includes("socks") || activeZones.includes("socks_back")
+  const extraCount =
+    (hasSleeves ? 2 : 0) + (hasShort ? 2 : 0) + (hasSocks ? 2 : 0)
+
   return (
     <div className="space-y-3">
       {/* Caras principales: siempre frente y espalda. */}
@@ -70,31 +77,44 @@ export const Viewer2D = forwardRef<Viewer2DHandle, Viewer2DProps>(function Viewe
         />
       </div>
 
-      {/* Mangas / cuello — sólo si el kit activo las incluye. */}
-      {(activeZones.includes("sleeve_l") || activeZones.includes("sleeve_r")) ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {activeZones.includes("sleeve_l") ? (
-            <SinglePreview
-              atlas={atlas}
-              region={ZONE_REGIONS.sleeve_l}
-              label="Manga izquierda"
-              className="aspect-square w-full"
-            />
-          ) : null}
-          {activeZones.includes("sleeve_r") ? (
-            <SinglePreview
-              atlas={atlas}
-              region={ZONE_REGIONS.sleeve_r}
-              label="Manga derecha"
-              className="aspect-square w-full"
-            />
-          ) : null}
-        </div>
-      ) : null}
+      {/* Resto: plegable para no saturar el preview principal. */}
+      {extraCount > 0 ? (
+        <details className="border-foreground/10 group rounded-lg border">
+          <summary className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center justify-between px-3 py-2 text-xs font-medium tracking-wider uppercase">
+            <span>Más vistas</span>
+            <span className="text-[10px] font-normal">
+              {extraCount} zona{extraCount === 1 ? "" : "s"}
+            </span>
+          </summary>
+          <div className="space-y-3 border-t p-3">
+            {/* Mangas izq/der cuando el kit las incluye. */}
+            {hasSleeves ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {activeZones.includes("sleeve_l") ? (
+                  <SinglePreview
+                    atlas={atlas}
+                    region={ZONE_REGIONS.sleeve_l}
+                    label="Manga izquierda"
+                    className="aspect-square w-full"
+                  />
+                ) : null}
+                {activeZones.includes("sleeve_r") ? (
+                  <SinglePreview
+                    atlas={atlas}
+                    region={ZONE_REGIONS.sleeve_r}
+                    label="Manga derecha"
+                    className="aspect-square w-full"
+                  />
+                ) : null}
+              </div>
+            ) : null}
 
-      {/* Short y medias cuando el kit lo incluye. */}
-      {activeZones.includes("short") || activeZones.includes("socks") ? (
-        <TwoUpPreview atlas={atlas} activeZones={activeZones} />
+            {/* Short y medias (frente + atrás) cuando el kit los incluye. */}
+            {hasShort || hasSocks ? (
+              <TwoUpPreview atlas={atlas} activeZones={activeZones} />
+            ) : null}
+          </div>
+        </details>
       ) : null}
     </div>
   )

@@ -14,7 +14,9 @@ export type ZoneId =
   | "cuff_l"
   | "cuff_r"
   | "short"
+  | "short_back"
   | "socks"
+  | "socks_back"
 
 export type MoldId = "round_classic" | "v_classic" | "round_raglan" | "v_raglan"
 export type KitId = "shirt" | "shirt_short" | "full"

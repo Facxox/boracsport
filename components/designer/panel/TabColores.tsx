@@ -22,7 +22,9 @@ const ZONE_LABEL: Record<ZoneId, string> = {
   cuff_l: "Puño izquierdo",
   cuff_r: "Puño derecho",
   short: "Short",
+  short_back: "Short (atrás)",
   socks: "Medias",
+  socks_back: "Medias (atrás)",
 }
 
 export function TabColores() {
