@@ -7,8 +7,9 @@ import {
   deleteDesignForUser,
   saveDesignForUser,
 } from "@/lib/supabase/queries/designs"
-import { signOut } from "@/lib/supabase/queries/auth"
+import { signOut, updateIntereses } from "@/lib/supabase/queries/auth"
 import { createClient } from "@/lib/supabase/server"
+import type { InterestSlug } from "@/types/interest"
 
 function isDesignState(value: unknown): value is DesignState {
   if (!value || typeof value !== "object") return false
@@ -55,4 +56,29 @@ export async function deleteDesignAction(designId: string) {
 export async function signOutAction() {
   await signOut()
   redirect("/")
+}
+
+const KNOWN_SLUGS: ReadonlySet<InterestSlug> = new Set<InterestSlug>([
+  "deportivo",
+  "corporativo",
+  "dtf",
+  "merchandising",
+])
+
+export async function updateInteresesAction(formData: FormData) {
+  const userId = await authenticatedUserId()
+  if (!userId) return { ok: false as const, error: "unauthenticated" as const }
+
+  const raw = formData.getAll("intereses").map((v) => String(v))
+  const intereses: InterestSlug[] = raw.filter((s): s is InterestSlug =>
+    (KNOWN_SLUGS as ReadonlySet<string>).has(s),
+  )
+
+  const { error } = await updateIntereses(intereses)
+  if (error) {
+    return { ok: false as const, error: error.message }
+  }
+
+  revalidatePath("/cuenta")
+  return { ok: true as const }
 }

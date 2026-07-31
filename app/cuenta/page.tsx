@@ -5,6 +5,7 @@ import { getActiveCategories } from "@/lib/supabase/queries/categories"
 import { createClient } from "@/lib/supabase/server"
 import { signOutAction } from "./actions"
 import { Button, ButtonLink } from "@/components/ui/button"
+import { InterestsEditor } from "./interests-editor"
 
 export const dynamic = "force-dynamic"
 
@@ -27,7 +28,6 @@ export default async function CuentaPage() {
   const canAccessAdmin = role === "admin" || role === "superadmin"
 
   const labelsBySlug = new Map(categories.map((c) => [c.slug, c]))
-  const labelsById = new Map(categories.map((c) => [c.id, c]))
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 md:py-14">
@@ -58,27 +58,19 @@ export default async function CuentaPage() {
 
       <section className="bg-card rounded-2xl border border-white/5 p-6">
         <h2 className="font-display text-lg font-extrabold">Tus intereses</h2>
-        {intereses.length === 0 ? (
-          <p className="text-muted-foreground mt-2 text-sm">
-            Todavía no elegiste intereses. Podés hacerlo al registrarte.
-          </p>
-        ) : (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {intereses.map((slugOrId) => {
-              const card = labelsBySlug.get(slugOrId) ?? labelsById.get(slugOrId)
-              const emoji = card?.emoji ?? "✨"
-              const title = card?.label ?? slugOrId
-              return (
-                <span
-                  key={slugOrId}
-                  className="border-brand-red/30 bg-brand-red/10 text-brand-red rounded-full border px-3 py-1 text-xs font-semibold"
-                >
-                  {emoji} {title}
-                </span>
-              )
-            })}
-          </div>
-        )}
+        <p className="text-muted-foreground mt-1 text-sm">
+          Elegí las categorías que te interesan para personalizar tu experiencia.
+        </p>
+        <InterestsEditor
+          categories={categories.map((c) => ({
+            id: c.id,
+            slug: c.slug,
+            label: c.label,
+            emoji: c.emoji,
+            description: c.description,
+          }))}
+          initialSelected={intereses.filter((s) => labelsBySlug.has(s))}
+        />
       </section>
 
       <section className="bg-card mt-6 rounded-2xl border border-white/5 p-6">
