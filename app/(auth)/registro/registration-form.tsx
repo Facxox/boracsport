@@ -56,7 +56,7 @@ export function RegistrationForm({ cards }: { cards: Card[] }) {
   }
 
   async function onConfirm() {
-    if (intereses.length === 0) return
+    if (!email || !password || !fullName || !phone || !address) return
     setLoading(true)
     setError(null)
     try {
@@ -258,7 +258,7 @@ export function RegistrationForm({ cards }: { cards: Card[] }) {
         <Button
           type="button"
           onClick={onConfirm}
-          disabled={intereses.length === 0 || loading}
+          disabled={loading}
           className="bg-brand-red text-foreground hover:bg-[#ef4444]"
         >
           {loading ? (

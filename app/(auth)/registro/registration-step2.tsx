@@ -71,7 +71,7 @@ export function RegistrationStep2({
   }
 
   async function onConfirm() {
-    if (!valid || intereses.length === 0) return
+    if (!valid) return
     setLoading(true)
     setError(null)
     try {
@@ -221,7 +221,7 @@ export function RegistrationStep2({
         <Button
           type="button"
           onClick={onConfirm}
-          disabled={intereses.length === 0 || loading}
+          disabled={loading}
           className="bg-brand-red text-foreground hover:bg-[#ef4444]"
         >
           {loading ? (
