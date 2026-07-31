@@ -81,7 +81,7 @@ export default async function PedidoDetallePage({ params }: { params: Params }) 
                 >
                   <div>
                     <p className="font-medium">{String(it.previewLabel ?? "Diseño personalizado")}</p>
-                    <p className="text-muted-foreground text-xs">Diseño 3D — precio a coordinar</p>
+                    <p className="text-muted-foreground text-xs">Diseño personalizado — precio a coordinar</p>
                   </div>
                   <span className="font-semibold">—</span>
                 </li>

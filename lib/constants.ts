@@ -3,7 +3,6 @@
 export const WHATSAPP_NUMBER = "59891615615"
 
 export const BORAC_DESIGN_STORAGE_KEY = "borac-design-v1"
-export const BORAC_FPS_WARNING_KEY = "borac-fps-warning-dismissed-v1"
 
 // Plantilla para mensajes de cotización del diseñador.
 // Usa {placeholders} que se sustituyen en runtime (ver QuoteModal).

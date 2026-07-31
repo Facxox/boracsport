@@ -1,7 +1,8 @@
 // Defaults explícitos del estado del diseñador.
 // Esta es la FUENTE DE VERDAD — el store NUNCA debe depender del JSONB
 // legacy `editable_zones` / `default_config` de la plantilla. Las plantillas
-// proveen el GLB/modelo; el configurador provee el comportamiento.
+// proveen los mockups de fondo; el configurador provee el comportamiento
+// por defecto de cada zona.
 
 import type { DesignState, MoldId, KitId, PatternId, RgbColor, ZoneConfig, ZoneId } from "@/lib/designer/types"
 import { ALL_ZONES } from "@/lib/designer/zones"

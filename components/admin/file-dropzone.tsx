@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { safeImageUrl } from "@/lib/safe-image"
 import { createClient } from "@/lib/supabase/client"
 
-export type DropzoneKind = "image" | "model" | "media"
+export type DropzoneKind = "image" | "media"
 
 interface FileDropzoneProps {
   bucket: "boracsport_products" | "boracsport_templates" | "boracsport_hero"
@@ -23,7 +23,6 @@ interface FileDropzoneProps {
 
 const ACCEPT_BY_KIND: Record<DropzoneKind, string> = {
   image: "image/jpeg,image/png,image/webp",
-  model: ".glb,.gltf,model/gltf-binary,model/gltf+json",
   media: "image/jpeg,image/png,image/webp,video/mp4,video/webm",
 }
 
@@ -89,13 +88,7 @@ export function FileDropzone({
           prefix,
           files: slice.map((f) => ({
             filename: f.name,
-            contentType:
-              f.type ||
-              (kind === "model"
-                ? /\.gltf$/i.test(f.name)
-                  ? "model/gltf+json"
-                  : "model/gltf-binary"
-                : "application/octet-stream"),
+            contentType: f.type || "application/octet-stream",
             size: f.size,
           })),
         }
@@ -221,7 +214,7 @@ export function FileDropzone({
               <span className="font-semibold text-[#dc2626]">Arrastrá</span> o hacé click para subir
             </p>
             <p className="text-xs text-white/50">
-              {label ?? (kind === "model" ? ".glb / .gltf" : kind === "media" ? "Imágenes o video" : "Imágenes JPG, PNG o WebP")}
+              {label ?? (kind === "media" ? "Imágenes o video" : "Imágenes JPG, PNG o WebP")}
               {emptyHint ? ` · ${emptyHint}` : ""}
             </p>
           </>
@@ -238,8 +231,6 @@ export function FileDropzone({
               <div className="aspect-square w-full">
                 {kind === "media" && /\.(mp4|webm)$/i.test(url) ? (
                   <video src={url} className="h-full w-full object-cover" muted playsInline />
-                ) : kind === "model" ? (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-white/60">.glb / .gltf</div>
                 ) : (
                   safeImageUrl(url) ? (
                     <Image
@@ -284,7 +275,7 @@ export function FileDropzone({
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
-              {idx === 0 && kind !== "model" ? (
+              {idx === 0 && kind !== "media" ? (
                 <span className="absolute bottom-1 left-1 rounded bg-[#dc2626] px-1.5 py-0.5 text-[10px] font-bold text-black">
                   Portada
                 </span>

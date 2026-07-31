@@ -8,9 +8,9 @@
 //   - Mangas y cuellos van arriba, body en el centro,
 //     short/medias abajo.
 //
-// Estos valores son razonables para una camiseta estándar. Si la plantilla
-// tiene GLB real con UVs custom, el PlaceholderModel escala el rectángulo
-// de cada zona sobre su cilindro de fallback.
+// Estos valores son razonables para una camiseta estándar. Si en el futuro
+// la plantilla define zonas adicionales, agregar el ZoneId correspondiente
+// a ZONE_REGIONS, ALL_ZONES y computeActiveZones.
 
 export interface ZoneRegion {
   x: number

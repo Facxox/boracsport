@@ -6,7 +6,7 @@
 
 import { Info } from "lucide-react"
 import { useDesignStore } from "@/stores/design-store"
-import { isPatternContinuous } from "@/lib/designer/warnings"
+import { isPatternContinuous } from "@/components/designer/patterns"
 
 export function ContinuousPatternBanner() {
   const patternId = useDesignStore((s) => s.state.pattern.id)

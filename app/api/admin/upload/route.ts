@@ -9,19 +9,18 @@ import type { UserRole } from "@/lib/supabase/types"
 const ALLOWED_BUCKETS = ["boracsport_products", "boracsport_templates", "boracsport_hero", "boracsport_orders"] as const
 type Bucket = (typeof ALLOWED_BUCKETS)[number]
 
-type Kind = "image" | "model" | "media"
+type Kind = "image" | "media"
 
 const RULES: Record<Bucket, { kinds: Kind[]; mimes: Record<Kind, string[]>; maxBytes: number }> = {
   boracsport_products: {
     kinds: ["image"],
-    mimes: { image: ["image/jpeg", "image/png", "image/webp"], model: [], media: [] },
+    mimes: { image: ["image/jpeg", "image/png", "image/webp"], media: [] },
     maxBytes: 8 * 1024 * 1024,
   },
   boracsport_templates: {
     kinds: ["image"],
     mimes: {
       image: ["image/jpeg", "image/png", "image/webp"],
-      model: [],
       media: [],
     },
     maxBytes: 8 * 1024 * 1024,
@@ -30,14 +29,13 @@ const RULES: Record<Bucket, { kinds: Kind[]; mimes: Record<Kind, string[]>; maxB
     kinds: ["image", "media"],
     mimes: {
       image: ["image/jpeg", "image/png", "image/webp"],
-      model: [],
       media: ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"],
     },
     maxBytes: 80 * 1024 * 1024,
   },
   boracsport_orders: {
     kinds: ["image"],
-    mimes: { image: ["image/jpeg", "image/png", "image/webp"], model: [], media: [] },
+    mimes: { image: ["image/jpeg", "image/png", "image/webp"], media: [] },
     maxBytes: 8 * 1024 * 1024,
   },
 }
@@ -48,8 +46,6 @@ const EXT_BY_MIME: Record<string, string> = {
   "image/webp": "webp",
   "video/mp4": "mp4",
   "video/webm": "webm",
-  "model/gltf-binary": "glb",
-  "model/gltf+json": "gltf",
 }
 
 function extFromName(name: string): string | null {
@@ -132,7 +128,6 @@ export async function POST(request: Request) {
     const contentType = String(meta.contentType ?? "")
     let kind: Kind | null = null
     if (rules.mimes.image.includes(contentType)) kind = "image"
-    else if (rules.mimes.model.includes(contentType)) kind = "model"
     else if (rules.mimes.media.includes(contentType)) kind = "media"
 
     if (!kind) {

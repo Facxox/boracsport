@@ -76,7 +76,7 @@ export function SiteHeader() {
             className="text-brand-red hidden font-semibold md:inline-flex"
           >
             <Sparkles className="mr-1.5 h-4 w-4" />
-            Diseñá en 3D
+            Diseñá tu uniforme
           </ButtonLink>
           <ButtonLink
             href="/productos"

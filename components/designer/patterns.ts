@@ -9,6 +9,12 @@
 
 import type { PatternId } from "@/lib/designer/types"
 
+// Patrones que generan cortes visuales si se imprimen en tela real.
+// Sirve para mostrar un banner amarillo cuando el usuario los selecciona.
+export function isPatternContinuous(p: PatternId): boolean {
+  return p === "gradient"
+}
+
 export interface PatternDrawArgs {
   ctx: CanvasRenderingContext2D
   region: { x: number; y: number; w: number; h: number }
