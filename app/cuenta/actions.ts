@@ -8,8 +8,8 @@ import {
   saveDesignForUser,
 } from "@/lib/supabase/queries/designs"
 import { signOut, updateIntereses } from "@/lib/supabase/queries/auth"
+import { getActiveCategories } from "@/lib/supabase/queries/categories"
 import { createClient } from "@/lib/supabase/server"
-import type { InterestSlug } from "@/types/interest"
 
 function isDesignState(value: unknown): value is DesignState {
   if (!value || typeof value !== "object") return false
@@ -58,21 +58,17 @@ export async function signOutAction() {
   redirect("/")
 }
 
-const KNOWN_SLUGS: ReadonlySet<InterestSlug> = new Set<InterestSlug>([
-  "deportivo",
-  "corporativo",
-  "dtf",
-  "merchandising",
-])
-
 export async function updateInteresesAction(formData: FormData) {
   const userId = await authenticatedUserId()
   if (!userId) return { ok: false as const, error: "unauthenticated" as const }
 
+  // Filtramos contra las categorías activas reales en la DB para que
+  // cualquier slug que el admin haya creado desde /admin/categorias sea
+  // válido (antes usábamos un set hardcodeado de 4 slugs).
+  const categories = await getActiveCategories()
+  const validSlugs = new Set(categories.map((c) => c.slug))
   const raw = formData.getAll("intereses").map((v) => String(v))
-  const intereses: InterestSlug[] = raw.filter((s): s is InterestSlug =>
-    (KNOWN_SLUGS as ReadonlySet<string>).has(s),
-  )
+  const intereses = Array.from(new Set(raw.filter((s) => validSlugs.has(s))))
 
   const { error } = await updateIntereses(intereses)
   if (error) {

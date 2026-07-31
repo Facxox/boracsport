@@ -4,13 +4,12 @@
 
 import "server-only"
 import { createClient } from "../server"
-import type { InterestSlug } from "@/types/interest"
 
 export type SignUpParams = {
   email: string
   password: string
   fullName: string
-  intereses: InterestSlug[]
+  intereses: string[]
 }
 
 export async function signUp({
@@ -49,7 +48,7 @@ export async function getCurrentUser() {
   return data.user ?? null
 }
 
-export async function updateIntereses(intereses: InterestSlug[]) {
+export async function updateIntereses(intereses: string[]) {
   const supabase = await createClient()
   return supabase.auth.updateUser({ data: { intereses } })
 }
