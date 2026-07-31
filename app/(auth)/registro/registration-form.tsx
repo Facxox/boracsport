@@ -75,7 +75,11 @@ export function RegistrationForm({ cards }: { cards: Card[] }) {
         },
       })
       if (error) {
-        setError(error.message)
+        if (/already registered|email.*exists|user.*exists/i.test(error.message)) {
+          setError("Ya tenés una cuenta con ese email. Iniciá sesión.")
+        } else {
+          setError(error.message)
+        }
         return
       }
       // Persistir localmente para autorrellenar el checkout incluso antes del primer refresh del servidor.

@@ -11,6 +11,11 @@ type SearchParams = Promise<{
   phone?: string
 }>
 
+// Forzamos no-cache para que Vercel no sirva RSC stale con getActiveCategories()
+// vacío después de un deploy o un seed de categorías.
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export default async function RegistroPage({ searchParams }: { searchParams: SearchParams }) {
   const user = await getCurrentUser()
   if (user) redirect("/cuenta")

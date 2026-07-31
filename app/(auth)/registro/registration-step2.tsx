@@ -105,7 +105,18 @@ export function RegistrationStep2({
         },
       })
       if (signUpError) {
-        setError(signUpError.message)
+        // Detectar email duplicado (Supabase a veces devuelve error 422/email_exists).
+        if (/already registered|email.*exists|user.*exists/i.test(signUpError.message)) {
+          setError("Ya tenés una cuenta con ese email. Iniciá sesión.")
+        } else {
+          setError(signUpError.message)
+        }
+        return
+      }
+      // Supabase anti-enumeration: con email ya registrado puede devolver
+      // success sin crear usuario ni sesión. Si pasa, mostrar error claro.
+      if (!data.user) {
+        setError("Ya tenés una cuenta con ese email. Iniciá sesión.")
         return
       }
       // Limpiamos el password del sessionStorage apenas se usa.
