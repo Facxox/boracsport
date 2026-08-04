@@ -90,7 +90,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Body inválido" }, { status: 400 })
   }
   const file = formData.get("file")
-  if (!(file instanceof File)) {
+  // Next 16 / Web Fetch runtime: formData.get("file") puede devolver Blob
+  // sin la subclase File; chequeamos por duck-typing para aceptar ambos.
+  if (!file || typeof file === "string" || typeof (file as Blob).arrayBuffer !== "function") {
     return NextResponse.json({ error: "Falta el archivo" }, { status: 400 })
   }
   // Rate limit antes de cualquier consulta pesada.
