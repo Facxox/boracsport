@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState } from "react"
 import { Building2, Check, ChevronRight, Copy, Loader2, Receipt, Smartphone, Upload } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -32,7 +32,6 @@ export function TransferOptions({ items, customer, forceNew = false }: TransferO
   const [registering, setRegistering] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [startReceiptTransition] = useTransition()
 
   async function registerOrder() {
     if (!items || !customer || registering) return

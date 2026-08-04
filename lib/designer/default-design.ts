@@ -15,20 +15,6 @@ function defaultZone(id: ZoneId): ZoneConfig {
   return { id, type: "color", color: "#0f172a" as RgbColor }
 }
 
-function textZone(id: ZoneId, text: string): ZoneConfig {
-  return {
-    id,
-    type: "text",
-    text,
-    color: "#f4f4f5" as RgbColor,
-    fontId: "syne",
-    size: 220,
-    bold: true,
-    strokeColor: "#000000" as RgbColor,
-    strokeWidth: 0,
-  }
-}
-
 function numberZone(id: ZoneId, value: string): ZoneConfig {
   return {
     id,

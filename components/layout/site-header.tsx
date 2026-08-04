@@ -16,7 +16,6 @@ import { Separator } from "@/components/ui/separator"
 import { useCartStore, useCartHasHydrated } from "@/stores/cart-store"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { AdminNavLink } from "@/components/layout/admin-nav-link"
-import { siteConfig } from "@/lib/config/site"
 
 const NAV = [
   { href: "/", label: "Inicio" },

@@ -40,7 +40,7 @@ export function CategoryNewForm() {
           <option value="otro">Otro (sin variantes — DTF, merchandising, etc.)</option>
         </select>
         <span className="text-xs text-white/50">
-          Elegí "Ropa" si los productos tienen talles/colores. Para el resto, "Otro" oculta la matriz.
+          Elegí &quot;Ropa&quot; si los productos tienen talles/colores. Para el resto, &quot;Otro&quot; oculta la matriz.
         </span>
       </label>
       <AdminField name="description" label="Descripción" type="textarea" />

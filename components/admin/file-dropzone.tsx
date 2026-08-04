@@ -26,16 +26,6 @@ const ACCEPT_BY_KIND: Record<DropzoneKind, string> = {
   media: "image/jpeg,image/png,image/webp,video/mp4,video/webm",
 }
 
-function safeUrl(u: string): string | null {
-  try {
-    const url = new URL(u, "https://placeholder.local")
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null
-    return u
-  } catch {
-    return null
-  }
-}
-
 export function FileDropzone({
   bucket,
   prefix,

@@ -24,9 +24,9 @@ interface ResendPayload {
   reply_to?: string
 }
 
-async function postResend(payload: ResendPayload): Promise<void> {
+async function postResend(payload: ResendPayload): Promise<{ ok: true }> {
   const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) return
+  if (!apiKey) throw new Error("RESEND_API_KEY no configurada")
   const res = await fetch(RESEND_API, {
     method: "POST",
     headers: {
@@ -40,6 +40,7 @@ async function postResend(payload: ResendPayload): Promise<void> {
     const text = await res.text().catch(() => "")
     throw new Error(`Resend ${res.status}: ${text.slice(0, 200)}`)
   }
+  return { ok: true }
 }
 
 export async function sendOrderConfirmation(input: SendOrderConfirmationInput): Promise<void> {
@@ -60,24 +61,30 @@ export async function sendOrderConfirmation(input: SendOrderConfirmationInput): 
     return
   }
 
-  // Al cliente.
-  await postResend({
+  // Envíos independientes: si el del cliente falla, no abortamos el aviso
+  // interno (best-effort) y viceversa.
+  const customerResult = await postResend({
     from,
     to: [input.customer.email],
     subject: subjectCustomer,
     html: htmlCustomer,
     reply_to: adminEmail,
+  }).catch((err) => {
+    console.warn(`[email] cliente falló para pedido ${input.orderId}:`, err)
+    return { ok: false as const }
   })
 
-  // Al admin (best-effort, no rompe si falla).
-  try {
-    await postResend({
-      from,
-      to: [adminEmail],
-      subject: subjectAdmin,
-      html: htmlAdmin,
-    })
-  } catch (err) {
-    console.warn(`[email] admin copy falló para pedido ${input.orderId}:`, err)
+  const adminResult = await postResend({
+    from,
+    to: [adminEmail],
+    subject: subjectAdmin,
+    html: htmlAdmin,
+  }).catch((err) => {
+    console.warn(`[email] admin falló para pedido ${input.orderId}:`, err)
+    return { ok: false as const }
+  })
+
+  if (!customerResult.ok && !adminResult.ok) {
+    throw new Error(`[email] ambos envíos fallaron para pedido ${input.orderId}`)
   }
 }

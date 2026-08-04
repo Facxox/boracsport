@@ -10,12 +10,10 @@ export function SlideNewForm({ nextOrder }: { nextOrder: number }) {
   const [pending, startTransition] = useTransition()
   const [kind, setKind] = useState<"image" | "video">("image")
   const [url, setUrl] = useState("")
-  const [posterUrl, setPosterUrl] = useState("")
 
   function handleSubmit(formData: FormData) {
     formData.set("kind", kind)
     formData.set("url", url)
-    formData.set("poster_url", posterUrl)
     if (!url) {
       toast.error("Subí primero la imagen o video")
       return

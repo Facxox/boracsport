@@ -10,9 +10,6 @@ import type { Category } from "@/lib/constants"
 const PRODUCT_COLUMNS =
   "id, slug, name, description, price, images, tags, category, stock, on_sale" as const
 
-const PRODUCT_DETAIL_COLUMNS =
-  "id, slug, name, description, price, images, tags, category, stock, active, featured, on_sale, product_variants:product_variants(id, size, color, sku, stock, price_override, active)" as const
-
 export type ProductWithVariants = Product & {
   stock: number
   variants: ProductVariantRow[]

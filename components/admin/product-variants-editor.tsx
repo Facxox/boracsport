@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react"
 
 export interface VariantFormValue {
@@ -20,7 +19,6 @@ interface ProductVariantsEditorProps {
 
 export function ProductVariantsEditor({ value, onChange }: ProductVariantsEditorProps) {
   const variants = value
-  const [adding, setAdding] = useState(false)
 
   function updateAt(idx: number, patch: Partial<VariantFormValue>) {
     const next = variants.map((v, i) => (i === idx ? { ...v, ...patch } : v))
@@ -29,7 +27,6 @@ export function ProductVariantsEditor({ value, onChange }: ProductVariantsEditor
 
   function add() {
     onChange([...variants, { ...DEFAULT_VARIANT }])
-    setAdding(false)
   }
 
   function remove(idx: number) {

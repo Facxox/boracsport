@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Banknote, CreditCard, MessageCircle, ArrowRight, ShieldCheck, Truck, Check, Lock, ShoppingBag } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -33,12 +32,11 @@ export default function CheckoutPage() {
   const setStoredProfile = useCustomerStore((s) => s.setProfile)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [hydrated, setHydrated] = useState(false)
 
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [phone, setPhone] = useState("")
-  const [address, setAddress] = useState("")
+  const [name, setName] = useState(() => storedProfile.name ?? "")
+  const [email, setEmail] = useState(() => storedProfile.email ?? "")
+  const [phone, setPhone] = useState(() => storedProfile.phone ?? "")
+  const [address, setAddress] = useState(() => storedProfile.address ?? "")
   const [touched, setTouched] = useState<{ name?: boolean; email?: boolean; phone?: boolean }>({})
   const [mpOpen, setMpOpen] = useState(false)
   // Bug 1.3: si el cliente repite el mismo carrito en <5min, el server
@@ -49,8 +47,6 @@ export default function CheckoutPage() {
   const subtotal = selectSubtotal(items)
   const totals = selectTotal(items)
   const empty = hasHydrated && items.length === 0
-
-  useEffect(() => { setHydrated(true) }, [])
 
   // Bug 1.1: si llegamos con ?status= o ?order= de un redirect de Mercado
   // Pago, derivamos a /checkout/confirmacion para que el cliente vea el
@@ -71,18 +67,11 @@ export default function CheckoutPage() {
     router.replace(`/checkout/confirmacion?${next.toString()}`)
   }, [searchParams, router])
 
+  // Persistimos el profile cuando el usuario edita los inputs.
   useEffect(() => {
-    if (!hydrated) return
-    if (!name && storedProfile.name) setName(storedProfile.name)
-    if (!email && storedProfile.email) setEmail(storedProfile.email)
-    if (!phone && storedProfile.phone) setPhone(storedProfile.phone)
-    if (!address && storedProfile.address) setAddress(storedProfile.address)
-  }, [hydrated, storedProfile, name, email, phone, address])
-
-  useEffect(() => {
-    if (!hydrated) return
+    if (!hasHydrated) return
     setStoredProfile({ name, email, phone, address })
-  }, [hydrated, name, email, phone, address, setStoredProfile])
+  }, [hasHydrated, name, email, phone, address, setStoredProfile])
 
   const customer = { name, email, phone, address }
   const hasPhysicalProduct = items.some((it) => it.kind === "product")
