@@ -15,7 +15,7 @@ const RULES: Record<Bucket, { kinds: Kind[]; mimes: Record<Kind, string[]>; maxB
   boracsport_products: {
     kinds: ["image"],
     mimes: { image: ["image/jpeg", "image/png", "image/webp"], media: [] },
-    maxBytes: 8 * 1024 * 1024,
+    maxBytes: 0,
   },
   boracsport_templates: {
     kinds: ["image"],
@@ -23,7 +23,7 @@ const RULES: Record<Bucket, { kinds: Kind[]; mimes: Record<Kind, string[]>; maxB
       image: ["image/jpeg", "image/png", "image/webp"],
       media: [],
     },
-    maxBytes: 8 * 1024 * 1024,
+    maxBytes: 0,
   },
   boracsport_hero: {
     kinds: ["image", "media"],
@@ -31,12 +31,12 @@ const RULES: Record<Bucket, { kinds: Kind[]; mimes: Record<Kind, string[]>; maxB
       image: ["image/jpeg", "image/png", "image/webp"],
       media: ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"],
     },
-    maxBytes: 80 * 1024 * 1024,
+    maxBytes: 0,
   },
   boracsport_orders: {
     kinds: ["image"],
     mimes: { image: ["image/jpeg", "image/png", "image/webp"], media: [] },
-    maxBytes: 8 * 1024 * 1024,
+    maxBytes: 0,
   },
 }
 
@@ -118,12 +118,10 @@ export async function POST(request: Request) {
     if (typeof meta.size !== "number" || meta.size <= 0) {
       return NextResponse.json({ error: `Tamaño inválido para ${meta.filename}` }, { status: 400 })
     }
-    if (meta.size > rules.maxBytes) {
-      return NextResponse.json(
-        { error: `Archivo demasiado grande (${(meta.size / 1024 / 1024).toFixed(1)}MB > ${rules.maxBytes / 1024 / 1024}MB)` },
-        { status: 413 },
-      )
-    }
+    // Sin límite de tamaño: confiamos en los topes nativos de Supabase Storage
+    // y de la signed upload URL. La subida es directa del navegador a Storage,
+    // así que no atravesamos los límites de Vercel.
+    void rules.maxBytes
 
     const contentType = String(meta.contentType ?? "")
     let kind: Kind | null = null

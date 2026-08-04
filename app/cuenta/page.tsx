@@ -12,19 +12,22 @@ export const dynamic = "force-dynamic"
 export default async function CuentaPage() {
   const user = await getCurrentUser()
   if (!user) redirect("/login")
-  const meta = user.user_metadata ?? {}
-  const raw = meta.intereses
-  const intereses: string[] = Array.isArray(raw)
-    ? raw.filter((s): s is string => typeof s === "string")
-    : []
   const categories = await getActiveCategories()
   const supabase = await createClient()
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, full_name, intereses")
     .eq("id", user.id)
     .maybeSingle()
-  const role = (profile as { role?: string } | null)?.role
+  const profileData = profile as {
+    role?: string
+    full_name?: string
+    intereses?: unknown
+  } | null
+  const intereses: string[] = Array.isArray(profileData?.intereses)
+    ? profileData.intereses.filter((slug): slug is string => typeof slug === "string")
+    : []
+  const role = profileData?.role
   const canAccessAdmin = role === "admin" || role === "superadmin"
 
   const labelsBySlug = new Map(categories.map((c) => [c.slug, c]))
@@ -34,7 +37,7 @@ export default async function CuentaPage() {
       <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-extrabold md:text-4xl">
-            Hola, {meta.full_name ?? user.email}
+            Hola, {profileData?.full_name || user.email}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">{user.email}</p>
         </div>

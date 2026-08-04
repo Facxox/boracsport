@@ -8,6 +8,7 @@ import {
   VariantMatrixEditor,
   type VariantFormValue,
 } from "@/components/admin/variant-matrix-editor"
+import { BallSizeVariantsEditor } from "@/components/admin/ball-size-variants-editor"
 import {
   deleteProductAction,
   updateProductAction,
@@ -47,6 +48,7 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
   const selectedCategory = categories.find((c) => c.slug === categorySlug)
   const currentKind = selectedCategory?.kind ?? "otro"
   const showVariants = currentKind === "ropa"
+  const showBallSizes = currentKind === "pelota"
 
   function handleSubmit(formData: FormData) {
     formData.delete("images")
@@ -155,12 +157,12 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
             {currentKind === "ropa"
               ? "Vas a poder cargar talles y colores abajo."
               : currentKind === "pelota"
-                ? "Solo se carga stock (sin talles ni colores)."
+                ? "Vas a poder cargar talles de pelota abajo (sin colores)."
                 : "Esta categoría no usa variantes — solo stock."}
           </span>
         </label>
         <AdminField name="price" label="Precio UYU" type="number" required defaultValue={String(initial.price)} />
-        {showVariants ? (
+        {showVariants || showBallSizes ? (
           <div className="grid gap-2 text-sm">
             <span className="font-medium">Stock total (calculado)</span>
             <div className="h-10 rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-white/70">
@@ -199,6 +201,14 @@ export function ProductForm({ id, initial, categories }: ProductFormProps) {
             <span className="text-muted-foreground text-xs">{variants.length} variante{variants.length === 1 ? "" : "s"}</span>
           </div>
           <VariantMatrixEditor value={variants} onChange={setVariants} />
+        </div>
+      ) : showBallSizes ? (
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-semibold">Talles y stock (pelota)</p>
+            <span className="text-muted-foreground text-xs">{variants.length} variante{variants.length === 1 ? "" : "s"}</span>
+          </div>
+          <BallSizeVariantsEditor value={variants} onChange={setVariants} />
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-4 text-sm text-white/60">

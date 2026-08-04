@@ -10,6 +10,7 @@ import {
   VariantMatrixEditor,
   type VariantFormValue,
 } from "@/components/admin/variant-matrix-editor"
+import { BallSizeVariantsEditor } from "@/components/admin/ball-size-variants-editor"
 import { createProductAction } from "@/app/admin/actions"
 import { safeImageUrl } from "@/lib/safe-image"
 
@@ -32,6 +33,7 @@ export function NewProductForm({ categories }: NewProductFormProps) {
   const selectedCategory = categories.find((category) => category.slug === categorySlug)
   const currentKind = selectedCategory?.kind ?? "otro"
   const showVariants = currentKind === "ropa"
+  const showBallSizes = currentKind === "pelota"
   const variantStock = variants.reduce((total, variant) => total + (Number(variant.stock) || 0), 0)
 
   function handleSubmit(formData: FormData) {
@@ -147,7 +149,9 @@ export function NewProductForm({ categories }: NewProductFormProps) {
               <span className="text-xs leading-5 text-white/50">
                 {showVariants
                   ? "Esta categoría usa talles, colores y stock por combinación."
-                  : "Esta categoría utiliza un único valor de stock."}
+                  : showBallSizes
+                    ? "Esta categoría usa talles de pelota y stock por talle (sin colores)."
+                    : "Esta categoría utiliza un único valor de stock."}
               </span>
             </label>
             <AdminField name="price" label="Precio UYU" type="number" required defaultValue="0" />
@@ -155,7 +159,11 @@ export function NewProductForm({ categories }: NewProductFormProps) {
           <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
             <span className="text-xs font-medium uppercase tracking-wider text-white/40">Inventario</span>
             <span className="rounded-full border border-[#dc2626]/30 bg-[#dc2626]/10 px-3 py-1 text-xs font-semibold text-[#f87171]">
-              {showVariants ? "Variantes por talle y color" : "Stock simple"}
+              {showVariants
+                ? "Variantes por talle y color"
+                : showBallSizes
+                  ? "Talles y stock de pelota"
+                  : "Stock simple"}
             </span>
           </div>
         </FormSection>
@@ -165,10 +173,12 @@ export function NewProductForm({ categories }: NewProductFormProps) {
           description={
             showVariants
               ? "Agregá colores y cargá el stock disponible para cada talle."
-              : "Indicá cuántas unidades están disponibles."
+              : showBallSizes
+                ? "Cargá el stock por talle de pelota. Sin colores."
+                : "Indicá cuántas unidades están disponibles."
           }
           action={
-            showVariants ? (
+            showVariants || showBallSizes ? (
               <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-white/60">
                 {variants.length} variante{variants.length === 1 ? "" : "s"}
               </span>
@@ -179,6 +189,11 @@ export function NewProductForm({ categories }: NewProductFormProps) {
             <>
               <DerivedStockSummary value={variantStock} />
               <VariantMatrixEditor value={variants} onChange={setVariants} />
+            </>
+          ) : showBallSizes ? (
+            <>
+              <DerivedStockSummary value={variantStock} />
+              <BallSizeVariantsEditor value={variants} onChange={setVariants} />
             </>
           ) : (
             <div className="max-w-sm">
@@ -246,6 +261,7 @@ export function NewProductForm({ categories }: NewProductFormProps) {
         category={selectedCategory?.label ?? "Sin categoría"}
         images={images}
         showVariants={showVariants}
+        showBallSizes={showBallSizes}
         variantsCount={variants.length}
         variantStock={variantStock}
         pending={pending}
@@ -258,7 +274,9 @@ export function NewProductForm({ categories }: NewProductFormProps) {
               {selectedCategory?.label ?? "Nuevo producto"}
             </p>
             <p className="text-[11px] text-white/50">
-              {showVariants ? `${variants.length} variantes · ${variantStock} u.` : `${images.length} imágenes`}
+              {showVariants || showBallSizes
+                ? `${variants.length} variante${variants.length === 1 ? "" : "s"} · ${variantStock} u.`
+                : `${images.length} imágenes`}
             </p>
           </div>
           <button
@@ -345,6 +363,7 @@ function ProductSummary({
   category,
   images,
   showVariants,
+  showBallSizes,
   variantsCount,
   variantStock,
   pending,
@@ -352,6 +371,7 @@ function ProductSummary({
   category: string
   images: string[]
   showVariants: boolean
+  showBallSizes: boolean
   variantsCount: number
   variantStock: number
   pending: boolean
@@ -383,8 +403,8 @@ function ProductSummary({
         <dl className="grid gap-3 border-y border-white/10 py-4">
           <SummaryRow label="Categoría" value={category} />
           <SummaryRow label="Imágenes" value={`${images.length} cargadas`} />
-          <SummaryRow label="Inventario" value={showVariants ? "Por variantes" : "Stock simple"} />
-          {showVariants ? (
+          <SummaryRow label="Inventario" value={showVariants ? "Por variantes" : showBallSizes ? "Por talles de pelota" : "Stock simple"} />
+          {showVariants || showBallSizes ? (
             <>
               <SummaryRow label="Variantes" value={String(variantsCount)} />
               <SummaryRow label="Stock total" value={`${variantStock} u.`} highlight />

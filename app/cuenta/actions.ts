@@ -7,7 +7,7 @@ import {
   deleteDesignForUser,
   saveDesignForUser,
 } from "@/lib/supabase/queries/designs"
-import { signOut, updateIntereses } from "@/lib/supabase/queries/auth"
+import { signOut } from "@/lib/supabase/queries/auth"
 import { getActiveCategories } from "@/lib/supabase/queries/categories"
 import { createClient } from "@/lib/supabase/server"
 
@@ -70,7 +70,11 @@ export async function updateInteresesAction(formData: FormData) {
   const raw = formData.getAll("intereses").map((v) => String(v))
   const intereses = Array.from(new Set(raw.filter((s) => validSlugs.has(s))))
 
-  const { error } = await updateIntereses(intereses)
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("profiles")
+    .update({ intereses } as never)
+    .eq("id", userId)
   if (error) {
     return { ok: false as const, error: error.message }
   }

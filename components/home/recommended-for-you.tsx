@@ -1,14 +1,23 @@
 import { getCurrentUser } from "@/lib/supabase/queries/auth"
 import { getRecommendedFor } from "@/lib/supabase/queries/products"
+import { createClient } from "@/lib/supabase/server"
 import { ProductGrid } from "@/components/product/product-grid"
 import type { Category } from "@/lib/constants"
 import type { InterestSlug } from "@/types/interest"
 
 export async function RecommendedForYou() {
   const user = await getCurrentUser()
-  const raw = user?.user_metadata?.intereses
+  if (!user) return null
+
+  const supabase = await createClient()
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("intereses")
+    .eq("id", user.id)
+    .maybeSingle()
+  const raw = (profile as { intereses?: unknown } | null)?.intereses
   const intereses: InterestSlug[] = Array.isArray(raw)
-    ? (raw.filter((s) => typeof s === "string") as InterestSlug[])
+    ? (raw.filter((slug): slug is string => typeof slug === "string") as InterestSlug[])
     : []
 
   if (intereses.length === 0) return null

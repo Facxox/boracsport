@@ -72,18 +72,37 @@ function parseProductFields(formData: FormData) {
 async function parseProduct(
   supabase: Awaited<ReturnType<typeof requireAdmin>>,
   formData: FormData,
-) {
+): Promise<{
+  name: string
+  slug: string
+  description: string
+  category: string
+  category_id: string
+  category_kind: "ropa" | "pelota" | "otro"
+  price: number
+  stock: number
+  tags: string[]
+  images: string[]
+  active: boolean
+  featured: boolean
+  on_sale: boolean
+}> {
   const fields = parseProductFields(formData)
   // Validamos contra la tabla `categories` (fuente de verdad). Cualquier
   // categoría creada desde /admin/categorias se acepta automáticamente.
+  // Traemos también `kind` para que la validación de variantes pueda
+  // diferenciar ropa (size+color) de pelota (size only).
   const { data: cat, error: catErr } = await supabase
     .from("categories")
-    .select("id")
+    .select("id, kind")
     .eq("slug", fields.category)
     .maybeSingle()
   if (catErr) throw new Error(`Error al validar categoría: ${catErr.message}`)
   if (!cat) throw new Error(`Categoría inválida: "${fields.category}" no existe`)
-  return { ...fields, category_id: (cat as { id: string }).id }
+  const rawKind = (cat as { kind?: string }).kind
+  const kind: "ropa" | "pelota" | "otro" =
+    rawKind === "ropa" || rawKind === "pelota" || rawKind === "otro" ? rawKind : "otro"
+  return { ...fields, category_id: (cat as { id: string }).id, category_kind: kind }
 }
 
 interface ParsedVariant {
@@ -94,7 +113,60 @@ interface ParsedVariant {
   price_override: number | null
 }
 
-function parseVariants(formData: FormData): ParsedVariant[] {
+// Reglas de validación de variantes según `category_kind`.
+// - 'ropa': size y color obligatorios.
+// - 'pelota': size obligatorio, color debe estar vacío.
+// - 'otro': no se aceptan variantes (deben llegar sin inputs de matriz).
+const SIZE_RE = /^[\p{L}\p{N}\s\-./]+$/u
+
+function isValidSizeFormat(size: string): boolean {
+  if (!size) return false
+  // Permitimos letras (incluye acentos), dígitos, espacios, guion, punto y
+  // barra. Esto cubre "S", "XL", "5", "12", "10.5", "Talle 3", etc.
+  return SIZE_RE.test(size)
+}
+
+function validateVariantShape(
+  idx: number,
+  size: string,
+  color: string,
+  categoryKind: "ropa" | "pelota" | "otro",
+): void {
+  const trimmedSize = (size || "").trim()
+  const trimmedColor = (color || "").trim()
+
+  if (categoryKind === "otro") {
+    throw new Error(
+      `Variante #${idx}: la categoría no admite variantes (kind=otro)`,
+    )
+  }
+
+  if (categoryKind === "pelota") {
+    if (!trimmedSize) {
+      throw new Error(`Variante #${idx}: talle requerido para pelotas`)
+    }
+    if (trimmedColor) {
+      throw new Error(`Variante #${idx}: las pelotas no llevan color`)
+    }
+    if (!isValidSizeFormat(trimmedSize)) {
+      throw new Error(`Variante #${idx}: formato de talle inválido`)
+    }
+    return
+  }
+
+  // kind='ropa'
+  if (!trimmedSize || !trimmedColor) {
+    throw new Error(`Variante #${idx}: talle y color requeridos`)
+  }
+  if (!isValidSizeFormat(trimmedSize)) {
+    throw new Error(`Variante #${idx}: formato de talle inválido`)
+  }
+}
+
+function parseVariants(
+  formData: FormData,
+  categoryKind: "ropa" | "pelota" | "otro" = "ropa",
+): ParsedVariant[] {
   const variants: ParsedVariant[] = []
   for (const key of Array.from(formData.keys())) {
     const match = key.match(/^variants\[(\d+)\]\[size\]$/)
@@ -113,11 +185,20 @@ function parseVariants(formData: FormData): ParsedVariant[] {
     if (priceOverride != null && (!Number.isFinite(priceOverride) || priceOverride < 0)) {
       throw new Error(`Variante #${idx}: precio inválido`)
     }
-    // Aceptamos size+color con cualquier stock (incluido 0) para preservar
-    // el estado completo de la matriz. El filtrado "sin stock = no guardar"
+    // Validamos el shape por kind de categoría. Si la fila viene totalmente
+    // vacía (size="" y color="") la ignoramos silenciosamente — es ruido
+    // residual que no genera variante pero tampoco debe romper el form.
+    const trimmedSize = size.trim()
+    const trimmedColor = color.trim()
+    if (!trimmedSize && !trimmedColor) continue
+    validateVariantShape(Number(idx), trimmedSize, trimmedColor, categoryKind)
+    // Aceptamos size (y color para ropa) con cualquier stock (incluido 0)
+    // para preservar el estado completo. El filtrado "sin stock = no guardar"
     // se hace en validRows dentro de replaceVariants.
-    if (size && color) {
-      variants.push({ size, color, sku, stock, price_override: priceOverride })
+    if (categoryKind === "pelota") {
+      variants.push({ size: trimmedSize, color: "", sku, stock, price_override: priceOverride })
+    } else {
+      variants.push({ size: trimmedSize, color: trimmedColor, sku, stock, price_override: priceOverride })
     }
   }
   return variants
@@ -128,16 +209,18 @@ async function replaceVariants(
   productId: string,
   variants: ParsedVariant[],
   formData: FormData,
+  categoryKind: "ropa" | "pelota" | "otro" = "ropa",
 ) {
-  // Si el form NO trae inputs `variants[N][size]`, el producto no está
-  // usando la matriz (categoría sin variantes como pelota/otro). Si
-  // antes tenía variantes, las borramos para no dejar stock huérfano.
+  // Si la categoría es 'otro' (no usa variantes), no procesamos nada y
+  // borramos defensivamente las huérfanas si las hubiera. Si el form
+  // tampoco trae inputs de matriz, salimos inmediatamente.
   const hasMatrixInputs = Array.from(formData.keys()).some((k) =>
     /^variants\[\d+\]\[size\]$/.test(k),
   )
-  if (!hasMatrixInputs) {
-    // Borrado defensivo: si la categoría cambió de ropa a otro sin limpiar
-    // variantes, las borramos para que el stock top-level sea la única verdad.
+  if (categoryKind === "otro" || !hasMatrixInputs) {
+    // Borrado defensivo: si la categoría cambió de ropa/pelota a otro sin
+    // limpiar variantes, las borramos para que el stock top-level sea la
+    // única verdad.
     const { error: orphanDeleteError } = await supabase
       .from("product_variants")
       .delete()
@@ -155,10 +238,15 @@ async function replaceVariants(
   const validRows = variants.filter(
     (v) => ((v.size || "").trim() !== "" || (v.color || "").trim() !== "") && v.stock >= 0,
   )
-  // Si no hay ni size ni color en ninguna variante, no tocar.
-  const hasUsableVariant = validRows.some(
-    (v) => (v.size || "").trim() !== "" && (v.color || "").trim() !== "",
-  )
+  // Una variante es "usable" si tiene size (obligatorio siempre) y, en
+  // kind=ropa, también color. Para kind=pelota, color debe estar vacío y
+  // alcanza con size.
+  const hasUsableVariant = validRows.some((v) => {
+    const hasSize = (v.size || "").trim() !== ""
+    if (!hasSize) return false
+    if (categoryKind === "pelota") return true
+    return (v.color || "").trim() !== ""
+  })
   if (!hasUsableVariant) return
 
   // 1) Borrar TODAS las variantes previas de este producto (delete + insert
@@ -254,16 +342,18 @@ export async function createProductAction(
     const supabase = await requireAdmin()
     authenticatedClient = supabase
     const data = await parseProduct(supabase, formData)
-    const variants = parseVariants(formData)
+    const variants = parseVariants(formData, data.category_kind)
     const validVariants = variants.filter(
       (v) => ((v.size || "").trim() !== "" || (v.color || "").trim() !== "") && v.stock >= 0,
     )
     const totalStock = validVariants.length > 0
       ? validVariants.reduce((acc, v) => acc + (Number.isInteger(v.stock) && v.stock >= 0 ? v.stock : 0), 0)
       : data.stock
+    const { category_kind, ...productInsert } = data
+    void category_kind
     const { data: row, error } = await supabase
       .from("products")
-      .insert([{ ...data, stock: totalStock }] as never)
+      .insert([{ ...productInsert, stock: totalStock }] as never)
       .select("id")
       .single()
     if (error || !row) {
@@ -278,7 +368,7 @@ export async function createProductAction(
     }
     const productId = (row as { id: string }).id
     createdProductId = productId
-    await replaceVariants(supabase, productId, variants, formData)
+    await replaceVariants(supabase, productId, variants, formData, data.category_kind)
     revalidatePath("/admin/productos"); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
     // En lugar de redirect() (que puede no propagarse correctamente en
     // Server Actions dentro de startTransition con async en Next.js 16),
@@ -333,7 +423,7 @@ export async function updateProductAction(
   try {
     const supabase = await requireAdmin()
     const data = await parseProduct(supabase, formData)
-    const variants = parseVariants(formData)
+    const variants = parseVariants(formData, data.category_kind)
     // Sólo pisamos `products.stock` con la suma de variantes si el form
     // efectivamente incluyó inputs de matriz y esas variantes son válidas.
     // Si la matriz quedó vacía, respetamos el stock del input principal.
@@ -343,16 +433,18 @@ export async function updateProductAction(
     const totalStock = validVariants.length > 0
       ? validVariants.reduce((acc, v) => acc + (Number.isInteger(v.stock) && v.stock >= 0 ? v.stock : 0), 0)
       : data.stock
+    const { category_kind, ...productUpdate } = data
+    void category_kind
     const { error } = await supabase
       .from("products")
-      .update({ ...data, stock: totalStock } as never)
+      .update({ ...productUpdate, stock: totalStock } as never)
       .eq("id", id)
     if (error) {
       const msg = describeSupabaseError(error, "No se pudo actualizar el producto")
       console.error("[updateProductAction] update error:", msg)
       throw new Error(msg)
     }
-    await replaceVariants(supabase, id, variants, formData)
+    await replaceVariants(supabase, id, variants, formData, data.category_kind)
     revalidatePath("/admin/productos"); revalidatePath(`/admin/productos/${id}`); revalidatePath("/productos"); revalidatePath("/productos/[slug]", "page"); revalidatePath("/")
     return { ok: true }
   } catch (err) {
