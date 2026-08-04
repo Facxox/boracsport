@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { sendOrderConfirmation } from "@/lib/email/send"
-import type { Json, OrderRow, ProductRow, ProductVariantRow } from "@/lib/supabase/types"
+import type { Json, ProductRow, ProductVariantRow } from "@/lib/supabase/types"
 
 const MAX_ITEMS = 50
 const MAX_QTY = 100
@@ -11,7 +11,6 @@ const MAX_BODY_BYTES = 100_000
 // dentro de esta ventana, devolvemos la orden existente en vez de crear
 // una nueva. 5 minutos es suficiente para que el cliente cambie de método
 // de pago sin terminar con dos pedidos idénticos.
-const DEDUPE_WINDOW_MS = 5 * 60 * 1000
 
 type ProductItemInput = {
   kind: "product"
@@ -237,115 +236,67 @@ export async function POST(request: Request) {
     source: "checkout",
     ...(cartHash ? { cartHash } : {}),
   }
-  const insert: Partial<OrderRow> = {
-    user_id: authData.user?.id ?? null,
-    items: snapshot,
-    subtotal,
-    total,
-    status: "pendiente",
-    payment_method: paymentMethod,
-    payment_status: "pendiente",
-    shipping_details: shippingDetails,
-  }
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert([insert] as never)
-    .select("id")
-    .single()
-  if (orderError || !order) {
-    return NextResponse.json({ error: orderError?.message ?? "No se pudo registrar el pedido." }, { status: 503 })
-  }
-  const orderId = (order as { id: string }).id
 
-  // Dedupe: si llegó un cartHash y ya hay una orden reciente con el mismo
-  // hash y mismo email/phone, devolvemos esa en vez de crear la nueva.
-  // Se hace DESPUÉS de crear la orden nueva porque queremos que el insert
-  // confirme que el carrito es válido (stock, variantes, etc). Si la
-  // orden nueva calza con una previa, borramos la nueva y devolvemos la
-  // vieja. Esto evita crear pedidos fantasma por una doble-click.
-  //
-  // Bug 1.3: el cliente puede pedir explícitamente `forceNew: true` para
-  // omitir el dedupe (caso: dos pedidos idénticos en <5min intencionalmente).
-  if (cartHash && !forceNew) {
-    const sinceIso = new Date(Date.now() - DEDUPE_WINDOW_MS).toISOString()
-    const { data: existing } = await supabase
-      .from("orders")
-      .select("id, payment_method, total, subtotal, status, payment_status, created_at, shipping_details")
-      .eq("shipping_details->>cartHash", cartHash)
-      .gte("created_at", sinceIso)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    if (existing && (existing as { id: string }).id !== orderId) {
-      const ex = existing as {
-        id: string
-        payment_method: string
-        total: number
-        subtotal: number
-        status: string
-        payment_status: string
-        created_at: string
-        shipping_details: Record<string, unknown> | null
-      }
-      const exShipping = ex.shipping_details ?? {}
-      const sameCustomer =
-        (typeof exShipping.email === "string" ? exShipping.email.toLowerCase() : "") === email.toLowerCase() &&
-        (typeof exShipping.phone === "string" ? exShipping.phone.replace(/\D/g, "") : "") === phone.replace(/\D/g, "")
-      if (sameCustomer) {
-        // Rollback: borramos la orden recién creada y devolvemos la previa.
-        await supabase.from("orders").delete().eq("id", orderId)
-        return NextResponse.json(
-          {
-            orderId: ex.id,
-            subtotal: Number(ex.subtotal),
-            shipping: Math.max(0, Number(ex.total) - Number(ex.subtotal)),
-            total: Number(ex.total),
-            requiresCoordination: items.some((item) => item.kind === "design"),
-            reused: true,
-          },
-          { status: 200 },
-        )
-      }
-    }
-  }
-
-  // Best-effort: comprobante.
-  if (paymentReceiptUrl) {
-    await supabase
-      .from("orders")
-      .update({ payment_receipt_url: paymentReceiptUrl } as never)
-      .eq("id", orderId)
-  }
-
-  // Decrementar stock. Usamos service role para bypassear RLS y aplicamos
-  // gte('stock', qty) para evitar vender sobre stock negativo (concurrencia).
+  // El insert lo realiza la RPC dentro de una transacción que también descuenta
+  // stock y aplica dedupe por cartHash. No se hace insert previo desde la API.
   const service = createServiceClient()
   if (!service) {
-    // Sin service role no podemos decrementar de forma confiable → deshacemos
-    // la orden para no cobrar algo que no podemos garantizar.
-    await supabase.from("orders").delete().eq("id", orderId)
     return NextResponse.json(
       { error: "Servicio no disponible. Contactanos por WhatsApp para finalizar tu pedido." },
       { status: 503 },
     )
   }
-  for (const cons of variantConsumption) {
-    const table = cons.id.startsWith("legacy:") ? "products" : "product_variants"
-    const eq = cons.id.startsWith("legacy:") ? cons.id.slice("legacy:".length) : cons.id
-    const { error: decErr, count } = await service
-      .from(table)
-      .update({ stock: cons.stockBefore - cons.qty } as never, { count: "exact" })
-      .eq("id", eq)
-      .gte("stock", cons.qty)
-    if (decErr || count === 0) {
-      // Otro request se llevó la última unidad. Rollback de la orden.
-      await service.from("orders").delete().eq("id", orderId)
+
+  const rpcPayload = {
+    user_id: authData.user?.id ?? null,
+    items: snapshot,
+    subtotal,
+    total,
+    payment_method: paymentMethod,
+    payment_receipt_url: paymentReceiptUrl,
+    shipping_details: shippingDetails,
+    cart_hash: cartHash,
+    force_new: forceNew,
+  } as unknown as Json
+  const rpcConsumptions = variantConsumption.map((cons) =>
+    cons.id.startsWith("legacy:")
+      ? { kind: "product", id: cons.id.slice("legacy:".length), qty: cons.qty }
+      : { kind: "variant", id: cons.id, qty: cons.qty },
+  ) as unknown as Json
+
+  const { data: rpcResult, error: rpcError } = await service.rpc(
+    "create_order_with_stock" as never,
+    {
+      p_order: rpcPayload,
+      p_consumptions: rpcConsumptions,
+    } as never,
+  )
+
+  if (rpcError) {
+    const message = rpcError.message ?? "No se pudo registrar el pedido."
+    if (/insufficient stock/i.test(message) || /P0001/.test(message)) {
       return NextResponse.json(
         { error: "Sin stock suficiente para uno de los productos. Volvé a intentar." },
         { status: 409 },
       )
     }
+    if (/consumption target not available/i.test(message) || /P0002/.test(message)) {
+      return NextResponse.json(
+        { error: "Uno de los productos ya no está disponible." },
+        { status: 409 },
+      )
+    }
+    return NextResponse.json({ error: message }, { status: 503 })
   }
+
+  const rpcRow = rpcResult as {
+    reused: boolean
+    order_id: string
+    subtotal: number
+    shipping: number
+    total: number
+  }
+  const orderId = rpcRow.order_id
 
   // Email: fire-and-forget (no bloquea la respuesta).
   if (paymentMethod === "transfer" || paymentMethod === "mercadopago") {
@@ -360,7 +311,17 @@ export async function POST(request: Request) {
     }).catch((err) => console.warn("[orders:email] failed", err))
   }
 
-  return NextResponse.json({ orderId, subtotal, shipping, total, requiresCoordination: items.some((item) => item.kind === "design") }, { status: 201 })
+  return NextResponse.json(
+    {
+      orderId: rpcRow.order_id,
+      subtotal: Number(rpcRow.subtotal),
+      shipping: Number(rpcRow.shipping),
+      total: Number(rpcRow.total),
+      requiresCoordination: items.some((item) => item.kind === "design"),
+      reused: rpcRow.reused,
+    },
+    { status: rpcRow.reused ? 200 : 201 },
+  )
 }
 
 // GET: devuelve los pedidos del usuario logueado (no anónimos).
