@@ -6,7 +6,9 @@
 // - Permite agregar talles y colores libres.
 // - Stock entero no negativo por variante.
 // - Emite hidden inputs variants[N][size|color|sku|stock|price_override]
-//   que consume createDesignPresetAction / updateDesignPresetAction.
+//   (al final del JSX) que consume createDesignPresetAction / updateDesignPresetAction.
+//   Sin estos hidden inputs, parseVariants(formData, "ropa") no recibe la
+//   matriz y replacePresetVariants borra todas las variantes existentes.
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Plus, Trash2 } from "lucide-react"
@@ -246,6 +248,23 @@ export function PresetVariantsEditor({ value, onChange }: PresetVariantsEditorPr
         El stock total del preset es la suma del stock de sus variantes activas.
         Las compras decrementan por variante específica.
       </p>
+
+      {/* Hidden inputs para que las variantes viajen con el form. Sin esto,
+          el server action no podría reconstruirlas y replacePresetVariants
+          borraría todas las existentes en cada guardado. */}
+      {mapToVariants(rows).map((v, idx) => (
+        <span key={`hidden-${idx}`} aria-hidden style={{ display: "none" }}>
+          <input type="hidden" name={`variants[${idx}][size]`} value={v.size} />
+          <input type="hidden" name={`variants[${idx}][color]`} value={v.color} />
+          <input type="hidden" name={`variants[${idx}][sku]`} value={v.sku ?? ""} />
+          <input type="hidden" name={`variants[${idx}][stock]`} value={String(v.stock)} />
+          <input
+            type="hidden"
+            name={`variants[${idx}][price_override]`}
+            value={v.price_override ?? ""}
+          />
+        </span>
+      ))}
     </div>
   )
 }
