@@ -216,6 +216,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .eq("id", id)
 
   if (updateError) {
+    // Si el UPDATE falla, borrar el archivo recién subido para no dejar
+    // comprobantes huérfanos en Storage.
+    await service.storage.from("boracsport_orders").remove([path])
     return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
 
