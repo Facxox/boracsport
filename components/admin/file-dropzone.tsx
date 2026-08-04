@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client"
 export type DropzoneKind = "image" | "media"
 
 interface FileDropzoneProps {
-  bucket: "boracsport_products" | "boracsport_templates" | "boracsport_hero"
+  bucket: "boracsport_products" | "boracsport_templates" | "boracsport_hero" | "boracsport_orders" | "boracsport_presets"
   prefix: string
   kind: DropzoneKind
   value: string[]

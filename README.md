@@ -41,8 +41,10 @@ Definidas en `.env.example`:
   - `(auth)/login`, `(auth)/registro` — autenticación + intereses dinámicos desde DB.
   - `cuenta/` — perfil del usuario, intereses y diseños guardados.
   - `productos/` — catálogo público con filtro por categoría dinámica.
-  - `personalizar/` — wrapper que monta el personalizador 2D (`Viewer2D` + `TextureCompositor`).
+  - `disenos-base/` — galería pública de **diseños base** publicables (presets). Cada card abre `/personalizar?preset=<slug>` con el `DesignState` precargado.
+  - `personalizar/` — wrapper que monta el personalizador 2D (`Viewer2D` + `TextureCompositor`). Acepta `?preset=<slug>`, `?d=<lz>`, `?design=<id>`.
   - `admin/` — panel restringido a `admin`/`superadmin`.
+    - `admin/disenos-base` — CRUD de diseños base (presets) con variantes y stock por variante.
     - `admin/productos` — CRUD con drag-and-drop de imágenes.
     - `admin/templates` — CRUD de plantillas 3D (mockups + .glb/.gltf).
     - `admin/categorias` — CRUD + reordenamiento con flechas.
@@ -88,6 +90,12 @@ El esquema vive en `boracsport` (schema dedicado dentro de Supabase). Toda query
 12. `20260804_create_order_with_stock.sql` — RPC transaccional con dedupe por `cartHash` y lock determinista (`FOR UPDATE` ordenado por `jsonb_each`); descuenta stock e inserta la orden en una sola transacción.
 13. `20260805_order_confirmation_tokens_and_rate_limits.sql` — tokens de confirmación, rate limit compartido (`rate_limit_buckets` + `consume_rate_limit`) y máquina de estados de pedidos (`transition_order_status` con `role_audit_log`).
 14. `20260806_roles_and_account_lifecycle.sql` — `require_superadmin()`, `promote_user_role()` con guarda del último superadmin, `delete_user_account()` (borra Auth user, profile, designs en cascada, conserva orders con `user_id=NULL`, limpia Storage del bucket `boracsport_customizations/<uid>/`).
+15. `20260807_cleanup_pending_orders.sql` + `pg_cron` — `cleanup_pending_orders()` borra diariamente pedidos `pendiente` > 7 días, devuelve stock a variants/products, audita.
+16. `20260807b_grant_schema_usage_to_service_role.sql` — `GRANT USAGE ON SCHEMA boracsport TO service_role` (sin esto `/api/orders` tira `permission denied for schema boracsport`).
+17. `20260807c_storage_orders_service_role.sql` — policies de Storage para que `service_role` suba/firme comprobantes en `boracsport_orders`.
+18. `20260807d_orders_owner_select_includes_guest.sql` — `orders_owner_select` permite SELECT a `user_id IS NULL` (guest puede leer su propio pedido y subir comprobante).
+19. `20260808_design_presets.sql` — tablas `design_presets` y `design_preset_variants` con RLS, índices y bucket Storage `boracsport_presets`.
+20. `20260808b_extend_create_order_with_stock_for_presets.sql` — extiende `create_order_with_stock` con `kind='design_preset_variant'` y `kind='design_preset'` (descuento agregado sobre variantes activas del preset).
 
 Todas son idempotentes. Tras aplicar cualquiera, refrescá tipos con `supabase gen types typescript` si los regenerás.
 
@@ -101,6 +109,7 @@ Todas son idempotentes (`create ... if not exists`, `drop policy if exists`, `on
 | `boracsport_templates` | pública | admin / superadmin |
 | `boracsport_hero` | pública | admin / superadmin |
 | `boracsport_customizations` | owner (carpeta = `auth.uid()`) o admin | owner o admin |
+| `boracsport_presets` | pública | admin / superadmin |
 
 ### Roles
 

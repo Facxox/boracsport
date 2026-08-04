@@ -6,12 +6,17 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import type { UserRole } from "@/lib/supabase/types"
 
-const ALLOWED_BUCKETS = ["boracsport_products", "boracsport_templates", "boracsport_hero", "boracsport_orders"] as const
+const ALLOWED_BUCKETS = ["boracsport_products", "boracsport_templates", "boracsport_hero", "boracsport_orders", "boracsport_presets"] as const
 type Bucket = (typeof ALLOWED_BUCKETS)[number]
 
 type Kind = "image" | "media"
 
 const RULES: Record<Bucket, { kinds: Kind[]; mimes: Record<Kind, string[]>; maxBytes: number }> = {
+  boracsport_presets: {
+    kinds: ["image"],
+    mimes: { image: ["image/jpeg", "image/png", "image/webp"], media: [] },
+    maxBytes: 0,
+  },
   boracsport_products: {
     kinds: ["image"],
     mimes: { image: ["image/jpeg", "image/png", "image/webp"], media: [] },

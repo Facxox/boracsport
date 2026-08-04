@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import type { UserRole } from "@/lib/supabase/types"
+import type { Json } from "@/lib/supabase/types"
 
 function text(value: FormDataEntryValue | null, max: number) {
   if (typeof value !== "string") return ""
@@ -917,4 +918,301 @@ export async function toggleTemplateActiveAction(id: string, active: boolean) {
   revalidatePath("/admin/templates")
   revalidatePath("/admin")
   revalidatePath("/personalizar")
+}
+
+// ===== design_presets =====
+// Validamos que un payload DesignState tenga la forma esperada (al menos
+// version=1 + zones con keys conocidas). Aceptamos el payload serializado
+// desde el cliente; la validación estricta la hace el renderer al pintar.
+function parseDesignPresetFields(formData: FormData) {
+  const name = text(formData.get("name"), 120)
+  const slug = text(formData.get("slug"), 80).toLowerCase()
+  const description = text(formData.get("description"), 1000)
+  const templateId = text(formData.get("template_id"), 60)
+  const previewUrl = text(formData.get("preview_url"), 1000)
+  const payloadRaw = text(formData.get("payload"), 200_000)
+  const priceRaw = Number(formData.get("price") ?? 0)
+
+  if (!name) throw new Error("Nombre requerido")
+  if (!slug) throw new Error("Slug requerido")
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    throw new Error("Slug inválido (sólo minúsculas, números y guiones)")
+  }
+  if (!templateId) throw new Error("Template requerido")
+  if (!isUuid(templateId)) throw new Error("Template inválido")
+  if (!Number.isFinite(priceRaw) || priceRaw < 0) throw new Error("Precio inválido")
+
+  let payload: Json = {} as Json
+  if (payloadRaw) {
+    try {
+      const parsed = JSON.parse(payloadRaw)
+      if (parsed && typeof parsed === "object" && (parsed as { version?: unknown }).version === 1) {
+        payload = parsed as Json
+      } else {
+        // Permitimos payload vacío (preset sin customización precargada) sólo
+        // si el cliente lo manda con version=1 y zones como objeto.
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          (parsed as { zones?: unknown }).zones &&
+          typeof (parsed as { zones: unknown }).zones === "object"
+        ) {
+          payload = { ...(parsed as Record<string, Json>), version: 1 } as Json
+        }
+      }
+    } catch {
+      throw new Error("payload no es JSON válido")
+    }
+  }
+
+  return {
+    name,
+    slug,
+    description,
+    template_id: templateId,
+    preview_url: previewUrl,
+    payload,
+    price: priceRaw,
+    active: formData.get("active") === "on",
+  }
+}
+
+async function replacePresetVariants(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>,
+  presetId: string,
+  variants: ParsedVariant[],
+  formData: FormData,
+) {
+  const hasMatrixInputs = Array.from(formData.keys()).some((k) =>
+    /^variants\[\d+\]\[size\]$/.test(k),
+  )
+  if (!hasMatrixInputs) {
+    await supabase.from("design_preset_variants").delete().eq("preset_id", presetId)
+    return
+  }
+
+  const validRows = variants.filter(
+    (v) => ((v.size || "").trim() !== "" || (v.color || "").trim() !== "") && v.stock >= 0,
+  )
+  // Para presets usamos convención "ropa": size y color requeridos.
+  const hasUsableVariant = validRows.some(
+    (v) => (v.size || "").trim() !== "" && (v.color || "").trim() !== "",
+  )
+  if (!hasUsableVariant) {
+    await supabase.from("design_preset_variants").delete().eq("preset_id", presetId)
+    return
+  }
+
+  const { error: delError } = await supabase
+    .from("design_preset_variants")
+    .delete()
+    .eq("preset_id", presetId)
+  if (delError) {
+    console.warn("[replacePresetVariants] delete prior error:", delError.message)
+  }
+
+  const seen = new Set<string>()
+  const rows = validRows
+    .filter((v) => {
+      const key = `${v.size.trim()}|${(v.color || "").trim().toLowerCase()}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .map((v) => ({
+      preset_id: presetId,
+      size: v.size.trim(),
+      color: (v.color || "").trim(),
+      sku: v.sku,
+      stock: v.stock,
+      price_override: v.price_override,
+      active: true,
+    }))
+
+  if (rows.length === 0) return
+  const { error: insError } = await supabase.from("design_preset_variants").insert(rows as never)
+  if (insError) {
+    throw new Error(
+      describeSupabaseError(insError, "No se pudieron guardar las variantes del preset"),
+    )
+  }
+}
+
+export async function createDesignPresetAction(
+  formData: FormData,
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  try {
+    const supabase = await requireAdmin()
+    const fields = parseDesignPresetFields(formData)
+    const variants = parseVariants(formData, "ropa")
+
+    // Verificamos que el template exista (RLS ya filtra por admin).
+    const { data: tpl } = await supabase
+      .from("templates")
+      .select("id")
+      .eq("id", fields.template_id)
+      .maybeSingle()
+    if (!tpl) throw new Error("Template inexistente")
+
+    // display_order = max + 1 para que aparezca al final.
+    const { data: maxRow } = await supabase
+      .from("design_presets")
+      .select("display_order")
+      .order("display_order", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const nextOrder = ((maxRow as { display_order?: number } | null)?.display_order ?? 0) + 1
+
+    const { data, error } = await supabase
+      .from("design_presets")
+      .insert({
+        name: fields.name,
+        slug: fields.slug,
+        description: fields.description,
+        template_id: fields.template_id,
+        preview_url: fields.preview_url,
+        payload: fields.payload,
+        price: fields.price,
+        active: fields.active,
+        display_order: nextOrder,
+      } as never)
+      .select("id")
+      .single()
+    if (error) {
+      throw new Error(describeSupabaseError(error, "No se pudo crear el preset"))
+    }
+    const id = (data as { id: string }).id
+    await replacePresetVariants(supabase, id, variants, formData)
+    revalidatePath("/admin/disenos-base")
+    revalidatePath("/disenos-base")
+    return { ok: true, id }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[createDesignPresetAction] failed:", message)
+    return { ok: false, error: message }
+  }
+}
+
+export async function updateDesignPresetAction(
+  id: string,
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isUuid(id)) return { ok: false, error: "ID inválido" }
+  try {
+    const supabase = await requireAdmin()
+    const fields = parseDesignPresetFields(formData)
+    const variants = parseVariants(formData, "ropa")
+
+    const { data: tpl } = await supabase
+      .from("templates")
+      .select("id")
+      .eq("id", fields.template_id)
+      .maybeSingle()
+    if (!tpl) throw new Error("Template inexistente")
+
+    const { error } = await supabase
+      .from("design_presets")
+      .update({
+        name: fields.name,
+        slug: fields.slug,
+        description: fields.description,
+        template_id: fields.template_id,
+        preview_url: fields.preview_url,
+        payload: fields.payload,
+        price: fields.price,
+        active: fields.active,
+      } as never)
+      .eq("id", id)
+    if (error) {
+      throw new Error(describeSupabaseError(error, "No se pudo actualizar el preset"))
+    }
+    await replacePresetVariants(supabase, id, variants, formData)
+    revalidatePath("/admin/disenos-base")
+    revalidatePath("/disenos-base")
+    revalidatePath(`/admin/disenos-base/${id}`)
+    return { ok: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[updateDesignPresetAction] failed:", message)
+    return { ok: false, error: message }
+  }
+}
+
+export async function deleteDesignPresetAction(
+  id: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!isUuid(id)) return { ok: false, error: "ID inválido" }
+  try {
+    const supabase = await requireAdmin()
+    // Cascade en FK borra design_preset_variants; borramos también el preview
+    // del bucket boracsport_presets.
+    const { data: preset } = await supabase
+      .from("design_presets")
+      .select("preview_url")
+      .eq("id", id)
+      .maybeSingle()
+    const previewUrl = (preset as { preview_url?: string } | null)?.preview_url ?? ""
+
+    const { error } = await supabase.from("design_presets").delete().eq("id", id)
+    if (error) {
+      throw new Error(describeSupabaseError(error, "No se pudo eliminar el preset"))
+    }
+
+    if (previewUrl) {
+      // Path dentro del bucket: {prefix}/{uuid}.{ext}. Borramos sólo el archivo
+      // exacto; si falla, no rompemos el delete del preset.
+      const { error: rmErr } = await supabase.storage
+        .from("boracsport_presets")
+        .remove([previewUrl])
+      if (rmErr) {
+        console.warn("[deleteDesignPresetAction] storage cleanup failed:", rmErr.message)
+      }
+    }
+
+    revalidatePath("/admin/disenos-base")
+    revalidatePath("/disenos-base")
+    return { ok: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error("[deleteDesignPresetAction] failed:", message)
+    return { ok: false, error: message }
+  }
+}
+
+export async function setPresetActiveAction(id: string, active: boolean) {
+  if (!isUuid(id)) throw new Error("ID inválido")
+  const supabase = await requireAdmin()
+  const { error } = await supabase
+    .from("design_presets")
+    .update({ active } as never)
+    .eq("id", id)
+  if (error) throw new Error(describeSupabaseError(error, "No se pudo actualizar el estado"))
+  revalidatePath("/admin/disenos-base")
+  revalidatePath("/disenos-base")
+}
+
+export async function reorderPresetsAction(orderedIds: string[]) {
+  if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+    throw new Error("Lista de IDs inválida")
+  }
+  for (const id of orderedIds) {
+    if (!isUuid(id)) throw new Error("ID inválido en la lista")
+  }
+  const supabase = await requireAdmin()
+  // Aplicamos en un loop con índice = display_order. Cada update es pequeño
+  // (1 fila, 1 columna). Para N presets chicos el costo es aceptable;
+  // evitamos un RPC nuevo.
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await supabase
+      .from("design_presets")
+      .update({ display_order: i + 1 } as never)
+      .eq("id", orderedIds[i])
+    if (error) {
+      throw new Error(
+        describeSupabaseError(error, "No se pudo reordenar el preset"),
+      )
+    }
+  }
+  revalidatePath("/admin/disenos-base")
+  revalidatePath("/disenos-base")
 }

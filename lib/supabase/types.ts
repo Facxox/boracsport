@@ -133,6 +133,34 @@ export interface DesignRow {
   updated_at: string
 }
 
+export interface DesignPresetRow {
+  id: string
+  template_id: string
+  name: string
+  slug: string
+  description: string
+  preview_url: string
+  payload: Json
+  price: number
+  active: boolean
+  display_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DesignPresetVariantRow {
+  id: string
+  preset_id: string
+  size: string
+  color: string
+  sku: string | null
+  stock: number
+  price_override: number | null
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface OrderRow {
   id: string
   user_id: string | null
@@ -158,6 +186,16 @@ export interface Database {
       products: { Row: ProductRow; Insert: Partial<ProductRow>; Update: Partial<ProductRow> }
       product_variants: { Row: ProductVariantRow; Insert: Partial<ProductVariantRow> & { product_id: string }; Update: Partial<ProductVariantRow> }
       templates: { Row: TemplateRow; Insert: Partial<TemplateRow>; Update: Partial<TemplateRow> }
+      design_presets: {
+        Row: DesignPresetRow
+        Insert: Partial<DesignPresetRow> & { name: string; slug: string; template_id: string }
+        Update: Partial<DesignPresetRow>
+      }
+      design_preset_variants: {
+        Row: DesignPresetVariantRow
+        Insert: Partial<DesignPresetVariantRow> & { preset_id: string }
+        Update: Partial<DesignPresetVariantRow>
+      }
       designs: {
         Row: DesignRow
         Insert: { user_id: string; payload: Json }

@@ -78,10 +78,36 @@ export function DesignerClient({ template }: DesignerClientProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, template?.id])
 
-  // 2) Leer `?d=` (link) o `?design=` (diseño guardado en cuenta).
+  // 2) Leer `?preset=` (diseño base publicado), `?d=` (link) o `?design=`
+  //    (diseño guardado en cuenta). Prioridad: preset > d > design.
   useEffect(() => {
     if (!hydrated || typeof window === "undefined") return
     const url = new URL(window.location.href)
+
+    const presetSlug = url.searchParams.get("preset")
+    if (presetSlug) {
+      const controller = new AbortController()
+      void fetch(`/api/design-presets/${encodeURIComponent(presetSlug)}`, {
+        signal: controller.signal,
+        credentials: "same-origin",
+      })
+        .then(async (response) => {
+          if (!response.ok) return null
+          return (await response.json()) as { payload?: unknown }
+        })
+        .then((result) => {
+          const payload = result?.payload
+          if (payload && typeof payload === "object" && (payload as { version?: unknown }).version === 1) {
+            importState(payload as DesignState)
+          }
+        })
+        .catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === "AbortError") return
+          console.warn("[design] preset load failed:", error)
+        })
+      return () => controller.abort()
+    }
+
     const d = url.searchParams.get("d")
     if (d) {
       const next = deserialize(d)

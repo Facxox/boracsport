@@ -95,6 +95,7 @@ export function QuoteModal({ state }: QuoteModalProps) {
       .replace("{kit}", KIT_LABEL[state.kit])
       .replace("{pattern}", state.pattern.id)
       .replace("{zones}", buildZonesSummary(state))
+      .replace("{sizes}", form.sizes || "—")
       .replace("{link}", link)
   }
 

@@ -14,6 +14,7 @@ Molde: {mold}
 Kit: {kit}
 Patrón: {pattern}
 Zonas: {zones}
+Talles y cantidades: {sizes}
 
 Link del diseño: {link}
 `
