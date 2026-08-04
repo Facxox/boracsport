@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
+import { GoogleAuthButton } from "@/components/auth/google-auth-button"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -44,7 +45,18 @@ export default function LoginPage() {
       <p className="text-muted-foreground mt-1 text-sm">
         Ingresá a tu cuenta para ver pedidos y diseños guardados.
       </p>
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+
+      <div className="mt-6">
+        <GoogleAuthButton next="/cuenta" />
+      </div>
+
+      <div className="my-5 flex items-center gap-3" aria-hidden>
+        <span className="bg-white/10 h-px flex-1" />
+        <span className="text-muted-foreground text-xs">o con email</span>
+        <span className="bg-white/10 h-px flex-1" />
+      </div>
+
+      <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
           <Input

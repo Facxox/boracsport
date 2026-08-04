@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useCustomerStore } from "@/stores/customer-store"
+import { GoogleAuthButton } from "@/components/auth/google-auth-button"
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -92,7 +93,23 @@ export function RegistrationStep1({ initialStep1Data }: { initialStep1Data: Step
         Tus datos se usan para procesar tus pedidos. Después elegís tus intereses.
       </p>
 
-      <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4">
+      <div className="mt-6">
+        <GoogleAuthButton
+          next="/cuenta"
+          label="Registrarme con Google"
+        />
+        <p className="text-muted-foreground mt-2 text-xs">
+          Si entrás con Google podés elegir tus intereses después desde tu cuenta.
+        </p>
+      </div>
+
+      <div className="my-5 flex items-center gap-3" aria-hidden>
+        <span className="bg-white/10 h-px flex-1" />
+        <span className="text-muted-foreground text-xs">o con email</span>
+        <span className="bg-white/10 h-px flex-1" />
+      </div>
+
+      <form onSubmit={onSubmit} noValidate className="space-y-4">
         <Field
           id="fullName"
           label="Nombre completo"
