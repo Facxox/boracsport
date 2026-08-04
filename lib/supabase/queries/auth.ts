@@ -47,8 +47,3 @@ export async function getCurrentUser() {
   const { data } = await supabase.auth.getUser()
   return data.user ?? null
 }
-
-export async function updateIntereses(intereses: string[]) {
-  const supabase = await createClient()
-  return supabase.auth.updateUser({ data: { intereses } })
-}

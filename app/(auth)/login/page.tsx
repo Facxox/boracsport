@@ -1,16 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { safeAuthNextPath } from "@/lib/auth/safe-next-path"
 import { createClient } from "@/lib/supabase/client"
 import { GoogleAuthButton } from "@/components/auth/google-auth-button"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = safeAuthNextPath(searchParams.get("next"))
+  const callbackFailed = searchParams.get("error") === "auth-callback-failed"
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -30,7 +34,7 @@ export default function LoginPage() {
         setError(error.message)
         return
       }
-      router.push("/cuenta")
+      router.push(next)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido")
@@ -47,7 +51,7 @@ export default function LoginPage() {
       </p>
 
       <div className="mt-6">
-        <GoogleAuthButton next="/cuenta" />
+        <GoogleAuthButton next={next} />
       </div>
 
       <div className="my-5 flex items-center gap-3" aria-hidden>
@@ -80,9 +84,9 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        {error && (
+        {(error || callbackFailed) && (
           <p className="text-sm text-red-400" role="alert">
-            {error}
+            {error ?? "No se pudo completar el inicio de sesión. Intentá nuevamente."}
           </p>
         )}
         <Button type="submit" disabled={loading} className="w-full">

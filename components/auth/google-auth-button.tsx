@@ -12,6 +12,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { GoogleIcon } from "@/components/shared/social-icons"
+import { safeAuthNextPath } from "@/lib/auth/safe-next-path"
 import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
@@ -40,7 +41,8 @@ export function GoogleAuthButton({
       // que funcione tanto en dev como en prod y en previews de Vercel.
       const origin =
         typeof window !== "undefined" ? window.location.origin : ""
-      const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`
+      const safeNext = safeAuthNextPath(next)
+      const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(safeNext)}`
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

@@ -11,8 +11,10 @@ export async function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Sin keys reales, devolvemos un cliente "stub" que todas las queries
-  // devuelven vacío. Esto evita que la app crashee mientras se configuran.
+  // Sin keys reales, devolvemos un cliente "stub" claramente marcado: las
+  // operaciones de auth devuelven error explícito de configuración y las
+  // queries devuelven vacío. Esto evita que un signup o un resend parezca
+  // exitoso sin haber contactado al backend.
   if (!url || !key || url.includes("REPLACE") || key.includes("REPLACE")) {
     return createStubServerClient()
   }
@@ -37,34 +39,42 @@ export async function createClient() {
   })
 }
 
-type StubResponse<T> = { data: T; error: null }
+const STUB_CONFIG_ERROR =
+  "Supabase no está configurado: faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY (o contienen REPLACE) en el entorno del servidor."
 
 function createStubServerClient() {
-  const ok = <T,>(value: T): StubResponse<T> => ({ data: value, error: null })
+  const ok = <T,>(value: T) => ({ data: value, error: null })
+  const fail = () => Promise.resolve({ data: null, error: { message: STUB_CONFIG_ERROR } })
   const emptyAuth = {
     getUser: async () => ok({ user: null }),
-    signUp: async () => ok({ user: null, session: null }),
-    signInWithPassword: async () => ok({ user: null, session: null }),
-    signOut: async () => ok({}),
-    updateUser: async () => ok({ user: null }),
-    exchangeCodeForSession: async () => ok({ session: null, user: null }),
+    signUp: () => fail(),
+    signInWithPassword: () => fail(),
+    signInWithOAuth: () => fail(),
+    signOut: async () => ({ error: null }),
+    updateUser: () => fail(),
+    resend: () => fail(),
+    resetPasswordForEmail: () => fail(),
+    exchangeCodeForSession: () => fail(),
   }
   const emptyQuery = {
     select: () => emptyQuery,
     insert: () => emptyQuery,
     update: () => emptyQuery,
+    delete: () => emptyQuery,
     eq: () => emptyQuery,
     neq: () => emptyQuery,
     ilike: () => emptyQuery,
     in: () => emptyQuery,
+    not: () => emptyQuery,
+    is: () => emptyQuery,
     order: () => emptyQuery,
     range: () => emptyQuery,
     limit: () => emptyQuery,
     maybeSingle: async () => ok(null),
-    then: undefined as never,
+    single: async () => ok(null),
   }
   // Make the query builder thenable so `await` works.
-  ;(emptyQuery as unknown as { then: unknown }).then = (resolve: (v: StubResponse<unknown[]>) => void) =>
+  ;(emptyQuery as unknown as { then: unknown }).then = (resolve: (v: { data: unknown[]; error: null }) => void) =>
     resolve(ok([]))
   return {
     auth: emptyAuth,

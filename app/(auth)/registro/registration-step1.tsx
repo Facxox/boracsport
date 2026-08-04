@@ -1,55 +1,41 @@
 "use client"
 
 // Paso 1 del registro: datos personales + credenciales.
-// Validación cliente antes de pasar al paso 2 (URL ?step=intereses).
-// La dirección se solicita después, en el checkout, para no frenar el alta.
-//
-// El password se mantiene en memoria del componente mientras dura la sesión
-// de la pestaña. NO se persiste en sessionStorage ni localStorage: el flujo
-// de "abrir el email en otra pestaña" no debe depender de un canal lateral.
-// Cuando el usuario vuelve de confirmar el email, la página
-// `/registro/confirmacion` intercambia el código de Supabase por una sesión
-// activa (signInWithMagicLink vía exchangeCodeForSession). El cliente puede
-// entonces seguir navegando sin necesidad de re-tipear la contraseña.
+// Es un componente presentacional controlado por el coordinator
+// (./registration-wizard.tsx). No escribe en URL, sessionStorage,
+// localStorage ni en el customer-store. La password y los demás datos
+// viven sólo en estado React del coordinator.
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useCustomerStore } from "@/stores/customer-store"
 import { GoogleAuthButton } from "@/components/auth/google-auth-button"
+import type { Step1Data } from "./registration-wizard"
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export function RegistrationStep1({ initialStep1Data }: { initialStep1Data: Step1Data }) {
-  const router = useRouter()
-  const setStored = useCustomerStore((s) => s.setProfile)
-  const stored = useCustomerStore((s) => s.profile)
+export interface RegistrationStep1Props {
+  /** Valores iniciales del coordinator. El componente los refleja en su
+   *  estado local, pero cualquier cambio se devuelve al coordinator vía
+   *  onContinue cuando el usuario avanza. */
+  initial: Step1Data
+  /** Callback invocado al pasar al paso 2 con los datos ya validados. */
+  onContinue: (data: Step1Data) => void
+}
 
-  const [fullName, setFullName] = useState(
-    initialStep1Data.fullName ?? stored.name ?? "",
-  )
-  const [email, setEmail] = useState(initialStep1Data.email ?? stored.email ?? "")
-  const [phone, setPhone] = useState(initialStep1Data.phone ?? stored.phone ?? "")
-  const [password, setPassword] = useState("")
+export function RegistrationStep1({ initial, onContinue }: RegistrationStep1Props) {
+  const [fullName, setFullName] = useState(initial.fullName)
+  const [email, setEmail] = useState(initial.email)
+  const [phone, setPhone] = useState(initial.phone)
+  const [password, setPassword] = useState(initial.password)
   const [touched, setTouched] = useState<{
     name?: boolean
     email?: boolean
     password?: boolean
     phone?: boolean
   }>({})
-
-  // Limpiamos cualquier residuo previo del sessionStorage al montar: el
-  // password solo se persiste al submit, y se borra en cuanto el paso 2
-  // completa el signUp. Esto evita arrastrar passwords de flows abortados.
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    // No leemos sessionStorage: la password arranca siempre vacía. Si por
-    // algún motivo quedó algo de un flujo previo, lo removemos al montar.
-    sessionStorage.removeItem("borac-reg-password")
-  }, [])
 
   const nameValid = fullName.trim().length >= 3
   const emailValid = EMAIL_REGEX.test(email.trim())
@@ -63,31 +49,16 @@ export function RegistrationStep1({ initialStep1Data }: { initialStep1Data: Step
       setTouched({ name: true, email: true, password: true, phone: true })
       return
     }
-    setStored({ name: fullName, email, phone })
-    // La password viaja en el state de React del paso 2 (mismo árbol de
-    // componentes si la navegación es client-side). Pero como paso 2 se
-    // monta en una nueva ruta, usamos un canal efímero: lo guardamos en
-    // sessionStorage sólo para esta misma pestaña, y se borra al navegar
-    // fuera. Si el usuario abre el email en otra pestaña, no hay password
-    // disponible — pero tampoco hace falta: la confirmación del email es
-    // un magic link, no requiere password.
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(
-        "borac-reg-password",
-        password,
-      )
-    }
-    const params = new URLSearchParams({
-      name: fullName,
-      email,
-      phone,
+    onContinue({
+      fullName: fullName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      password,
     })
-    router.push(`/registro?step=intereses&${params.toString()}`)
   }
 
   return (
     <div className="bg-card rounded-2xl border border-white/5 p-6">
-      <Stepper current={1} />
       <h1 className="font-display mt-4 text-2xl font-extrabold">Crear cuenta</h1>
       <p className="text-muted-foreground mt-1 text-sm">
         Tus datos se usan para procesar tus pedidos. Después elegís tus intereses.
@@ -175,12 +146,6 @@ export function RegistrationStep1({ initialStep1Data }: { initialStep1Data: Step
       </p>
     </div>
   )
-}
-
-type Step1Data = {
-  fullName?: string
-  email?: string
-  phone?: string
 }
 
 function Field({
