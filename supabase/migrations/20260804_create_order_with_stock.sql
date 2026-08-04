@@ -90,6 +90,9 @@ begin
     if v_kind not in ('variant', 'product') or v_target_id is null or v_qty is null or v_qty <= 0 then
       raise exception 'invalid consumption entry' using errcode = '22023';
     end if;
+    if v_qty > 100 then
+      raise exception 'quantity exceeds limit (100)' using errcode = '22023';
+    end if;
     v_current_value := coalesce((v_consolidation ->> v_key)::numeric, 0);
     v_consolidation := v_consolidation || jsonb_build_object(v_key, v_current_value + v_qty);
   end loop;
@@ -100,6 +103,11 @@ begin
     -- Dedupe previo: un pedido idéntico del mismo cliente en la ventana corta
     -- evita duplicados por doble-click. Se hace ANTES de bloquear stock para
     -- no castigar al sistema cuando ya hay respuesta.
+    -- Serializamos peticiones con el mismo cartHash con un advisory lock
+    -- transaccional para que dos requests concurrentes no se salten el
+    -- SELECT y generen dos órdenes idénticas.
+    perform pg_advisory_xact_lock(hashtext('cartHash:' || v_cart_hash));
+
     select o.id, o.subtotal, o.total, o.payment_method, o.status, o.payment_status, o.created_at, o.shipping_details
       into v_reused_order_id, v_reused_subtotal, v_reused_total, v_reused_payment, v_reused_status, v_reused_pstatus, v_reused_created_at, v_reused_shipping
       from boracsport.orders o

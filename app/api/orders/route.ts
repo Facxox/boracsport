@@ -274,13 +274,18 @@ export async function POST(request: Request) {
 
   if (rpcError) {
     const message = rpcError.message ?? "No se pudo registrar el pedido."
-    if (/insufficient stock/i.test(message) || /P0001/.test(message)) {
+    // PostgREST expone el errcode de Postgres en rpcError.code (o en details
+    // como fallback). Preferimos eso sobre parsear el message.
+    const code = String(
+      (rpcError as { code?: string }).code ?? (rpcError as { details?: string }).details ?? "",
+    )
+    if (code.includes("P0001") || /insufficient stock/i.test(message)) {
       return NextResponse.json(
         { error: "Sin stock suficiente para uno de los productos. Volvé a intentar." },
         { status: 409 },
       )
     }
-    if (/consumption target not available/i.test(message) || /P0002/.test(message)) {
+    if (code.includes("P0002") || /consumption target not available/i.test(message)) {
       return NextResponse.json(
         { error: "Uno de los productos ya no está disponible." },
         { status: 409 },
