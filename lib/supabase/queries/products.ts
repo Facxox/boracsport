@@ -8,7 +8,7 @@ import type { Product, ProductVariantRow } from "../types"
 import type { Category } from "@/lib/constants"
 
 const PRODUCT_COLUMNS =
-  "id, slug, name, description, price, images, tags, category, stock, on_sale" as const
+  "id, slug, name, description, price, images, tags, category, stock, featured, on_sale" as const
 
 export type ProductWithVariants = Product & {
   stock: number
@@ -39,6 +39,8 @@ export async function getProducts({
       .from("products")
       .select(PRODUCT_COLUMNS)
       .eq("active", true)
+      // Destacados primero (true > false en PostgREST), luego más recientes.
+      .order("featured", { ascending: false })
       .order("created_at", { ascending: false })
       .range(from, to)
 
@@ -182,6 +184,7 @@ export async function getOnSaleProducts(limit = 8, from = 0): Promise<Product[]>
       .select(ON_SALE_COLUMNS)
       .eq("active", true)
       .eq("on_sale", true)
+      .order("featured", { ascending: false })
       .order("created_at", { ascending: false })
       .range(from, from + limit - 1)
     if (error) {
