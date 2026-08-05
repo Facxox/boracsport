@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import type { UserRole } from "@/lib/supabase/types"
-import type { Json } from "@/lib/supabase/types"
+import type { Json, PaymentStatus, OrderStatus } from "@/lib/supabase/types"
 
 function text(value: FormDataEntryValue | null, max: number) {
   if (typeof value !== "string") return ""
@@ -1222,4 +1223,122 @@ export async function reorderPresetsAction(orderedIds: string[]) {
   }
   revalidatePath("/admin/disenos-base")
   revalidatePath("/disenos-base")
+}
+
+// ---------- Validación manual de pagos por transferencia ----------
+//
+// Hoy: los pedidos con payment_method = 'transfer' muestran el comprobante
+// que subió el cliente, pero no había forma de cambiar payment_status/status
+// desde el admin (se hacía a mano por WhatsApp). Estas dos server actions
+// exponen el flujo estándar:
+//   - approveTransferPayment: payment_status = 'aprobado', status = 'confirmado'
+//   - rejectTransferPayment:  payment_status = 'rechazado', status queda igual
+// Ambas requieren rol admin/superadmin, validan que el pedido sea transfer,
+// y registran el cambio en role_audit_log para trazabilidad.
+
+interface OrderPaymentRow {
+  id: string
+  payment_method: string | null
+  payment_status: PaymentStatus
+  status: OrderStatus
+}
+
+async function loadOrderForPaymentAction(id: string): Promise<OrderPaymentRow> {
+  const supabase = await requireAdmin()
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id, payment_method, payment_status, status")
+    .eq("id", id)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!data) throw new Error("Pedido no encontrado")
+  return data as OrderPaymentRow
+}
+
+async function recordPaymentAudit(params: {
+  orderId: string
+  before: { payment_status: PaymentStatus; status: OrderStatus }
+  after: { payment_status: PaymentStatus; status: OrderStatus }
+  reason: string
+}) {
+  const service = createServiceClient()
+  if (!service) return
+  // Leemos el actor desde la sesión del cliente autenticado.
+  const supabase = await createClient()
+  const { data: auth } = await supabase.auth.getUser()
+  await service
+    .from("role_audit_log")
+    .insert([
+      {
+        actor_id: auth.user?.id ?? null,
+        actor_role: "admin" as UserRole,
+        target_order_id: params.orderId,
+        before_payment_status: params.before.payment_status,
+        after_payment_status: params.after.payment_status,
+        before_status: params.before.status,
+        after_status: params.after.status,
+      },
+    ] as never)
+    .then(
+      () => undefined,
+      () => undefined,
+    )
+  // Si quisiéramos guardar un reason humano, hoy no tenemos la columna en el
+  // enum; queda como comentario para futuro.
+  void params.reason
+}
+
+export async function approveTransferPaymentAction(orderId: string) {
+  if (!isUuid(orderId)) throw new Error("ID inválido")
+  const before = await loadOrderForPaymentAction(orderId)
+  if (before.payment_method !== "transfer") {
+    throw new Error("Este pedido no es por transferencia")
+  }
+  if (before.payment_status === "aprobado") {
+    return // idempotente: ya estaba aprobado
+  }
+  const supabase = await requireAdmin()
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      payment_status: "aprobado",
+      status: "confirmado",
+    } as never)
+    .eq("id", orderId)
+  if (error) throw new Error(error.message)
+  await recordPaymentAudit({
+    orderId,
+    before: { payment_status: before.payment_status, status: before.status },
+    after: { payment_status: "aprobado", status: "confirmado" },
+    reason: "transfer_approved_by_admin",
+  })
+  revalidatePath("/admin/pedidos")
+  revalidatePath(`/admin/pedidos/${orderId}`)
+}
+
+export async function rejectTransferPaymentAction(orderId: string) {
+  if (!isUuid(orderId)) throw new Error("ID inválido")
+  const before = await loadOrderForPaymentAction(orderId)
+  if (before.payment_method !== "transfer") {
+    throw new Error("Este pedido no es por transferencia")
+  }
+  if (before.payment_status === "rechazado") {
+    return // idempotente
+  }
+  const supabase = await requireAdmin()
+  // Rechazamos el pago pero NO cambiamos status: el pedido sigue pendiente
+  // hasta que el cliente suba un nuevo comprobante o el admin lo cancele.
+  const { error } = await supabase
+    .from("orders")
+    .update({ payment_status: "rechazado" } as never)
+    .eq("id", orderId)
+  if (error) throw new Error(error.message)
+  await recordPaymentAudit({
+    orderId,
+    before: { payment_status: before.payment_status, status: before.status },
+    after: { payment_status: "rechazado", status: before.status },
+    reason: "transfer_rejected_by_admin",
+  })
+  revalidatePath("/admin/pedidos")
+  revalidatePath(`/admin/pedidos/${orderId}`)
 }

@@ -4,8 +4,9 @@ import { notFound } from "next/navigation"
 import { ExternalLink } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
-import type { OrderRow } from "@/lib/supabase/types"
+import type { OrderRow, PaymentStatus } from "@/lib/supabase/types"
 import { safeImageUrl } from "@/lib/safe-image"
+import { TransferValidationButtons } from "@/components/admin/transfer-validation-buttons"
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
@@ -67,7 +68,14 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       <div className="mt-8 grid gap-6 md:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <section className="rounded-2xl border border-white/10 bg-[#101012] p-5">
-            <h2 className="font-display text-lg font-extrabold">Comprobante de transferencia</h2>
+            <div className="flex items-end justify-between gap-3">
+              <h2 className="font-display text-lg font-extrabold">Comprobante de transferencia</h2>
+              {order.payment_method === "transfer" ? (
+                <span className="bg-amber-500/10 text-amber-300 ring-amber-400/30 rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ring-1 ring-inset">
+                  {order.payment_status}
+                </span>
+              ) : null}
+            </div>
             {receiptUrl && safeImageUrl(receiptUrl) ? (
               <div className="mt-4 space-y-3">
                 <a href={receiptUrl} target="_blank" rel="noopener noreferrer" className="block">
@@ -100,6 +108,15 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 El cliente todavía no subió el comprobante.
               </p>
             )}
+            {order.payment_method === "transfer" ? (
+              <div className="mt-5 border-t border-white/10 pt-5">
+                <TransferValidationButtons
+                  orderId={order.id}
+                  paymentStatus={order.payment_status}
+                  variant="full"
+                />
+              </div>
+            ) : null}
           </section>
 
           <section className="rounded-2xl border border-white/10 bg-[#101012] p-5">

@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
-import type { OrderRow } from "@/lib/supabase/types"
+import type { OrderRow, PaymentStatus } from "@/lib/supabase/types"
+import { TransferValidationButtons } from "@/components/admin/transfer-validation-buttons"
 
 export const dynamic = "force-dynamic"
 
@@ -9,12 +10,21 @@ export default async function AdminOrdersPage() {
   const supabase = await createClient()
   const { data } = await supabase
     .from("orders")
-    .select("id, user_id, total, status, payment_status, payment_receipt_url, created_at")
+    .select(
+      "id, user_id, total, status, payment_status, payment_method, payment_receipt_url, created_at",
+    )
     .order("created_at", { ascending: false })
     .limit(100)
   const orders = (data ?? []) as Pick<
     OrderRow,
-    "id" | "user_id" | "total" | "status" | "payment_status" | "payment_receipt_url" | "created_at"
+    | "id"
+    | "user_id"
+    | "total"
+    | "status"
+    | "payment_status"
+    | "payment_method"
+    | "payment_receipt_url"
+    | "created_at"
   >[]
 
   // Generamos URLs firmadas (1h) para los comprobantes en paralelo.
@@ -49,6 +59,7 @@ export default async function AdminOrdersPage() {
               <th className="p-4">Estado</th>
               <th className="p-4">Pago</th>
               <th className="p-4">Comprobante</th>
+              <th className="p-4">Validar</th>
               <th className="p-4">Fecha</th>
               <th className="p-4" />
             </tr>
@@ -56,7 +67,7 @@ export default async function AdminOrdersPage() {
           <tbody>
             {orders.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-white/50">
+                <td colSpan={8} className="p-8 text-center text-white/50">
                   Todavía no hay pedidos.
                 </td>
               </tr>
@@ -85,6 +96,17 @@ export default async function AdminOrdersPage() {
                       )
                     ) : (
                       <span className="text-white/40">—</span>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    {order.payment_method === "transfer" ? (
+                      <TransferValidationButtons
+                        orderId={order.id}
+                        paymentStatus={order.payment_status as PaymentStatus}
+                        variant="compact"
+                      />
+                    ) : (
+                      <span className="text-white/30 text-xs">—</span>
                     )}
                   </td>
                   <td className="p-4 text-white/60">
