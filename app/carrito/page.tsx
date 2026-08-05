@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ShieldCheck, ShoppingBag, Trash2, Truck, MessageCircle } from "lucide-react"
+import { ShieldCheck, ShoppingBag, Trash2, Truck, MessageCircle, Store } from "lucide-react"
 import { Button, ButtonLink } from "@/components/ui/button"
 import {
   useCartHasHydrated,
@@ -95,6 +95,67 @@ export default function CarritoPage() {
           <aside className="space-y-4">
             <div className="bg-card sticky top-24 rounded-2xl border border-white/5 p-5">
               <h2 className="font-display text-lg font-extrabold">Resumen</h2>
+
+              <div className="mt-4 space-y-2">
+                <p className="text-[11px] font-semibold tracking-wider text-white/70 uppercase">
+                  Método de entrega
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <label
+                    className={`flex cursor-pointer items-start gap-2 rounded-lg border p-3 transition ${
+                      !isPickup
+                        ? "border-[#dc2626] bg-[#dc2626]/10"
+                        : "border-white/10 bg-black/20 hover:border-white/30"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="deliveryMethod"
+                      value="shipping"
+                      checked={!isPickup}
+                      onChange={() => setProfile({ deliveryMethod: "shipping" })}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#dc2626]"
+                      aria-label="Envío a domicilio"
+                    />
+                    <span className="flex-1">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
+                        <Truck className="h-3.5 w-3.5 text-[#dc2626]" />
+                        Envío
+                      </span>
+                      <span className="text-muted-foreground mt-0.5 block text-[11px]">
+                        Coordinamos por WhatsApp.
+                      </span>
+                    </span>
+                  </label>
+                  <label
+                    className={`flex cursor-pointer items-start gap-2 rounded-lg border p-3 transition ${
+                      isPickup
+                        ? "border-[#dc2626] bg-[#dc2626]/10"
+                        : "border-white/10 bg-black/20 hover:border-white/30"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="deliveryMethod"
+                      value="pickup"
+                      checked={isPickup}
+                      onChange={() => setProfile({ deliveryMethod: "pickup" })}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#dc2626]"
+                      aria-label="Retiro en el local"
+                    />
+                    <span className="flex-1">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-white">
+                        <Store className="h-3.5 w-3.5 text-[#dc2626]" />
+                        Pickup
+                      </span>
+                      <span className="text-muted-foreground mt-0.5 block text-[11px]">
+                        Gratis, retirás en el local.
+                      </span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
               <dl className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Subtotal productos</dt>

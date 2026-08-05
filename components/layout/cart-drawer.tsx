@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react"
+import { Minus, Plus, ShoppingBag, Store, Trash2, Truck, X } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -99,6 +99,7 @@ export function CartDrawer() {
   const hasHydrated = useCartHasHydrated()
   const deliveryMethod = useCustomerStore((s) => s.profile.deliveryMethod)
   const isPickup = deliveryMethod === "pickup"
+  const setProfile = useCustomerStore((s) => s.setProfile)
   const [confirmClear, setConfirmClear] = useState(false)
 
   const summary = summarizeCart(items)
@@ -160,6 +161,49 @@ export function CartDrawer() {
 
         {!empty ? (
           <div className="border-t border-white/5 px-5 py-4">
+            <fieldset className="mb-3">
+              <legend className="text-foreground/90 mb-1.5 text-[11px] font-semibold tracking-wider uppercase">
+                Entrega
+              </legend>
+              <div className="grid grid-cols-2 gap-1.5">
+                <label
+                  className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-2 text-xs font-medium transition ${
+                    !isPickup
+                      ? "border-[#dc2626] bg-[#dc2626]/10 text-white"
+                      : "border-white/10 bg-black/20 text-white/70 hover:border-white/30"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="shipping"
+                    checked={!isPickup}
+                    onChange={() => setProfile({ deliveryMethod: "shipping" })}
+                    className="sr-only"
+                  />
+                  <Truck className="h-3.5 w-3.5 text-[#dc2626]" />
+                  Envío
+                </label>
+                <label
+                  className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-2 text-xs font-medium transition ${
+                    isPickup
+                      ? "border-[#dc2626] bg-[#dc2626]/10 text-white"
+                      : "border-white/10 bg-black/20 text-white/70 hover:border-white/30"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="pickup"
+                    checked={isPickup}
+                    onChange={() => setProfile({ deliveryMethod: "pickup" })}
+                    className="sr-only"
+                  />
+                  <Store className="h-3.5 w-3.5 text-[#dc2626]" />
+                  Pickup
+                </label>
+              </div>
+            </fieldset>
             <dl className="mb-3 space-y-1.5 text-sm">
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">Subtotal productos</dt>
