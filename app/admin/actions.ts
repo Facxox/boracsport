@@ -43,10 +43,17 @@ function parseProductFields(formData: FormData) {
     .map((tag) => tag.trim())
     .filter(Boolean)
     .slice(0, 250)
-  const images = text(formData.get("images"), 4000)
-    .split(/[\n,]+/)
-    .map((url) => url.trim())
-    .filter(Boolean)
+  // El FileDropzone emite UN hidden input por URL con name="images".
+  // formData.get() devolvería sólo la primera, así que usamos getAll() para
+  // no perder las demás (la columna `products.images` es ARRAY en la DB).
+  const images = formData
+    .getAll("images")
+    .flatMap((entry) =>
+      text(entry, 4000)
+        .split(/[\n,]+/)
+        .map((url) => url.trim())
+        .filter(Boolean),
+    )
   if (!name) throw new Error("Nombre requerido")
   if (!slug) throw new Error("Slug requerido")
   if (!category) throw new Error("Categoría requerida")
