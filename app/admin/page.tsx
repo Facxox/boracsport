@@ -4,21 +4,35 @@ import { createClient } from "@/lib/supabase/server"
 import { getAnalytics, type AnalyticsPeriod } from "@/lib/supabase/queries/analytics"
 import { AdminMetricsSection } from "@/components/admin/admin-metrics"
 
+const PERIOD_BADGE: Record<AnalyticsPeriod, string> = {
+  "7": "7d",
+  "30": "30d",
+  "90": "90d",
+  all: "todo",
+}
+
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
   const params = await searchParams
   const analytics = await getAnalytics(params.period)
   const period = analytics.period as AnalyticsPeriod
   const supabase = await createClient()
-  const [{ count: products }, { count: orders }, { count: profiles }, { count: templates }] = await Promise.all([
+  // Catálogo (productos/siluetas/usuarios) son métricas de stock, no de
+  // ventas: siempre se muestran como totales. Pedidos sí respeta el
+  // período, mostrando los cobrados del rango.
+  const [{ count: products }, { count: profiles }, { count: templates }] = await Promise.all([
     supabase.from("products").select("id", { count: "exact", head: true }),
-    supabase.from("orders").select("id", { count: "exact", head: true }),
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("templates").select("id", { count: "exact", head: true }),
   ])
   const cards = [
     { label: "Productos", value: products ?? 0, href: "/admin/productos", icon: Box },
     { label: "Siluetas", value: templates ?? 0, href: "/admin/templates", icon: Shirt },
-    { label: "Pedidos", value: orders ?? 0, href: "/admin/pedidos", icon: ClipboardList },
+    {
+      label: "Pedidos cobrados",
+      value: analytics.validOrders,
+      href: "/admin/pedidos",
+      icon: ClipboardList,
+    },
     { label: "Usuarios", value: profiles ?? 0, href: "/admin/usuarios", icon: Users },
   ]
   const periodOptions = [{ value: "7", label: "7 días" }, { value: "30", label: "30 días" }, { value: "90", label: "90 días" }, { value: "all", label: "Todo" }]
