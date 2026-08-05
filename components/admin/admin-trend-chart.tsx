@@ -34,14 +34,19 @@ ChartJS.register(
 )
 
 interface AdminTrendChartProps {
-  /** Etiqueta visible sólo en el tooltip (los ticks X están ocultos). */
+  /** Etiquetas visibles en el eje X (categorías: productos, categorías, etc.). */
   labels: string[]
-  /** Serie numérica 0..100 (o la escala que pase). */
+  /** Serie numérica 0..N. El eje Y se autoescala al máximo real del dataset. */
   values: number[]
   /** Título que aparece arriba del chart. */
   title?: string
   /** Descripción corta debajo del título. */
   subtitle?: string
+  /**
+   * Etiqueta corta del período activo ("7d", "30d", "90d", "todo").
+   * Si no se pasa, usa "?" para no mentir.
+   */
+  period?: string
 }
 
 export function AdminTrendChart({
@@ -49,7 +54,13 @@ export function AdminTrendChart({
   values,
   title,
   subtitle,
+  period,
 }: AdminTrendChartProps) {
+  // El eje Y se autoescala al máximo real del dataset (con un piso de 10
+  // para que la curva no quede pegada al borde cuando todos los valores
+  // son pequeños). Sin esto, valores >100 se cortarían y mentiríamos sobre
+  // los datos.
+  const yMax = Math.max(10, Math.ceil(Math.max(0, ...values) * 1.1))
   const data = {
     labels,
     datasets: [
@@ -102,13 +113,24 @@ export function AdminTrendChart({
     scales: {
       x: {
         grid: { color: "rgba(255, 255, 255, 0.05)" },
-        ticks: { display: false },
+        ticks: {
+          display: true,
+          color: "rgba(255,255,255,0.55)",
+          font: { size: 10 },
+          autoSkip: false,
+          maxRotation: 0,
+        },
       },
       y: {
         grid: { color: "rgba(255, 255, 255, 0.05)" },
-        ticks: { display: false },
+        ticks: {
+          display: true,
+          color: "rgba(255,255,255,0.45)",
+          font: { size: 10 },
+          maxTicksLimit: 4,
+        },
         min: 0,
-        max: 100,
+        max: yMax,
       },
     },
   } as const
@@ -126,7 +148,7 @@ export function AdminTrendChart({
             ) : null}
           </div>
           <span className="bg-[#dc2626]/10 text-[#fca5a5] rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ring-1 ring-inset ring-[#dc2626]/40">
-            7d
+            {period ?? "?"}
           </span>
         </header>
       )}
