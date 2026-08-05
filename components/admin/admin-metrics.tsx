@@ -61,15 +61,15 @@ function MetricCard({
   accent?: "revenue" | "orders" | "units" | "ticket" | "designs"
 }) {
   const ringClass =
-    accent === "revenue"
-      ? "ring-emerald-400/40 from-emerald-500/10"
-      : accent === "orders"
-      ? "ring-amber-400/40 from-amber-500/10"
+    accent === "orders"
+      ? "ring-[#dc2626]/40 from-[#dc2626]/10"
       : accent === "units"
-      ? "ring-sky-400/40 from-sky-500/10"
+      ? "ring-[#dc2626]/40 from-[#dc2626]/10"
       : accent === "ticket"
-      ? "ring-violet-400/40 from-violet-500/10"
-      : "ring-pink-400/40 from-pink-500/10"
+      ? "ring-[#dc2626]/40 from-[#dc2626]/10"
+      : accent === "designs"
+      ? "ring-[#dc2626]/40 from-[#dc2626]/10"
+      : "ring-[#dc2626]/40 from-[#dc2626]/10"
 
   return (
     <div
