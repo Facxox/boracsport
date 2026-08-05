@@ -213,19 +213,28 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: uploadError.message }, { status: 500 })
     }
 
-    const { error: updateError } = await service
-      .from("orders")
-      .update({ payment_receipt_url: path } as never)
-      .eq("id", id)
+    // Guardamos el path del comprobante vía RPC SECURITY DEFINER. Esto evita
+    // depender de GRANT UPDATE + BYPASSRLS sobre service_role (que en PostgREST
+    // sigue propagando RLS), y deja la validación de "path empieza con orderId"
+    // y "pedido es transfer pendiente" dentro de la DB.
+    const { error: updateError } = await service.rpc(
+      "set_payment_receipt" as never,
+      {
+        p_order_id: id,
+        p_receipt_path: path,
+      } as never,
+    )
 
     if (updateError) {
-      // Si el UPDATE falla, borrar el archivo recién subido para no dejar
-      // comprobantes huérfanos en Storage.
+      // Si la RPC falla, borrar el archivo recién subido para no dejar
+      // comprobantes huérfanos en Storage. Mapeamos P0002 (order not found) a
+      // 404 para no devolver un 500 confuso cuando el id está mal.
       await service.storage.from("boracsport_orders").remove([path]).catch((rmErr) => {
         console.warn(`[receipt] rollback remove failed for ${path}:`, rmErr)
       })
-      console.warn(`[receipt] orders update error for ${id}:`, updateError.message)
-      return NextResponse.json({ error: updateError.message }, { status: 500 })
+      console.warn(`[receipt] set_payment_receipt error for ${id}:`, updateError.message)
+      const status = /not found/i.test(updateError.message) ? 404 : 500
+      return NextResponse.json({ error: updateError.message }, { status })
     }
 
     const { data: signed, error: signError } = await service.storage
