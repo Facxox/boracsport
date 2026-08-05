@@ -31,7 +31,7 @@ type OrderItemInput = ProductItemInput | DesignItemInput
 
 type OrderRequest = {
   items?: unknown
-  customer?: { name?: unknown; email?: unknown; phone?: unknown; address?: unknown }
+  customer?: { name?: unknown; email?: unknown; phone?: unknown; address?: unknown; deliveryMethod?: unknown }
   paymentMethod?: unknown
   paymentReceiptUrl?: unknown
   cartHash?: unknown
@@ -121,6 +121,10 @@ export async function POST(request: Request) {
   const email = text(customer.email, 254)
   const phone = text(customer.phone, 40)
   const address = text(customer.address, 300)
+  // Método de entrega elegido por el cliente en /checkout. Default "shipping"
+  // para compatibilidad con llamadas viejas (PDP / drawer) que no lo envían.
+  const deliveryMethod: "shipping" | "pickup" =
+    customer.deliveryMethod === "pickup" ? "pickup" : "shipping"
   if (!items || !name || !email || !phone) return NextResponse.json({ error: "Completá nombre, email, teléfono y productos." }, { status: 400 })
   // Validamos el formato del teléfono en server (defensa en profundidad — el
   // cliente ya lo valida, pero si alguien bypasea la UI puede mandar basura).
@@ -170,7 +174,6 @@ export async function POST(request: Request) {
 
   const snapshot: Json[] = []
   let subtotal = 0
-  let hasPhysical = false
   const variantConsumption: { id: string; qty: number; stockBefore: number }[] = []
   for (const item of items) {
     if (item.kind === "design") {
@@ -200,7 +203,6 @@ export async function POST(request: Request) {
     }
 
     subtotal += unitPrice * quantity
-    hasPhysical = true
     snapshot.push({
       kind: "product",
       id: product.id,
@@ -226,13 +228,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Totales fuera de rango." }, { status: 400 })
   }
 
-  const shipping = hasPhysical ? 250 : 0
+  // El envío ya no se cobra en línea: el cliente eligió "Envío" o "Pickup" en
+  // el checkout y la gente de Borac coordina el precio del envío por WhatsApp
+  // cuando corresponde. El `total` que ve la pasarela y la BD es el subtotal.
+  const shipping = 0
   const total = subtotal + shipping
+  // Si eligió pickup, ignoramos la dirección por las dudas (la UI ya la oculta,
+  // pero defendemos en server contra payloads viejos).
+  const persistedAddress = deliveryMethod === "pickup" ? "" : address
   const shippingDetails: Json = {
     name,
     email,
     phone,
-    address: address ?? "",
+    address: persistedAddress,
+    delivery_method: deliveryMethod,
     source: "checkout",
     ...(cartHash ? { cartHash } : {}),
   }

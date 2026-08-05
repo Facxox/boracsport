@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Loader2, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { buildWhatsAppUrl } from "@/lib/cart/whatsapp-message"
+import { buildWhatsAppUrl, type DeliveryMethod } from "@/lib/cart/whatsapp-message"
 import { computeCartHash, rememberOrder, getRememberedOrder } from "@/lib/cart/hash"
 import type { CartItem } from "@/types/cart"
 
@@ -12,6 +12,7 @@ type Props = {
   customerName: string
   customerEmail?: string
   customerPhone?: string
+  deliveryMethod?: DeliveryMethod
   className?: string
   label?: string
   variant?: "default" | "outline" | "ghost" | "destructive" | "secondary" | "link"
@@ -22,6 +23,7 @@ export function WhatsAppCTA({
   customerName,
   customerEmail,
   customerPhone,
+  deliveryMethod,
   className,
   label = "Coordinar por WhatsApp",
   variant = "default",
@@ -53,6 +55,7 @@ export function WhatsAppCTA({
               name: customerName,
               email: customerEmail,
               phone: customerPhone,
+              deliveryMethod,
             },
             cartHash,
           }),
@@ -70,11 +73,15 @@ export function WhatsAppCTA({
       }
 
       const url =
-        buildWhatsAppUrl(cart.items, {
-          name: customerName || undefined,
-          email: customerEmail,
-          phone: customerPhone,
-        }) + `&order=${encodeURIComponent(orderId)}`
+        buildWhatsAppUrl(
+          cart.items,
+          {
+            name: customerName || undefined,
+            email: customerEmail,
+            phone: customerPhone,
+          },
+          deliveryMethod,
+        ) + `&order=${encodeURIComponent(orderId)}`
       window.open(url, "_blank", "noopener,noreferrer")
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "No se pudo registrar el pedido")

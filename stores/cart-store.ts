@@ -8,7 +8,9 @@
 import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
 import type { CartItem, ProductLine } from "@/types/cart"
-import { FLAT_SHIPPING_UYU } from "@/lib/constants"
+// FLAT_SHIPPING_UYU ya no se usa aquí: el envío se coordina aparte y el
+// total en línea es siempre el subtotal. La constante queda en
+// lib/constants.ts por compat con tests.
 
 type AddProductInput = Omit<ProductLine, "kind" | "key"> & { qty?: number }
 
@@ -156,6 +158,9 @@ export function selectTotal(items: CartItem[]): {
   total: number
 } {
   const subtotal = selectSubtotal(items)
-  const shipping = items.length > 0 ? FLAT_SHIPPING_UYU : 0
-  return { subtotal, shipping, total: subtotal + shipping }
+  // El envío NO se suma en línea: se coordina aparte con la gente de Borac
+  // Sport. Devolvemos shipping=0 y total=subtotal en todas las superficies
+  // (checkout, carrito, drawer) para mantener coherencia visual.
+  const shipping = 0
+  return { subtotal, shipping, total: subtotal }
 }

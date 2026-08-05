@@ -10,6 +10,7 @@ import {
   TRANSFER_SENIA_MESSAGE,
 } from "@/lib/config/banking"
 import { WHATSAPP_NUMBER } from "@/lib/constants"
+import { useCustomerStore } from "@/stores/customer-store"
 import { cn } from "@/lib/utils"
 import type { CartItem } from "@/types/cart"
 
@@ -27,6 +28,7 @@ interface TransferOptionsProps {
 }
 
 export function TransferOptions({ items, customer, forceNew = false }: TransferOptionsProps) {
+  const deliveryMethod = useCustomerStore((s) => s.profile.deliveryMethod)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [registering, setRegistering] = useState(false)
@@ -44,7 +46,13 @@ export function TransferOptions({ items, customer, forceNew = false }: TransferO
         body: JSON.stringify({
           items,
           paymentMethod: "transfer",
-          customer: { name: customer.name, email: customer.email, phone: customer.phone, address: customer.address },
+          customer: {
+            name: customer.name,
+            email: customer.email,
+            phone: customer.phone,
+            address: customer.address,
+            deliveryMethod,
+          },
           forceNew,
         }),
       })

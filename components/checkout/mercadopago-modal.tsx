@@ -5,6 +5,7 @@ import { Loader2, ShieldCheck } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { selectTotal, useCartStore } from "@/stores/cart-store"
+import { useCustomerStore } from "@/stores/customer-store"
 import { computeCartHash, rememberOrder } from "@/lib/cart/hash"
 import { formatUYU } from "@/lib/format"
 
@@ -25,6 +26,7 @@ export function MercadoPagoModal({
   forceNew?: boolean
 }) {
   const items = useCartStore((state) => state.items)
+  const deliveryMethod = useCustomerStore((s) => s.profile.deliveryMethod)
   const totals = selectTotal(items)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -38,7 +40,12 @@ export function MercadoPagoModal({
       const response = await fetch("/api/checkout/mercadopago", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, customer, cartHash, forceNew }),
+        body: JSON.stringify({
+          items,
+          customer: { ...customer, deliveryMethod },
+          cartHash,
+          forceNew,
+        }),
       })
       const data = (await response.json().catch(() => ({}))) as {
         error?: string

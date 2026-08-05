@@ -7,11 +7,14 @@
 import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
 
+export type DeliveryMethod = "shipping" | "pickup"
+
 export interface CustomerProfile {
   name: string
   email: string
   phone: string
   address: string
+  deliveryMethod: DeliveryMethod
 }
 
 type CustomerState = {
@@ -24,7 +27,13 @@ type CustomerState = {
   _setHasHydrated: (b: boolean) => void
 }
 
-const EMPTY: CustomerProfile = { name: "", email: "", phone: "", address: "" }
+const EMPTY: CustomerProfile = {
+  name: "",
+  email: "",
+  phone: "",
+  address: "",
+  deliveryMethod: "shipping",
+}
 
 export const useCustomerStore = create<CustomerState>()(
   persist(

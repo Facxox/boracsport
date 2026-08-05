@@ -9,7 +9,6 @@ import {
 } from "@/stores/cart-store"
 import { useCustomerStore } from "@/stores/customer-store"
 import { formatUYU } from "@/lib/format"
-import { FLAT_SHIPPING_UYU } from "@/lib/constants"
 import { WhatsAppCTA } from "@/components/checkout/whatsapp-cta"
 import { ProductSection, summarizeCart } from "@/components/checkout/cart-sections"
 
@@ -21,12 +20,13 @@ export default function CarritoPage() {
   const hasHydrated = useCartHasHydrated()
   const setProfile = useCustomerStore((s) => s.setProfile)
   const storedName = useCustomerStore((s) => s.profile.name)
+  const deliveryMethod = useCustomerStore((s) => s.profile.deliveryMethod)
+  const isPickup = deliveryMethod === "pickup"
   const [confirmClear, setConfirmClear] = useState(false)
   const [customerName, setCustomerName] = useState("")
 
   const empty = hasHydrated && items.length === 0
   const summary = summarizeCart(items)
-  const hasPhysical = summary.hasPhysical
 
   function commitName(value: string) {
     setCustomerName(value)
@@ -101,22 +101,22 @@ export default function CarritoPage() {
                   <dd className="font-semibold">{formatUYU(summary.subtotal)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Envío</dt>
-                  <dd className={hasPhysical ? "font-semibold" : "text-white/60"}>
-                    {hasPhysical ? formatUYU(FLAT_SHIPPING_UYU) : "Gratis"}
+                  <dt className="text-muted-foreground">Entrega</dt>
+                  <dd className={isPickup ? "font-semibold text-emerald-300" : "text-white/70"}>
+                    {isPickup ? "Retiro en el local · Gratis" : "A coordinar"}
                   </dd>
                 </div>
                 <div className="mt-3 flex justify-between border-t border-white/5 pt-3 text-base">
                   <dt className="font-semibold">Total estimado</dt>
                   <dd className="text-brand-red font-extrabold">
-                    {formatUYU(summary.total)}
+                    {formatUYU(summary.subtotal)}
                   </dd>
                 </div>
               </dl>
               <p className="text-muted-foreground mt-3 text-[11px]">
-                {hasPhysical
-                  ? `Envío estándar a todo Uruguay: ${formatUYU(FLAT_SHIPPING_UYU)}.`
-                  : "El envío se coordina según el tipo de pedido."}
+                {isPickup
+                  ? "Retirá en el local sin costo. El envío se omite del total."
+                  : "El envío se coordina aparte por WhatsApp y se suma al total al confirmar."}
               </p>
               <div className="mt-5 space-y-2">
                 <label className="block text-xs font-medium" htmlFor="customer-name">
@@ -136,6 +136,7 @@ export default function CarritoPage() {
                 <WhatsAppCTA
                   cart={{ items }}
                   customerName={customerName || storedName}
+                  deliveryMethod={deliveryMethod}
                   variant="outline"
                   className="w-full"
                 />

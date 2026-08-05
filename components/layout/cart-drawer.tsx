@@ -15,8 +15,8 @@ import {
   useCartHasHydrated,
   useCartStore,
 } from "@/stores/cart-store"
+import { useCustomerStore } from "@/stores/customer-store"
 import { formatUYU } from "@/lib/format"
-import { FLAT_SHIPPING_UYU } from "@/lib/constants"
 import { safeImageUrl } from "@/lib/safe-image"
 import { WhatsAppCTA } from "@/components/checkout/whatsapp-cta"
 import { ProductSection, summarizeCart } from "@/components/checkout/cart-sections"
@@ -97,6 +97,8 @@ export function CartDrawer() {
   const removeItem = useCartStore((s) => s.removeItem)
   const clear = useCartStore((s) => s.clear)
   const hasHydrated = useCartHasHydrated()
+  const deliveryMethod = useCustomerStore((s) => s.profile.deliveryMethod)
+  const isPickup = deliveryMethod === "pickup"
   const [confirmClear, setConfirmClear] = useState(false)
 
   const summary = summarizeCart(items)
@@ -164,9 +166,9 @@ export function CartDrawer() {
                 <dd className="font-semibold">{formatUYU(summary.subtotal)}</dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">Envío</dt>
-                <dd className={summary.hasPhysical ? "font-semibold" : "text-white/60"}>
-                  {summary.hasPhysical ? formatUYU(FLAT_SHIPPING_UYU) : "Gratis"}
+                <dt className="text-muted-foreground">Entrega</dt>
+                <dd className={isPickup ? "font-semibold text-emerald-300" : "text-white/70"}>
+                  {isPickup ? "Retiro en el local · Gratis" : "A coordinar"}
                 </dd>
               </div>
             </dl>
@@ -174,13 +176,13 @@ export function CartDrawer() {
             <div className="mb-3 flex items-baseline justify-between text-base">
               <span className="font-semibold">Total estimado</span>
               <span className="text-brand-red font-extrabold">
-                {formatUYU(summary.total)}
+                {formatUYU(summary.subtotal)}
               </span>
             </div>
             <p className="text-muted-foreground mb-4 text-[11px]">
-              {summary.hasPhysical
-                ? `Envío estándar a todo Uruguay: ${formatUYU(FLAT_SHIPPING_UYU)}.`
-                : "El envío se coordina según el tipo de pedido."}
+              {isPickup
+                ? "Retirá en el local sin costo."
+                : "El envío se coordina aparte por WhatsApp."}
             </p>
             {confirmClear ? (
               <div className="mb-3 rounded-xl border border-red-500/30 bg-red-500/5 p-3 text-xs">
@@ -221,6 +223,7 @@ export function CartDrawer() {
               <WhatsAppCTA
                 cart={{ items }}
                 customerName=""
+                deliveryMethod={deliveryMethod}
                 variant="outline"
                 className="w-full"
                 label="Coordinar por WhatsApp"

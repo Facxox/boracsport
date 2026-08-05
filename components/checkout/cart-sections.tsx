@@ -10,7 +10,6 @@ import Image from "next/image"
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatUYU } from "@/lib/format"
-import { FLAT_SHIPPING_UYU } from "@/lib/constants"
 import { safeImageUrl } from "@/lib/safe-image"
 import type { CartItem, ProductLine } from "@/types/cart"
 
@@ -143,8 +142,9 @@ export function summarizeCart(items: CartItem[]) {
   const { products } = splitCartItems(items)
   const subtotal = products.reduce((acc, it) => acc + it.price * it.qty, 0)
   const hasPhysical = products.length > 0
-  const shipping = hasPhysical ? FLAT_SHIPPING_UYU : 0
-  const total = subtotal + shipping
+  // El envío se coordina aparte: no se suma al total en línea.
+  const shipping = 0
+  const total = subtotal
   return { products, subtotal, shipping, total, hasPhysical }
 }
 

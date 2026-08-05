@@ -5,9 +5,12 @@ import { formatUYU } from "@/lib/format"
 import { calcSubtotal } from "./totals"
 import { siteConfig } from "@/lib/config/site"
 
+export type DeliveryMethod = "shipping" | "pickup"
+
 export function buildWhatsAppMessage(
   items: CartItem[],
   customer: { name?: string; email?: string; phone?: string },
+  delivery?: DeliveryMethod,
 ): string {
   const lines: string[] = []
   lines.push(`Hola ${siteConfig.name}, quiero coordinar un pedido:`)
@@ -24,11 +27,16 @@ export function buildWhatsAppMessage(
         `  · ${p.qty}× ${p.name} (${formatUYU(p.price)} c/u) = ${formatUYU(p.price * p.qty)}`,
       )
     }
-    // El envío se coordina aparte con el cliente; el mensaje de WhatsApp
-    // muestra sólo el subtotal de productos para no inflar el "total estimado"
-    // cuando aún no hay dirección ni método de envío definidos.
+    // El envío NO se suma al subtotal: se coordina aparte con la gente de
+    // Borac Sport. El mensaje aclara el método elegido y deja el total en
+    // términos de productos.
+    if (delivery === "pickup") {
+      lines.push("— Entrega: Retiro en el local (gratis)")
+    } else {
+      lines.push("— Entrega: Envío a domicilio (a coordinar)")
+    }
     const subtotal = calcSubtotal(items)
-    lines.push(`— Total estimado: ${formatUYU(subtotal)}`)
+    lines.push(`— Total productos: ${formatUYU(subtotal)}`)
   }
   lines.push("")
   lines.push("¡Gracias!")
@@ -39,8 +47,9 @@ export function buildWhatsAppMessage(
 export function buildWhatsAppUrl(
   items: CartItem[],
   customer: { name?: string; email?: string; phone?: string },
+  delivery?: DeliveryMethod,
 ): string {
   const phone = siteConfig.social.whatsapp.replace(/^https?:\/\/wa\.me\//, "")
-  const text = encodeURIComponent(buildWhatsAppMessage(items, customer))
+  const text = encodeURIComponent(buildWhatsAppMessage(items, customer, delivery))
   return `https://wa.me/${phone}?text=${text}`
 }

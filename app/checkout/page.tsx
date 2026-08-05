@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Banknote, CreditCard, MessageCircle, ArrowRight, ShieldCheck, Truck, Check, Lock, ShoppingBag } from "lucide-react"
+import { Banknote, CreditCard, MessageCircle, ArrowRight, ShieldCheck, Truck, Check, Lock, ShoppingBag, Store, MapPin } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button, ButtonLink } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,13 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import {
   selectSubtotal,
-  selectTotal,
   useCartHasHydrated,
   useCartStore,
 } from "@/stores/cart-store"
 import { useCustomerStore } from "@/stores/customer-store"
 import { formatUYU } from "@/lib/format"
-import { FLAT_SHIPPING_UYU } from "@/lib/constants"
 import { TransferOptions } from "@/components/checkout/transfer-options"
 import { MercadoPagoModal } from "@/components/checkout/mercadopago-modal"
 import { WhatsAppCTA } from "@/components/checkout/whatsapp-cta"
@@ -30,6 +28,8 @@ export default function CheckoutPage() {
   const hasHydrated = useCartHasHydrated()
   const storedProfile = useCustomerStore((s) => s.profile)
   const setStoredProfile = useCustomerStore((s) => s.setProfile)
+  const deliveryMethod = useCustomerStore((s) => s.profile.deliveryMethod)
+  const isPickup = deliveryMethod === "pickup"
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -45,7 +45,6 @@ export default function CheckoutPage() {
   const [forceNew, setForceNew] = useState(false)
 
   const subtotal = selectSubtotal(items)
-  const totals = selectTotal(items)
   const empty = hasHydrated && items.length === 0
 
   // Bug 1.1: si llegamos con ?status= o ?order= de un redirect de Mercado
@@ -74,7 +73,6 @@ export default function CheckoutPage() {
   }, [hasHydrated, name, email, phone, address, setStoredProfile])
 
   const customer = { name, email, phone, address }
-  const hasPhysicalProduct = items.some((it) => it.kind === "product")
 
   const validation = useMemo(
     () => ({
@@ -183,24 +181,98 @@ export default function CheckoutPage() {
             </section>
 
             <section className="bg-card rounded-2xl border border-white/5 p-5">
-              <header className="mb-4 flex items-baseline justify-between gap-3">
+              <header className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">Paso 1.1</p>
-                  <h2 className="font-display text-lg font-extrabold">Datos de envío</h2>
+                  <h2 className="font-display text-lg font-extrabold">Método de entrega</h2>
                 </div>
-                <span className="text-[11px] text-white/40">Opcional, recomendado para coordinar la entrega.</span>
+                <span className="text-[11px] text-white/40">Elegí cómo recibís tu pedido.</span>
               </header>
-              <div className="space-y-1.5">
-                <Label htmlFor="address">Dirección de entrega</Label>
-                <textarea id="address" rows={3} value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Calle, número, ciudad, departamento"
-                  className="bg-background w-full rounded-md border border-white/10 px-3 py-2 text-sm" />
-                <p className="text-xs text-white/40">
-                  La usamos únicamente para coordinar la entrega del pedido.
-                </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                    !isPickup
+                      ? "border-[#dc2626] bg-[#dc2626]/10"
+                      : "border-white/10 bg-black/20 hover:border-white/30"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="shipping"
+                    checked={!isPickup}
+                    onChange={() => setStoredProfile({ deliveryMethod: "shipping" })}
+                    className="mt-1 h-4 w-4 shrink-0 accent-[#dc2626]"
+                  />
+                  <span className="flex-1">
+                    <span className="flex items-center gap-2 text-sm font-semibold text-white">
+                      <Truck className="h-4 w-4 text-[#dc2626]" />
+                      Envío a domicilio
+                    </span>
+                    <span className="mt-1 block text-xs text-white/55">
+                      Coordinamos el precio del envío por WhatsApp.
+                    </span>
+                  </span>
+                </label>
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                    isPickup
+                      ? "border-[#dc2626] bg-[#dc2626]/10"
+                      : "border-white/10 bg-black/20 hover:border-white/30"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="pickup"
+                    checked={isPickup}
+                    onChange={() => setStoredProfile({ deliveryMethod: "pickup" })}
+                    className="mt-1 h-4 w-4 shrink-0 accent-[#dc2626]"
+                  />
+                  <span className="flex-1">
+                    <span className="flex items-center gap-2 text-sm font-semibold text-white">
+                      <Store className="h-4 w-4 text-[#dc2626]" />
+                      Retiro en el local
+                    </span>
+                    <span className="mt-1 block text-xs text-white/55">
+                      Gratis. Te pasamos la dirección al confirmar.
+                    </span>
+                  </span>
+                </label>
               </div>
             </section>
+
+            {!isPickup ? (
+              <section className="bg-card rounded-2xl border border-white/5 p-5">
+                <header className="mb-4 flex items-baseline justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">Paso 1.2</p>
+                    <h2 className="font-display text-lg font-extrabold">Datos de envío</h2>
+                  </div>
+                  <span className="text-[11px] text-white/40">Opcional, recomendado para coordinar la entrega.</span>
+                </header>
+                <div className="space-y-1.5">
+                  <Label htmlFor="address">Dirección de entrega</Label>
+                  <textarea id="address" rows={3} value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Calle, número, ciudad, departamento"
+                    className="bg-background w-full rounded-md border border-white/10 px-3 py-2 text-sm" />
+                  <p className="text-xs text-white/40">
+                    La usamos únicamente para coordinar la entrega del pedido.
+                  </p>
+                </div>
+              </section>
+            ) : (
+              <section className="bg-card/40 rounded-2xl border border-dashed border-white/10 p-5 text-sm text-white/55">
+                <p className="flex items-center gap-2 font-semibold text-white/80">
+                  <MapPin className="h-4 w-4 text-[#dc2626]" />
+                  Retiro en el local
+                </p>
+                <p className="mt-1 text-xs">
+                  No necesitamos dirección de entrega. Te pasamos la dirección del local y horarios al confirmar por WhatsApp.
+                </p>
+              </section>
+            )}
 
             <section className="bg-card rounded-2xl border border-white/5 p-5">
               <header className="mb-4 flex items-center justify-between gap-3">
@@ -243,7 +315,8 @@ export default function CheckoutPage() {
                     <CreditCard className="text-muted-foreground mx-auto h-8 w-8" />
                     <p className="mt-3 text-sm font-semibold">Pago con tarjeta vía Mercado Pago (UYU)</p>
                     <p className="text-muted-foreground mt-1 text-sm">
-                      {`Total a pagar ahora: ${formatUYU(totals.total)}.`}
+                      {`Total a pagar ahora: ${formatUYU(subtotal)}.`}
+                      {isPickup ? " Retiro en el local, sin envío." : " Envío a coordinar."}
                     </p>
                     <Button onClick={() => setMpOpen(true)} disabled={!contactInfoValid}
                       className="bg-brand-red text-foreground hover:bg-[#ef4444] mt-4 inline-flex items-center">
@@ -269,7 +342,12 @@ export default function CheckoutPage() {
                     <p className="text-muted-foreground mt-1 text-sm">
                       Te enviamos un mensaje pre-armado con el detalle del carrito y los diseños incluidos.
                     </p>
-                    <WhatsAppCTA cart={{ items }} customerName={name} customerEmail={email} customerPhone={phone}
+                    <WhatsAppCTA
+                      cart={{ items }}
+                      customerName={name}
+                      customerEmail={email}
+                      customerPhone={phone}
+                      deliveryMethod={deliveryMethod}
                       className="bg-brand-red text-foreground hover:bg-[#ef4444] mt-4 inline-flex items-center" />
                   </div>
                 </TabsContent>
@@ -306,21 +384,21 @@ export default function CheckoutPage() {
                 <dd className="font-semibold">{formatUYU(subtotal)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">Envío</dt>
-                <dd className={hasPhysicalProduct ? "font-semibold" : "text-white/60"}>
-                  {hasPhysicalProduct ? formatUYU(FLAT_SHIPPING_UYU) : "Gratis"}
+                <dt className="text-muted-foreground">Entrega</dt>
+                <dd className={isPickup ? "font-semibold text-emerald-300" : "text-white/70"}>
+                  {isPickup ? "Retiro en el local · Gratis" : "A coordinar"}
                 </dd>
               </div>
               <div className="flex justify-between border-t border-white/5 pt-2 text-base">
                 <dt className="font-semibold">Total estimado</dt>
-                <dd className="text-brand-red font-extrabold">{formatUYU(totals.total)}</dd>
+                <dd className="text-brand-red font-extrabold">{formatUYU(subtotal)}</dd>
               </div>
             </dl>
 
             <p className="text-muted-foreground mt-4 text-[11px]">
-              {hasPhysicalProduct
-                ? `Incluye envío estándar a todo Uruguay: ${formatUYU(FLAT_SHIPPING_UYU)}.`
-                : "El envío se coordina según el tipo de pedido."}
+              {isPickup
+                ? "Pasamos a retirar por el local sin costo. El envío se omite del total."
+                : "El envío se coordina aparte por WhatsApp y se suma al total al confirmar."}
             </p>
 
             <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11px] text-white/70 select-none">
