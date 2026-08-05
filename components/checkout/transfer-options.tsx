@@ -13,6 +13,7 @@ import { WHATSAPP_NUMBER } from "@/lib/constants"
 import { useCustomerStore } from "@/stores/customer-store"
 import { cn } from "@/lib/utils"
 import { computeCartHash, rememberOrder, getRememberedOrder } from "@/lib/cart/hash"
+import { useCartStore } from "@/stores/cart-store"
 import type { CartItem } from "@/types/cart"
 
 const ACCOUNT = BANK_ACCOUNTS[0]
@@ -30,6 +31,7 @@ interface TransferOptionsProps {
 
 export function TransferOptions({ items, customer, forceNew = false }: TransferOptionsProps) {
   const deliveryMethod = useCustomerStore((s) => s.profile.deliveryMethod)
+  const removeMissingProducts = useCartStore((s) => s.removeMissingProducts)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [registering, setRegistering] = useState(false)
@@ -68,7 +70,18 @@ export function TransferOptions({ items, customer, forceNew = false }: TransferO
           }),
         })
         const data = await res.json().catch(() => ({}))
-        if (!res.ok) throw new Error(data.error || `Error ${res.status} al registrar el pedido`)
+        if (!res.ok) {
+          // Si el server reporta líneas con productos desconocidos, las purga
+          // automáticamente del carrito para que el siguiente intento funcione.
+          if (
+            data?.reason === "product_unknown" &&
+            Array.isArray(data.unknownProductIds) &&
+            data.unknownProductIds.length > 0
+          ) {
+            removeMissingProducts(data.unknownProductIds)
+          }
+          throw new Error(data.error || `Error ${res.status} al registrar el pedido`)
+        }
         if (!data.orderId) throw new Error("La respuesta del servidor no incluye el ID del pedido.")
         resolvedOrderId = data.orderId
         rememberOrder(resolvedOrderId, cartHash, "transfer")

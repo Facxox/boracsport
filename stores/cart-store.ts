@@ -26,6 +26,7 @@ type CartState = {
   addProduct: (input: AddProductInput) => void
   updateQty: (key: string, qty: number) => void
   removeItem: (key: string) => void
+  removeMissingProducts: (ids: string[]) => void
   clear: () => void
 
   _setHasHydrated: (b: boolean) => void
@@ -113,6 +114,22 @@ export const useCartStore = create<CartState>()(
         set((state) => ({
           items: state.items.filter((it) => it.key !== key),
         })),
+
+      /**
+       * Purga del carrito todas las líneas cuyo productId ya no existe en el
+       * catálogo. Se usa cuando el server responde con reason=product_unknown
+       * para que el cliente no tenga que adivinar qué línea remover.
+       */
+      removeMissingProducts: (ids) =>
+        set((state) => {
+          if (!Array.isArray(ids) || ids.length === 0) return state
+          const lookup = new Set(ids)
+          return {
+            items: state.items.filter(
+              (it) => !(it.kind === "product" && lookup.has(it.id)),
+            ),
+          }
+        }),
 
       clear: () => set({ items: [] }),
 

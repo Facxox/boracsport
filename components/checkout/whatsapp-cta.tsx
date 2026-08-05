@@ -5,6 +5,7 @@ import { Loader2, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { buildWhatsAppUrl, type DeliveryMethod } from "@/lib/cart/whatsapp-message"
 import { computeCartHash, rememberOrder, getRememberedOrder } from "@/lib/cart/hash"
+import { useCartStore } from "@/stores/cart-store"
 import type { CartItem } from "@/types/cart"
 
 type Props = {
@@ -30,6 +31,7 @@ export function WhatsAppCTA({
 }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const removeMissingProducts = useCartStore((s) => s.removeMissingProducts)
 
   async function onClick() {
     if (loading) return
@@ -64,8 +66,17 @@ export function WhatsAppCTA({
           orderId?: string
           error?: string
           reused?: boolean
+          reason?: string
+          unknownProductIds?: string[]
         }
         if (!response.ok || !result.orderId) {
+          if (
+            result.reason === "product_unknown" &&
+            Array.isArray(result.unknownProductIds) &&
+            result.unknownProductIds.length > 0
+          ) {
+            removeMissingProducts(result.unknownProductIds)
+          }
           throw new Error(result.error || "No se pudo registrar el pedido")
         }
         orderId = result.orderId

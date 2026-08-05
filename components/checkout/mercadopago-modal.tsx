@@ -26,6 +26,7 @@ export function MercadoPagoModal({
   forceNew?: boolean
 }) {
   const items = useCartStore((state) => state.items)
+  const removeMissingProducts = useCartStore((s) => s.removeMissingProducts)
   const deliveryMethod = useCustomerStore((s) => s.profile.deliveryMethod)
   const totals = selectTotal(items)
   const [loading, setLoading] = useState(false)
@@ -51,8 +52,17 @@ export function MercadoPagoModal({
         error?: string
         initPoint?: string
         orderId?: string
+        reason?: string
+        unknownProductIds?: string[]
       }
       if (!response.ok || !data.initPoint) {
+        if (
+          data.reason === "product_unknown" &&
+          Array.isArray(data.unknownProductIds) &&
+          data.unknownProductIds.length > 0
+        ) {
+          removeMissingProducts(data.unknownProductIds)
+        }
         throw new Error(data.error || "No se pudo iniciar Mercado Pago")
       }
       if (data.orderId) rememberOrder(data.orderId, cartHash, "mercadopago")

@@ -175,18 +175,29 @@ export async function POST(request: Request) {
   const snapshot: Json[] = []
   let subtotal = 0
   const variantConsumption: { id: string; qty: number; stockBefore: number }[] = []
+  // Acumulamos ids de productos desconocidos para devolverlos todos juntos en
+  // el 409 (la UI los purga del carrito en un solo paso).
+  const unknownProductIds: string[] = []
   for (const item of items) {
     if (item.kind === "design") {
       snapshot.push({ kind: "design", designId: item.designId!, payload: item.payload!, customPrice: 0, qty: 1, previewLabel: "Diseño personalizado" })
       continue
     }
     const product = productMap.get(item.id!)
-    if (!product || !product.active) {
+    if (!product) {
+      // El producto no existe en el catálogo: típicamente quedó en el carrito
+      // porque se borró del admin o el id cambió (deploy / migración). No es
+      // un 409 de stock ni de variante — indicamos la causa para que la UI
+      // pueda mostrar un mensaje claro y el cliente elimine la línea.
+      if (!unknownProductIds.includes(item.id!)) unknownProductIds.push(item.id!)
+      continue
+    }
+    if (!product.active) {
       return NextResponse.json(
         {
-          error: `"${product?.name ?? item.id}" ya no está disponible. Quitalo del carrito para continuar.`,
+          error: `"${product.name}" ya no está disponible. Quitalo del carrito para continuar.`,
           reason: "product_unavailable",
-          productId: product?.id ?? item.id,
+          productId: product.id,
         },
         { status: 409 },
       )
@@ -243,6 +254,22 @@ export async function POST(request: Request) {
       // Legacy: registrar consumo contra el producto top-level
       variantConsumption.push({ id: `legacy:${product.id}`, qty: quantity, stockBefore: stockAvailable })
     }
+  }
+
+  // Si había líneas con productos que ya no existen en el catálogo, devolvemos
+  // los ids en un solo 409. La UI puede purgar esas líneas del carrito y
+  // reintentar el checkout sin que el cliente tenga que adivinar cuál era.
+  if (unknownProductIds.length > 0) {
+    return NextResponse.json(
+      {
+        error: unknownProductIds.length === 1
+          ? "Hay un producto en tu carrito que ya no está en el catálogo. Lo quitamos por vos: volvé a intentar."
+          : "Hay productos en tu carrito que ya no están en el catálogo. Los quitamos por vos: volvé a intentar.",
+        reason: "product_unknown",
+        unknownProductIds,
+      },
+      { status: 409 },
+    )
   }
 
   // Defensa contra overflow si el admin inventó un precio absurdo.
