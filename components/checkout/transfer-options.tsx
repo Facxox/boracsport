@@ -12,6 +12,7 @@ import {
 import { WHATSAPP_NUMBER } from "@/lib/constants"
 import { useCustomerStore } from "@/stores/customer-store"
 import { cn } from "@/lib/utils"
+import { computeCartHash, rememberOrder, getRememberedOrder } from "@/lib/cart/hash"
 import type { CartItem } from "@/types/cart"
 
 const ACCOUNT = BANK_ACCOUNTS[0]
@@ -40,25 +41,39 @@ export function TransferOptions({ items, customer, forceNew = false }: TransferO
     setRegistering(true)
     setError(null)
     try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items,
-          paymentMethod: "transfer",
-          customer: {
-            name: customer.name,
-            email: customer.email,
-            phone: customer.phone,
-            address: customer.address,
-            deliveryMethod,
-          },
-          forceNew,
-        }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || `Error ${res.status} al registrar el pedido`)
-      setOrderId(data.orderId)
+      const cartHash = computeCartHash(items)
+      // Si ya registramos este mismo carrito en los últimos minutos, evitamos
+      // duplicar la orden y seguimos con la existente (mismo flujo que
+      // WhatsAppCTA / MercadoPago).
+      const remembered = getRememberedOrder()
+      let resolvedOrderId: string
+      if (remembered && remembered.cartHash === cartHash) {
+        resolvedOrderId = remembered.orderId
+      } else {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items,
+            paymentMethod: "transfer",
+            customer: {
+              name: customer.name,
+              email: customer.email,
+              phone: customer.phone,
+              address: customer.address,
+              deliveryMethod,
+            },
+            cartHash,
+            forceNew,
+          }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data.error || `Error ${res.status} al registrar el pedido`)
+        if (!data.orderId) throw new Error("La respuesta del servidor no incluye el ID del pedido.")
+        resolvedOrderId = data.orderId
+        rememberOrder(resolvedOrderId, cartHash, "transfer")
+      }
+      setOrderId(resolvedOrderId)
       toast.success("Pedido registrado. Subí tu comprobante cuando termines la transferencia.")
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "No se pudo registrar el pedido"

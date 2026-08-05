@@ -182,7 +182,14 @@ export async function POST(request: Request) {
     }
     const product = productMap.get(item.id!)
     if (!product || !product.active) {
-      return NextResponse.json({ error: "Uno de los productos ya no está disponible." }, { status: 409 })
+      return NextResponse.json(
+        {
+          error: `"${product?.name ?? item.id}" ya no está disponible. Quitalo del carrito para continuar.`,
+          reason: "product_unavailable",
+          productId: product?.id ?? item.id,
+        },
+        { status: 409 },
+      )
     }
     const quantity = item.qty!
 
@@ -192,14 +199,29 @@ export async function POST(request: Request) {
     if (item.variantId) {
       const variant = variantMap.get(item.variantId)
       if (!variant || variant.product_id !== product.id || !variant.active) {
-        return NextResponse.json({ error: "Una de las variantes ya no está disponible." }, { status: 409 })
+        return NextResponse.json(
+          {
+            error: `La variante seleccionada para "${product.name}" ya no está disponible. Elegí otra desde la ficha del producto.`,
+            reason: "variant_unavailable",
+            productId: product.id,
+            variantId: item.variantId,
+          },
+          { status: 409 },
+        )
       }
       stockAvailable = Number(variant.stock)
       if (variant.price_override != null) unitPrice = Number(variant.price_override)
     }
 
     if (stockAvailable < quantity) {
-      return NextResponse.json({ error: `Sin stock suficiente para "${product.name}". Quedan ${stockAvailable}.` }, { status: 409 })
+      return NextResponse.json(
+        {
+          error: `Sin stock suficiente para "${product.name}". Quedan ${stockAvailable}.`,
+          reason: "insufficient_stock",
+          productId: product.id,
+        },
+        { status: 409 },
+      )
     }
 
     subtotal += unitPrice * quantity
@@ -289,14 +311,65 @@ export async function POST(request: Request) {
       (rpcError as { code?: string }).code ?? (rpcError as { details?: string }).details ?? "",
     )
     if (code.includes("P0001") || /insufficient stock/i.test(message)) {
+      // Mensaje de la RPC: "insufficient stock for variant <uuid> (... remaining, N requested)"
+      // o "insufficient stock for product <uuid> (...)". Extraemos el id para
+      // identificar el ítem al cliente.
+      const match = message.match(/insufficient stock for (variant|product) ([0-9a-f-]{36})/i)
+      const consumptionsArray = Array.isArray(rpcConsumptions) ? rpcConsumptions : []
+      const failingConsumption = match
+        ? consumptionsArray.find(
+            (c): c is { kind: string; id: string } =>
+              typeof c === "object" && c !== null &&
+              typeof (c as { kind?: unknown }).kind === "string" &&
+              typeof (c as { id?: unknown }).id === "string" &&
+              (c as { kind: string }).kind === match[1] &&
+              (c as { id: string }).id === match[2],
+          )
+        : undefined
+      const failingSnapshotId = failingConsumption
+        ? String(failingConsumption.id)
+        : null
+      const failingProduct = snapshot.find(
+        (s) =>
+          typeof s === "object" && s !== null &&
+          ((s as { variantId?: string | null }).variantId === failingSnapshotId ||
+            (s as { id?: string }).id === failingSnapshotId),
+      ) as { name?: string } | undefined
       return NextResponse.json(
-        { error: "Sin stock suficiente para uno de los productos. Volvé a intentar." },
+        {
+          error: failingProduct?.name
+            ? `Sin stock suficiente para "${failingProduct.name}". Volvé a intentar.`
+            : "Sin stock suficiente para uno de los productos. Volvé a intentar.",
+          reason: "insufficient_stock",
+          ...(failingSnapshotId ? { targetId: failingSnapshotId } : {}),
+        },
         { status: 409 },
       )
     }
     if (code.includes("P0002") || /consumption target not available/i.test(message)) {
+      // Misma idea: identificar el producto/variante que la RPC no pudo lockear.
+      const match = message.match(/(variant|product) ([0-9a-f-]{36})/i)
+      const failingSnapshotId = match ? match[2] : null
+      const failingProduct = failingSnapshotId
+        ? (snapshot.find(
+            (s) =>
+              typeof s === "object" && s !== null &&
+              ((s as { variantId?: string | null }).variantId === failingSnapshotId ||
+                (s as { id?: string }).id === failingSnapshotId),
+          ) as { name?: string } | undefined)
+        : undefined
       return NextResponse.json(
-        { error: "Uno de los productos ya no está disponible." },
+        {
+          error: failingProduct?.name
+            ? `"${failingProduct.name}" ya no está disponible. Quitalo del carrito para continuar.`
+            : "Uno de los productos ya no está disponible.",
+          reason: failingSnapshotId
+            ? match?.[1] === "variant"
+              ? "variant_unavailable"
+              : "product_unavailable"
+            : "consumption_target_unavailable",
+          ...(failingSnapshotId ? { targetId: failingSnapshotId } : {}),
+        },
         { status: 409 },
       )
     }
