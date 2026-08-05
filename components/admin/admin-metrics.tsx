@@ -7,7 +7,7 @@
 import type { OrderStatus } from "@/lib/supabase/types"
 import { CountUp } from "@/components/admin/count-up"
 import { AnimatedBar } from "@/components/admin/animated-bar"
-import { CyanAreaChart } from "@/components/admin/cyan-area-chart"
+import { AdminTrendChart } from "@/components/admin/admin-trend-chart"
 
 // Tipos espejo de AnalyticsSnapshot (el original vive en lib/supabase/queries/analytics.ts
 // marcado como "server-only", no podemos importarlo desde un client component).
@@ -205,7 +205,7 @@ export function AdminMetricsSection({ snapshot }: { snapshot: AnalyticsSnapshotL
       </div>
 
       <div className="mt-6">
-        <CyanAreaChart
+        <AdminTrendChart
           labels={weeklySparkline.labels}
           values={weeklySparkline.values}
           title="Actividad reciente"

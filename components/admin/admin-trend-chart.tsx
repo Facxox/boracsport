@@ -1,14 +1,15 @@
 "use client"
 
-// Line + área + gradient estilo "cyanChart" de la imagen de referencia,
-// pero:
+// Line + área + gradiente — replica funcional del snippet de referencia
+// que dieron, adaptado al design system de Borac Sport (paleta roja de marca
+// en lugar del cyan original).
+//
 //   - No toca DOM directamente (sin getElementById). Funciona en SSR-friendly
-//     via react-chartjs-2, registrada como Client Component.
-//   - Tema coherente con Borac Sport (cyan = #06b6d4 para acentuar; el
-//     primario sigue siendo #dc2626).
+//     via react-chartjs-2, registrado como Client Component.
+//   - Tema coherente con Borac Sport: rojo (#dc2626) en línea, puntos y
+//     gradiente. Acento de hover en rojo claro (#fca5a5).
 //   - La altura se controla por CSS para respetar maintainAspectRatio:false.
-//   - Tooltip custom (no rompe el pattern del gráfico de referencia, que no
-//     tenía leyenda pero sí puntos interactivos).
+//   - Tooltip custom (sigue el patrón del snippet, sin leyenda).
 
 import {
   CategoryScale,
@@ -32,7 +33,7 @@ ChartJS.register(
   Legend,
 )
 
-interface CyanAreaChartProps {
+interface AdminTrendChartProps {
   /** Etiqueta visible sólo en el tooltip (los ticks X están ocultos). */
   labels: string[]
   /** Serie numérica 0..100 (o la escala que pase). */
@@ -43,36 +44,39 @@ interface CyanAreaChartProps {
   subtitle?: string
 }
 
-export function CyanAreaChart({ labels, values, title, subtitle }: CyanAreaChartProps) {
-  // El componente <Line/> de react-chartjs-2 se encarga de pasar el canvas al
-  // ChartJS. Construimos el dataset con un gradient calculado dentro del
-  // plugin "beforeDraw" sólo cuando el gráfico ya tiene tamaño real, así
-  // evitamos NaN en SSR/hidratación.
+export function AdminTrendChart({
+  labels,
+  values,
+  title,
+  subtitle,
+}: AdminTrendChartProps) {
   const data = {
     labels,
     datasets: [
       {
         label: title ?? "Tendencia",
         data: values,
-        borderColor: "#06b6d4",
+        borderColor: "#dc2626",
         borderWidth: 3.5,
         tension: 0.42,
         fill: true,
-        backgroundColor: (context: { chart: { ctx: CanvasRenderingContext2D; chartArea?: { top: number; bottom: number } } }) => {
+        backgroundColor: (context: {
+          chart: { ctx: CanvasRenderingContext2D; chartArea?: { top: number; bottom: number } }
+        }) => {
           const chart = context.chart
           const { ctx, chartArea } = chart
-          if (!chartArea) return "rgba(6, 182, 212, 0.25)"
+          if (!chartArea) return "rgba(220, 38, 38, 0.25)"
           const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
-          gradient.addColorStop(0, "rgba(6, 182, 212, 0.45)")
-          gradient.addColorStop(1, "rgba(6, 182, 212, 0)")
+          gradient.addColorStop(0, "rgba(220, 38, 38, 0.45)")
+          gradient.addColorStop(1, "rgba(220, 38, 38, 0)")
           return gradient
         },
-        pointBackgroundColor: "#06b6d4",
+        pointBackgroundColor: "#dc2626",
         pointBorderColor: "#080c14",
         pointBorderWidth: 2,
         pointRadius: 6,
         pointHoverRadius: 9,
-        pointHoverBackgroundColor: "#22d3ee",
+        pointHoverBackgroundColor: "#fca5a5",
       },
     ],
   }
@@ -84,7 +88,7 @@ export function CyanAreaChart({ labels, values, title, subtitle }: CyanAreaChart
       legend: { display: false },
       tooltip: {
         backgroundColor: "rgba(8, 12, 20, 0.92)",
-        borderColor: "rgba(6, 182, 212, 0.45)",
+        borderColor: "rgba(220, 38, 38, 0.45)",
         borderWidth: 1,
         titleColor: "#fff",
         bodyColor: "#d4d4d8",
@@ -121,7 +125,7 @@ export function CyanAreaChart({ labels, values, title, subtitle }: CyanAreaChart
               <p className="text-xs text-white/45 mt-1">{subtitle}</p>
             ) : null}
           </div>
-          <span className="bg-cyan-500/10 text-cyan-300 rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ring-1 ring-inset ring-cyan-400/30">
+          <span className="bg-[#dc2626]/10 text-[#fca5a5] rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ring-1 ring-inset ring-[#dc2626]/40">
             7d
           </span>
         </header>
