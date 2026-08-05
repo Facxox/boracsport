@@ -2,7 +2,7 @@
 
 import type { CartItem } from "@/types/cart"
 import { formatUYU } from "@/lib/format"
-import { calcTotals } from "./totals"
+import { calcSubtotal } from "./totals"
 import { siteConfig } from "@/lib/config/site"
 
 export function buildWhatsAppMessage(
@@ -24,12 +24,11 @@ export function buildWhatsAppMessage(
         `  · ${p.qty}× ${p.name} (${formatUYU(p.price)} c/u) = ${formatUYU(p.price * p.qty)}`,
       )
     }
-  }
-
-  const { subtotal, total } = calcTotals(items)
-  if (products.length > 0) {
-    lines.push(`— Subtotal: ${formatUYU(subtotal)}`)
-    lines.push(`— Total estimado: ${formatUYU(total)}`)
+    // El envío se coordina aparte con el cliente; el mensaje de WhatsApp
+    // muestra sólo el subtotal de productos para no inflar el "total estimado"
+    // cuando aún no hay dirección ni método de envío definidos.
+    const subtotal = calcSubtotal(items)
+    lines.push(`— Total estimado: ${formatUYU(subtotal)}`)
   }
   lines.push("")
   lines.push("¡Gracias!")
