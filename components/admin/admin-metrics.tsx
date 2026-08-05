@@ -60,16 +60,20 @@ function MetricCard({
   isCurrency?: boolean
   accent?: "revenue" | "orders" | "units" | "ticket" | "designs"
 }) {
+  // Acento único: rojo de marca (#dc2626) con el mismo peso visual en
+  // todas las cards. Subimos el degradado a 25% para que sobre fondo
+  // #101012 no quede lavado, y el ring a 60% para que el borde se note
+  // sin gritar.
   const ringClass =
     accent === "orders"
-      ? "ring-[#dc2626]/40 from-[#dc2626]/10"
+      ? "ring-[#dc2626]/60 from-[#dc2626]/25"
       : accent === "units"
-      ? "ring-[#dc2626]/40 from-[#dc2626]/10"
+      ? "ring-[#dc2626]/60 from-[#dc2626]/25"
       : accent === "ticket"
-      ? "ring-[#dc2626]/40 from-[#dc2626]/10"
+      ? "ring-[#dc2626]/60 from-[#dc2626]/25"
       : accent === "designs"
-      ? "ring-[#dc2626]/40 from-[#dc2626]/10"
-      : "ring-[#dc2626]/40 from-[#dc2626]/10"
+      ? "ring-[#dc2626]/60 from-[#dc2626]/25"
+      : "ring-[#dc2626]/60 from-[#dc2626]/25"
 
   return (
     <div
